@@ -10,6 +10,8 @@ Implements the Bentov "water surface" metaphor where:
 This is the core of the holographic storage system.
 """
 
+from typing import Optional
+
 import torch
 
 from hologram.config.constants import (
@@ -54,15 +56,24 @@ class MemoryTrace:
         True
     """
 
-    def __init__(self, space: VectorSpace):
+    def __init__(
+        self,
+        space: VectorSpace,
+        initial_trace: Optional[torch.Tensor] = None,
+    ):
         """
-        Initialize empty memory trace.
+        Initialize memory trace, optionally with existing trace vector.
 
         Args:
             space: VectorSpace defining dimensionality
+            initial_trace: Optional pre-existing trace vector (for consolidation decay)
         """
         self._space = space
-        self._trace = space.empty_vector()
+        if initial_trace is not None:
+            space.validate_vector(initial_trace)
+            self._trace = initial_trace.clone()
+        else:
+            self._trace = space.empty_vector()
         self._fact_count = 0
         self._momentum = space.empty_vector()  # Titans momentum tracking
         self._momentum_decay = SURPRISE_MOMENTUM_DECAY

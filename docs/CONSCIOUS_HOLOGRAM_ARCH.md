@@ -150,7 +150,7 @@ surprise2 = trace.store_with_surprise(france_capital_key, paris)  # 0.02 (known)
 
 **Capacity is heuristic, not guaranteed.** `constants.py` documents a rule-of-thumb (dimensions ÷ 100), while `MemoryTrace.saturation_estimate` uses √dimensions. Both are unproven; treat capacity as empirical and monitor confidence, not a hard limit.
 
-**Scaling Beyond the Hot Layer: HierarchicalFactStore** (`src/hologram/memory/fact_store.py:472-598`)
+**Scaling Strategy 1: Hierarchical Fact Store (HDC + FAISS)** (`src/hologram/memory/fact_store.py:472-598`)
 
 Use the two-tier architecture when you need headroom:
 
@@ -168,34 +168,17 @@ Use the two-tier architecture when you need headroom:
 
 **Result**: Exact key lookups work at unlimited scale; fuzzy resonance searches gracefully degrade to cold storage when confidence drops.
 
-**Usage**:
+**Scaling Strategy 2: Neural Consolidation (Sleep Learning)** (`src/hologram/consolidation/`)
 
-```python
-from hologram import HologramContainer
+_New in v0.4.0_: A bio-inspired approach where facts are moved from "working memory" (HDC) to "long-term memory" (Neural Weights) via background consolidation.
 
-container = HologramContainer(dimensions=10000)
-# Create HierarchicalFactStore explicitly (requires faiss installed)
-fact_store = container.create_hierarchical_fact_store(
-    hot_confidence_threshold=0.7,  # Fall back to FAISS if below this
-    faiss_path="./data/faiss_index"
-)
+1.  **Working Memory (HDC)**: Fast, immediate storage.
+2.  **Background Consolidation**: When buffer fills, a background thread trains a small MLP on the facts.
+3.  **Decay**: HDC trace is decayed (not wiped), preserving a faint signal while the neural net takes over.
+4.  **Calibrated Retrieval**: Queries check both HDC and Neural layers. `ConfidenceCalibrator` picks the winner based on calibrated confidence scores.
+5.  **Safety Gate**: Neural predictions must pass an HDC unbinding check to prevent hallucination.
 
-# Store 10,000 facts - hot layer overflows to FAISS gracefully
-for i in range(10000):
-    fact_store.add_fact(f"Entity_{i}", "property", f"value_{i}")
-
-# Query works seamlessly across both layers
-answer, confidence = fact_store.query("Entity_9999", "property")
-# → "value_9999", 0.95 (or cold-layer similarity)
-```
-
-**Capacity Profile**:
-
-- **Exact match queries** (normalized key lookup): O(1) dictionary; scales with metadata, not the bundled vector.
-- **Fuzzy holographic queries** (resonance): Practically limited; treat “tens to low hundreds” as a heuristic before interference grows.
-- **Cold layer queries**: Operationally unbounded; similarity reflects FAISS scoring.
-
-This is the implemented scaling path; monitor confidence empirically.
+This allows the system to store "infinite" facts in fixed-size weights, using the HDC layer as a fast buffer.
 
 ### New: Episodic Memory Layer
 
@@ -493,6 +476,15 @@ The following features were designed as proposals but are **fully implemented**:
 
 - **Status**: ✅ **Implemented** in `src/hologram/conversation/memory.py`
 - **What it does**: Stores user-response pairs in vector storage for long-term context retrieval.
+
+### 5. Neural Consolidation (IMPLEMENTED)
+
+- **Status**: ✅ **Implemented** in `src/hologram/consolidation/`
+- **What it does**: Sleep-inspired memory consolidation. Moves facts from HDC working memory to a compressed neural network for long-term storage.
+- **Key Features**:
+  - **Async Training**: Happens in background thread.
+  - **Calibration**: Unifies HDC and Neural confidence scores.
+  - **Goldfish/Elephant**: Supports both rapid forgetting (working memory) and long-term retention.
 
 ---
 

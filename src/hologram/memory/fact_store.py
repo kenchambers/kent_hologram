@@ -267,8 +267,15 @@ class FactStore:
             >>> conf > 0.9
             True
         """
-        if len(self._value_vocab) == 0:
-            # No facts stored yet
+        # Check if there's anything to query
+        has_local_vocab = len(self._value_vocab) > 0
+        has_manager_vocab = (
+            self._consolidation_manager and 
+            self._consolidation_manager.vocab_size > 0
+        )
+        
+        if not has_local_vocab and not has_manager_vocab:
+            # No facts stored anywhere
             return "", 0.0
 
         # Strategy 1: Exact normalized match (fastest)
@@ -290,6 +297,10 @@ class FactStore:
             # Query consolidation manager (checks both HDC and Neural)
             result = self._consolidation_manager.query(key, require_unbind_safety=True)
             return result.value_label, result.confidence
+        
+        # If no local vocab, can't do resonance search
+        if not has_local_vocab:
+            return "", 0.0
 
         # Strategy 3: HDC resonance search (fuzzy matching)
         # Use normalized forms for encoding to improve matching

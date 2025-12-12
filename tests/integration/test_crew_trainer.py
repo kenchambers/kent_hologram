@@ -130,7 +130,7 @@ class TestCrewTrainerIntegration:
         assert confidence > 0.1  # Should have reasonable confidence
 
     def test_chromadb_persistence(self, temp_dirs):
-        """Test that facts persist to ChromaDB across sessions."""
+        """Test that facts persist across sessions (via neural memory or ChromaDB)."""
         from crew_trainer import CrewTrainer
         from hologram.container import HologramContainer
 
@@ -143,23 +143,24 @@ class TestCrewTrainerIntegration:
             max_turns_per_topic=1,
         )
         trainer1.chatbot.teach_fact("PersistTest", "capital", "PersistCity")
-        fact_count_before = trainer1.chatbot._fact_store.fact_count
+        
+        # Save neural memory explicitly (normally happens on exit)
+        trainer1.chatbot.save_memory(persist_dir)
+        trainer1.chatbot.end_session()
 
-        # Second session: verify fact persists
+        # Second session: verify fact persists via query (not fact_count)
+        # Note: With neural consolidation, the metadata list isn't repopulated
+        # on load, but the neural memory and vocabulary are restored
         trainer2 = CrewTrainer(
             persist_dir=persist_dir,
             log_dir=Path(log_dir),
             max_turns_per_topic=1,
         )
-        fact_count_after = trainer2.chatbot._fact_store.fact_count
 
-        # Should have at least the same number of facts
-        assert fact_count_after >= fact_count_before
-
-        # Query the persisted fact
+        # Query the persisted fact - this should work via neural/HDC lookup
         answer, confidence = trainer2.chatbot._fact_store.query("PersistTest", "capital")
-        assert answer.lower() == "persistcity"
-        assert confidence > 0.1
+        assert answer.lower() == "persistcity", f"Expected 'persistcity', got '{answer}'"
+        assert confidence > 0.1, f"Confidence {confidence} too low"
 
     def test_log_format(self, temp_dirs):
         """Test that logs are formatted correctly."""
@@ -207,11 +208,11 @@ class TestCrewTrainerIntegration:
             ("claude", "How are you?"),
         ]
 
-        # Get context
+        # Get context - note: _get_conversation_context uses generic labels
+        # "Partner" for gemini/claude and "Bot" for hologram to prevent role-play
         context = trainer._get_conversation_context(last_n=3)
-        assert "gemini:" in context
-        assert "hologram:" in context
-        assert "claude:" in context
+        assert "Partner:" in context  # gemini/claude mapped to Partner
+        assert "Bot:" in context  # hologram mapped to Bot
 
         # Test limiting context
         context_limited = trainer._get_conversation_context(last_n=2)

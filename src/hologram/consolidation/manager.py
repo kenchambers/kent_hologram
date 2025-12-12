@@ -227,10 +227,29 @@ class ConsolidationManager:
                 logger.error(f"Consolidation callback error: {e}")
 
     def _apply_decay_to_working_memory(self, old_trace: torch.Tensor) -> None:
-        """Apply decay to working memory (preserves faint signal)."""
-        # Reset working memory with decayed trace
-        decayed_trace = old_trace * self._decay_factor
-        self._working_memory._trace = decayed_trace
+        """
+        Apply decay to working memory (preserves faint signal).
+        
+        Handles race condition where new facts may have been stored
+        while consolidation was running.
+        """
+        with self._lock:
+            current_trace = self._working_memory._trace
+            
+            # If nothing changed, just decay the old trace
+            if torch.allclose(current_trace, old_trace):
+                decayed_trace = old_trace * self._decay_factor
+                self._working_memory._trace = decayed_trace
+            else:
+                # Facts were added during consolidation!
+                # We want: (old_trace * decay) + (new_facts)
+                # We approximate new_facts as (current_trace - old_trace)
+                # So: current_trace - old_trace + (old_trace * decay)
+                #   = current_trace - (old_trace * (1 - decay))
+                
+                decay_amount = old_trace * (1.0 - self._decay_factor)
+                self._working_memory._trace = current_trace - decay_amount
+                
         # Note: fact_count is not reset - it's a running total
 
     def store(

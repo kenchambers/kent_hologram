@@ -591,7 +591,7 @@ class HologramContainer:
             neural_path = Path(persist_dir) / "neural_memory.pt"
             if neural_path.exists():
                 try:
-                    state = torch.load(neural_path)
+                    state = torch.load(neural_path, weights_only=False)
                     if fact_store._consolidation_manager:
                         fact_store._consolidation_manager.load_state_dict(state)
                         print(f"Loaded neural memory from {neural_path}")

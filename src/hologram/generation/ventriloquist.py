@@ -223,13 +223,20 @@ class VentriloquistGenerator:
             if context.fact_answer:
                 fact_lower = context.fact_answer.lower()
                 text_lower = generated_text.lower()
-                # Check if key words from fact appear in response
-                fact_words = [w for w in fact_lower.split() if len(w) > 2]
-                if fact_words:
-                    matches = sum(1 for word in fact_words if word in text_lower)
-                    if matches < len(fact_words) * 0.5:
-                        # Fact not properly incorporated - reject
-                        return None
+
+                # First, check for exact substring match (handles names like "Emperor Vex")
+                if fact_lower in text_lower:
+                    # Exact match found - validation passed
+                    pass
+                else:
+                    # Fall back to word-level matching for longer phrases
+                    # Keep words >= 2 chars (was > 2, which excluded 3-letter words like "Vex")
+                    fact_words = [w for w in fact_lower.split() if len(w) >= 2]
+                    if fact_words:
+                        matches = sum(1 for word in fact_words if word in text_lower)
+                        if matches < len(fact_words) * 0.5:
+                            # Fact not properly incorporated - reject
+                            return None
             
             # Create GenerationResult (SLM doesn't provide trace/metrics)
             tokens = generated_text.split()

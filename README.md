@@ -39,6 +39,7 @@ Unlike traditional LLMs that predict the next token, Hologram:
 - ✅ **Fact Persistence**: ChromaDB stores facts across sessions
 - ✅ **Style Adaptation**: Tracks user communication style over time
 - ✅ **Conversation Memory**: Context-aware responses for follow-ups
+- ✅ **Neural Consolidation**: Sleep-inspired background learning transfers facts to long-term neural memory (v0.4.0)
 
 ### Safety Mechanisms
 
@@ -329,13 +330,13 @@ Run any example with: `uv run python examples/<filename>.py`
 
 The Hologram system is built as a **5-layer architecture** where each layer adds essential capabilities. The **Ventriloquist is an addition, not a replacement** - it sits on top of the complete HDC foundation.
 
-| Layer | Component | Status | Role |
-|-------|-----------|--------|------|
-| **1. Substrate** | `FractalSpace` | **IMPLEMENTED** | Every vector is a holographic "DNA" - robust to corruption |
-| **2. Memory** | `FactStore` + `MemoryTrace` | **IMPLEMENTED** | HDC binding/bundling for fact storage with S-P-O structure |
-| **3. Controller** | `MetacognitiveLoop` | **IMPLEMENTED** | Self-monitoring, confidence tracking, retry when confused |
-| **4. Retrieval** | `FactStore` + `ResponseSelector` | **IMPLEMENTED** | Multi-strategy lookup (exact match + HDC resonance) |
-| **5. Voice** | `ResonantGenerator` or `VentriloquistGenerator` | **IMPLEMENTED** | Hybrid: HDC-native (factual) or SLM-based (conversational) |
+| Layer             | Component                                       | Status          | Role                                                       |
+| ----------------- | ----------------------------------------------- | --------------- | ---------------------------------------------------------- |
+| **1. Substrate**  | `FractalSpace`                                  | **IMPLEMENTED** | Every vector is a holographic "DNA" - robust to corruption |
+| **2. Memory**     | `FactStore` + `MemoryTrace`                     | **IMPLEMENTED** | HDC binding/bundling for fact storage with S-P-O structure |
+| **3. Controller** | `MetacognitiveLoop`                             | **IMPLEMENTED** | Self-monitoring, confidence tracking, retry when confused  |
+| **4. Retrieval**  | `FactStore` + `ResponseSelector`                | **IMPLEMENTED** | Multi-strategy lookup (exact match + HDC resonance)        |
+| **5. Voice**      | `ResonantGenerator` or `VentriloquistGenerator` | **IMPLEMENTED** | Hybrid: HDC-native (factual) or SLM-based (conversational) |
 
 ### Data Flow (All Layers)
 

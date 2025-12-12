@@ -535,7 +535,7 @@ class CrewTrainer:
                 # If neural memory exists, we might not have easy access to the exact words 
                 # without instantiating the manager. For now, rely on base vocabulary 
                 # or try to peek at value_vocab if stored in the pt file.
-                state = torch.load(neural_path)
+                state = torch.load(neural_path, weights_only=False)
                 value_vocab = state.get("value_vocab", {})
                 for word in value_vocab.keys():
                     if len(word) > 2:
