@@ -86,14 +86,57 @@ class HologramContainer:
         """Get the shared Codebook instance."""
         return self._codebook
 
-    def create_fact_store(self) -> FactStore:
+    def create_fact_store(
+        self,
+        enable_neural_consolidation: bool = False,
+        consolidation_threshold: int = 20,
+    ) -> FactStore:
         """
         Create a new FactStore instance.
+
+        Args:
+            enable_neural_consolidation: If True, use Neural Consolidation layer
+            consolidation_threshold: Facts before consolidation triggers
 
         Returns:
             FactStore using shared VectorSpace and Codebook
         """
-        return FactStore(self._space, self._codebook)
+        consolidation_manager = None
+        if enable_neural_consolidation:
+            consolidation_manager = self.create_consolidation_manager(
+                threshold=consolidation_threshold
+            )
+            
+        return FactStore(
+            self._space, 
+            self._codebook,
+            consolidation_manager=consolidation_manager
+        )
+
+    def create_consolidation_manager(
+        self,
+        threshold: int = 20,
+        decay_factor: float = 0.3,
+        neural_hidden_dim: int = 256,
+    ):
+        """
+        Create a ConsolidationManager for neural memory.
+
+        Args:
+            threshold: Number of pending facts to trigger consolidation
+            decay_factor: HDC decay factor
+            neural_hidden_dim: Neural network hidden dimension
+
+        Returns:
+            ConsolidationManager instance
+        """
+        from hologram.consolidation.manager import ConsolidationManager
+        return ConsolidationManager(
+            space=self._space,
+            consolidation_threshold=threshold,
+            decay_factor=decay_factor,
+            neural_hidden_dim=neural_hidden_dim,
+        )
 
     def create_hierarchical_fact_store(
         self,
@@ -496,6 +539,7 @@ class HologramContainer:
         enable_ventriloquist: bool = False,
         ventriloquist_model: str = "moonshotai/kimi-k2-thinking",
         ventriloquist_mode: str = "full",
+        enable_neural_consolidation: bool = False,
     ):
         """
         Create a ConversationalChatbot with persistent fact storage.
@@ -511,6 +555,7 @@ class HologramContainer:
             enable_metacognition: If True, create MetacognitiveLoop for self-monitoring (default: True)
             enable_ventriloquist: If True, create VentriloquistGenerator for fluent SLM output (default: False)
             ventriloquist_model: Model identifier for Ventriloquist (default: moonshotai/kimi-k2-thinking)
+            enable_neural_consolidation: If True, use Neural Consolidation instead of Chroma (default: False)
 
         Returns:
             ConversationalChatbot with persistent storage
@@ -534,13 +579,36 @@ class HologramContainer:
         from hologram.persistence.chroma_adapter import ChromaFactStore, ChromaResponseCorpus
 
         # Create persistent fact store
-        chroma_store = ChromaFactStore(
-            codebook=self._codebook,
-            persist_dir=persist_dir,
-        )
-
-        # Create wrapper that bridges ChromaFactStore to FactStore interface
-        fact_store = self._create_chroma_bridge(chroma_store)
+        if enable_neural_consolidation:
+            # Use Neural Consolidation (FactStore with Manager)
+            # Persistence is handled by loading state dict if it exists
+            import torch
+            import os
+            
+            fact_store = self.create_fact_store(enable_neural_consolidation=True)
+            
+            # Try to load existing neural state
+            neural_path = Path(persist_dir) / "neural_memory.pt"
+            if neural_path.exists():
+                try:
+                    state = torch.load(neural_path)
+                    if fact_store._consolidation_manager:
+                        fact_store._consolidation_manager.load_state_dict(state)
+                        print(f"Loaded neural memory from {neural_path}")
+                except Exception as e:
+                    print(f"Failed to load neural memory: {e}")
+            
+            # We also ensure the directory exists for saving later
+            Path(persist_dir).mkdir(parents=True, exist_ok=True)
+            
+        else:
+            # Use ChromaDB (Standard Persistence)
+            chroma_store = ChromaFactStore(
+                codebook=self._codebook,
+                persist_dir=persist_dir,
+            )
+            # Create wrapper that bridges ChromaFactStore to FactStore interface
+            fact_store = self._create_chroma_bridge(chroma_store)
 
         # Create all conversation components
         # Use FastIntentClassifier for accurate, fast intent classification

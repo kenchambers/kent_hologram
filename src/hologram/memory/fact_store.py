@@ -86,16 +86,23 @@ class FactStore:
         'France'
     """
 
-    def __init__(self, space: VectorSpace, codebook: Codebook):
+    def __init__(
+        self,
+        space: VectorSpace,
+        codebook: Codebook,
+        consolidation_manager=None,
+    ):
         """
         Initialize fact store.
 
         Args:
             space: VectorSpace for dimensionality
             codebook: Codebook for string->vector conversion
+            consolidation_manager: Optional ConsolidationManager for neural memory
         """
         self._memory = MemoryTrace(space)
         self._codebook = codebook
+        self._consolidation_manager = consolidation_manager
         self._facts: list[Fact] = []
         self._value_vocab: set[str] = set()
         self._subject_vocab: set[str] = set()  # Track unique subjects
@@ -177,12 +184,21 @@ class FactStore:
         key = Operations.bind(s_vec, p_vec)
 
         # NEW: Store with surprise gating (Titans-inspired)
-        surprise = self._memory.store_with_surprise(
-            key,
-            o_vec,
-            learning_rate=confidence,  # Use fact confidence as learning rate
-            surprise_threshold=SURPRISE_THRESHOLD
-        )
+        if self._consolidation_manager:
+            # Delegate to consolidation manager (HDC + Neural)
+            # Use confidence as learning rate? Manager handles its own logic, 
+            # but we pass key/value/label.
+            # Note: Manager stores immediately to HDC (buffer) and queues for neural.
+            self._consolidation_manager.store(key, o_vec, obj)
+            surprise = 1.0  # Assume novel if using consolidation manager (simplification)
+        else:
+            # Standard HDC-only storage
+            surprise = self._memory.store_with_surprise(
+                key,
+                o_vec,
+                learning_rate=confidence,  # Use fact confidence as learning rate
+                surprise_threshold=SURPRISE_THRESHOLD
+            )
 
         # Track metadata (preserve original text)
         fact = Fact(
@@ -230,7 +246,8 @@ class FactStore:
 
         Multi-strategy retrieval:
         1. Exact Match: Check normalized key directly (O(1))
-        2. Resonance Search: If exact match fails, use HDC resonance with normalized vectors
+        2. Neural/HDC Hybrid: If consolidation manager enabled
+        3. HDC Resonance: Fallback standard search
 
         Args:
             subject: Subject to query
@@ -264,11 +281,18 @@ class FactStore:
             # Perfect match - return with high confidence
             return fact.object, 1.0
 
-        # Strategy 2: HDC resonance search (fuzzy matching)
-        # Use normalized forms for encoding to improve matching
+        # Strategy 2: Neural/HDC Hybrid (if enabled)
         s_vec = self._codebook.encode(subject_norm)
         p_vec = self._codebook.encode(predicate_norm)
         key = Operations.bind(s_vec, p_vec)
+
+        if self._consolidation_manager:
+            # Query consolidation manager (checks both HDC and Neural)
+            result = self._consolidation_manager.query(key, require_unbind_safety=True)
+            return result.value_label, result.confidence
+
+        # Strategy 3: HDC resonance search (fuzzy matching)
+        # Use normalized forms for encoding to improve matching
 
         value_list = sorted(self._value_vocab)  # Deterministic ordering
 
@@ -472,6 +496,12 @@ class FactStore:
     def saturation_estimate(self) -> float:
         """Get memory saturation estimate from underlying trace."""
         return self._memory.saturation_estimate
+
+    def get_state_dict(self) -> Optional[dict]:
+        """Get state dictionary for persistence (if using consolidation)."""
+        if self._consolidation_manager:
+            return self._consolidation_manager.state_dict()
+        return None
 
     def __repr__(self) -> str:
         return (

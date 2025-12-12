@@ -525,11 +525,19 @@ class ConversationalChatbot:
         self._style_tracker.reset()
         self._last_candidate = None
 
+        # Start consolidation worker if using neural memory
+        if self._fact_store and getattr(self._fact_store, "_consolidation_manager", None):
+            self._fact_store._consolidation_manager.start_worker()
+
         # Return a greeting
         return "Hello! I'm Hologram, a learning chatbot. How can I help you today?"
 
     def end_session(self) -> None:
         """End conversation session and persist learned patterns."""
+        # Stop consolidation worker if using neural memory
+        if self._fact_store and getattr(self._fact_store, "_consolidation_manager", None):
+            self._fact_store._consolidation_manager.stop_worker()
+            
         # Future: persist pattern store to disk
         pass
 
@@ -694,5 +702,20 @@ class ConversationalChatbot:
             stats["generator_enabled"] = True
         return stats
 
+    def save_memory(self, persist_dir: str) -> None:
+        """
+        Save memory state to disk (if using neural consolidation).
+        
+        Args:
+            persist_dir: Directory to save to
+        """
+        if self._fact_store:
+            state = getattr(self._fact_store, "get_state_dict", lambda: None)()
+            if state:
+                import torch
+                from pathlib import Path
+                path = Path(persist_dir) / "neural_memory.pt"
+                torch.save(state, path)
+                
     def __repr__(self) -> str:
         return f"ConversationalChatbot(turns={self._memory.turn_count})"

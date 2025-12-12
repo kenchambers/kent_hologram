@@ -451,6 +451,7 @@ class CrewTrainer:
             max_turns_per_topic: Maximum conversation turns per topic
             max_rounds: Maximum number of conversation rounds (None for unlimited)
         """
+        self.persist_dir = persist_dir  # Store for saving
         # Load API keys
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         self.anthropic_key = os.getenv("ANTHROPIC_API_KEY")
@@ -480,6 +481,7 @@ class CrewTrainer:
             vocabulary=vocab_dict,
             enable_ventriloquist=True,  # Enable VentriloquistGenerator for fluency
             ventriloquist_model="moonshotai/kimi-k2-thinking",  # Novita/Kimi model
+            enable_neural_consolidation=True,  # Enable Neural Consolidation Layer
         )
         self.chatbot.start_session()
 
@@ -524,7 +526,23 @@ class CrewTrainer:
         verbs = {"is", "are", "was", "were", "has", "have", "can", "do", "does"}  # Base verbs
         
         try:
-            # Try to access ChromaDB directly
+            # Try to load from neural memory first
+            import torch
+            from pathlib import Path
+            neural_path = Path(persist_dir) / "neural_memory.pt"
+            
+            if neural_path.exists():
+                # If neural memory exists, we might not have easy access to the exact words 
+                # without instantiating the manager. For now, rely on base vocabulary 
+                # or try to peek at value_vocab if stored in the pt file.
+                state = torch.load(neural_path)
+                value_vocab = state.get("value_vocab", {})
+                for word in value_vocab.keys():
+                    if len(word) > 2:
+                        nouns.add(word)
+                print(f"Initialized vocabulary from neural memory: {len(nouns)} nouns")
+            
+            # Fallback/Complement: Try ChromaDB if it exists (legacy/dual mode)
             from hologram.persistence.chroma_adapter import ChromaFactStore
             
             chroma_store = ChromaFactStore(
@@ -1456,6 +1474,9 @@ class CrewTrainer:
                         # Save vocabulary periodically
                         vocab_stats = self.vocabulary.get_stats()
                         self.logger.log("SYSTEM", f"Vocabulary: {vocab_stats['total_words']} words ({vocab_stats['nouns']} nouns, {vocab_stats['verbs']} verbs)")
+                        
+                        # Save neural memory
+                        self.chatbot.save_memory(self.persist_dir)
                     
                 except Exception as e:
                     consecutive_errors += 1
@@ -1487,6 +1508,12 @@ class CrewTrainer:
             self.logger.log("SYSTEM", f"Training stopped after {round_num} rounds")
             self.logger.log("SYSTEM", f"Total facts learned: {self.facts_learned_count}")
             self.logger.log("SYSTEM", f"Total responses learned: {self.responses_learned_count}")
+            
+            # Save neural memory on exit
+            if hasattr(self, 'chatbot'):
+                self.chatbot.save_memory(self.persist_dir)
+                # Ensure worker is stopped
+                self.chatbot.end_session()
             
             # Show final statistics
             self._print_status_report(round_num, final=True)
