@@ -592,9 +592,14 @@ class HologramContainer:
             if neural_path.exists():
                 try:
                     state = torch.load(neural_path, weights_only=False)
-                    if fact_store._consolidation_manager:
-                        fact_store._consolidation_manager.load_state_dict(state)
+                    # Load state via FactStore interface (handles both manager and store-level metadata)
+                    if hasattr(fact_store, "load_state_dict"):
+                        fact_store.load_state_dict(state)
                         print(f"Loaded neural memory from {neural_path}")
+                    elif fact_store._consolidation_manager:
+                        # Fallback for old/mock stores
+                        fact_store._consolidation_manager.load_state_dict(state)
+                        print(f"Loaded neural memory (manager only) from {neural_path}")
                 except Exception as e:
                     print(f"Failed to load neural memory: {e}")
             

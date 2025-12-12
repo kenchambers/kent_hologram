@@ -237,3 +237,143 @@ class TestCrewTrainerIntegration:
         # Should not raise exception
         trainer.run_conversation_round()
 
+    def test_neural_persistence_reproduction(self, temp_dirs):
+        """
+        Reproduction test for neural memory persistence issue.
+        Verifies that facts trained in one session are retrievable in another
+        using the exact same flow as the interactive CLI.
+        """
+        from crew_trainer import CrewTrainer
+        from hologram.container import HologramContainer
+        import torch
+
+        persist_dir, log_dir = temp_dirs
+
+        # --- Phase 1: Training Session ---
+        print("\\n--- Phase 1: Training ---")
+        trainer = CrewTrainer(
+            persist_dir=persist_dir,
+            log_dir=Path(log_dir),
+            max_turns_per_topic=1,
+        )
+        
+        # Verify neural consolidation is enabled
+        assert trainer.chatbot._fact_store._consolidation_manager is not None, "Neural consolidation should be enabled in trainer"
+
+        # Teach specific facts that were failing for the user
+        facts_to_teach = [
+            ("France", "capital", "Paris"),
+            ("Brazil", "capital", "Brasilia"),
+            ("Sky", "color", "Blue"),
+        ]
+        
+        for subj, pred, obj in facts_to_teach:
+            trainer.chatbot.teach_fact(subj, pred, obj)
+            # Verify immediate recall in training session
+            ans, conf = trainer.chatbot._fact_store.query(subj, pred)
+            print(f"Immediate recall for {subj} {pred}: {ans} ({conf:.3f})")
+            assert ans.lower() == obj.lower(), f"Immediate recall failed for {subj}"
+
+        # Save memory
+        save_success = trainer.chatbot.save_memory(persist_dir)
+        assert save_success, "Failed to save memory"
+        trainer.chatbot.end_session()
+
+        # Verify file exists
+        neural_path = Path(persist_dir) / "neural_memory.pt"
+        assert neural_path.exists(), "neural_memory.pt was not created"
+        print(f"Neural memory saved to {neural_path}")
+
+        # --- Phase 2: Interactive Session (Simulation) ---
+        print("\\n--- Phase 2: Interactive Session ---")
+        
+        # Re-initialize essentially how ChatInterface does it
+        # Note: ChatInterface uses force_neural=True/False or auto-detect
+        
+        # Simulate CLI initialization with auto-detection
+        container = HologramContainer(dimensions=10000) # Match default dims
+        
+        # Manually check for neural file (logic from interface.py)
+        use_neural = neural_path.exists()
+        assert use_neural is True, "Should have detected neural memory file"
+        
+        chatbot = container.create_persistent_chatbot(
+            persist_dir=persist_dir,
+            enable_neural_consolidation=use_neural,
+        )
+        
+        # Verify consolidation manager is active and loaded
+        assert chatbot._fact_store._consolidation_manager is not None, "Consolidation manager missing in loaded chatbot"
+        
+        # Verify facts are loaded in pending/vocab
+        # Note: If they haven't been consolidated yet (count < threshold), 
+        # they should be in 'pending_facts' restored from state_dict
+        manager = chatbot._fact_store._consolidation_manager
+        print(f"Pending facts: {manager.pending_count}")
+        print(f"Vocab size: {manager.vocab_size}")
+        
+        # Query facts
+        for subj, pred, obj in facts_to_teach:
+            ans, conf = chatbot._fact_store.query(subj, pred)
+            
+            # The core issue: if ans is empty or wrong
+            assert ans.lower() == obj.lower(), f"Failed to recall {subj} {pred} after reload. Got '{ans}'"
+            assert conf > 0.05, f"Confidence too low for {subj} {pred}: {conf}" 
+
+    def test_neural_persistence_conversation_reproduction(self, temp_dirs):
+        """
+        Reproduction test for neural memory persistence issue using full conversation.
+        Verifies that facts trained in one session are retrievable via NATURAL LANGUAGE
+        in another session.
+        """
+        from crew_trainer import CrewTrainer
+        from hologram.container import HologramContainer
+        
+        persist_dir, log_dir = temp_dirs
+
+        # --- Phase 1: Training Session ---
+        print("\\n--- Phase 1: Training ---")
+        trainer = CrewTrainer(
+            persist_dir=persist_dir,
+            log_dir=Path(log_dir),
+            max_turns_per_topic=1,
+        )
+        
+        # Teach specific facts via teach_fact
+        facts_to_teach = [
+            ("France", "capital", "Paris"),
+        ]
+        
+        for subj, pred, obj in facts_to_teach:
+            trainer.chatbot.teach_fact(subj, pred, obj)
+            # Verify immediate recall in training session
+            ans, conf = trainer.chatbot._fact_store.query(subj, pred)
+            print(f"Immediate recall for {subj} {pred}: {ans} ({conf:.3f})")
+
+        # Save memory
+        save_success = trainer.chatbot.save_memory(persist_dir)
+        assert save_success
+        trainer.chatbot.end_session()
+
+        # --- Phase 2: Interactive Session (Simulation) ---
+        print("\\n--- Phase 2: Interactive Session ---")
+        
+        container = HologramContainer(dimensions=10000)
+        chatbot = container.create_persistent_chatbot(
+            persist_dir=persist_dir,
+            enable_neural_consolidation=True,
+        )
+        
+        # Try natural language query
+        queries = [
+            "What is the capital of France?",
+            "What's the capital of France?",
+            "France capital?",
+        ]
+        
+        for query in queries:
+            response = chatbot.respond(query)
+            
+            # This is likely where it fails for the user
+            assert "Paris" in response, f"Failed to retrieve Paris for query: {query}. Response: {response}"
+

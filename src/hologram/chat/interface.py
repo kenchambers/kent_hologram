@@ -53,6 +53,7 @@ class ChatInterface:
         conversational: bool = True,
         persistent: bool = True,
         persist_dir: str = "./data/hologram_facts",
+        force_neural: bool = False,
     ):
         """
         Initialize chat interface.
@@ -62,7 +63,9 @@ class ChatInterface:
             conversational: Enable conversational mode (default True)
             persistent: Use ChromaDB for fact persistence (default True)
             persist_dir: Directory for persistent storage
+            force_neural: Force neural consolidation mode even if no file exists
         """
+        self.force_neural = force_neural
         self.container = HologramContainer(dimensions=dimensions)
         self.persistent = persistent
         self.persist_dir = persist_dir
@@ -74,11 +77,18 @@ class ChatInterface:
 
         if conversational:
             if persistent:
-                # Use ChromaDB for persistence
+                # Check if this directory was trained with neural consolidation
+                neural_path = Path(persist_dir) / "neural_memory.pt"
+                use_neural = self.force_neural or neural_path.exists()
+                
+                if use_neural:
+                    print(f"  [Neural consolidation: {'loaded' if neural_path.exists() else 'enabled'}]")
+                
                 self.chatbot = self.container.create_persistent_chatbot(
                     persist_dir=persist_dir,
                     enable_ventriloquist=True,
-                    ventriloquist_model="zai-org/glm-4.6v"
+                    ventriloquist_model="zai-org/glm-4.6v",
+                    enable_neural_consolidation=use_neural,
                 )
                 self.fact_store = self.chatbot._fact_store
             else:
@@ -495,11 +505,18 @@ Examples:
         help="Disable persistence (in-memory only)"
     )
     
+    parser.add_argument(
+        "--neural",
+        action="store_true",
+        help="Force neural consolidation mode (auto-detected if neural_memory.pt exists)"
+    )
+    
     args = parser.parse_args()
     
     interface = ChatInterface(
         persist_dir=args.persist_dir,
         persistent=not args.no_persist,
+        force_neural=args.neural,
     )
     interface.start()
 

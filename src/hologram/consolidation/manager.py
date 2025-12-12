@@ -466,11 +466,23 @@ class ConsolidationManager:
     def state_dict(self) -> dict:
         """Get state for persistence."""
         with self._lock:
+            # Serialize pending facts (not yet consolidated)
+            pending_data = [
+                {
+                    "key_vector": pf.key_vector.clone(),
+                    "value_vector": pf.value_vector.clone(),
+                    "value_label": pf.value_label,
+                    "timestamp": pf.timestamp,
+                }
+                for pf in self._pending_facts
+            ]
+            
             return {
                 "neural_memory": self._neural_memory.state_dict(),
                 "working_memory_trace": self._working_memory._trace.clone(),
                 "working_memory_fact_count": self._working_memory._fact_count,
                 "value_vocab": {k: v.clone() for k, v in self._value_vocab.items()},
+                "pending_facts": pending_data,
                 "total_consolidated": self._total_consolidated,
                 "consolidation_count": self._consolidation_count,
             }
@@ -484,6 +496,18 @@ class ConsolidationManager:
             self._value_vocab = state["value_vocab"]
             self._total_consolidated = state.get("total_consolidated", 0)
             self._consolidation_count = state.get("consolidation_count", 0)
+            
+            # Restore pending facts
+            pending_data = state.get("pending_facts", [])
+            self._pending_facts = [
+                PendingFact(
+                    key_vector=pf["key_vector"],
+                    value_vector=pf["value_vector"],
+                    value_label=pf["value_label"],
+                    timestamp=pf["timestamp"],
+                )
+                for pf in pending_data
+            ]
 
     def __enter__(self) -> "ConsolidationManager":
         """Context manager entry - start worker."""

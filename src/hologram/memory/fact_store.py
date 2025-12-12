@@ -511,8 +511,26 @@ class FactStore:
     def get_state_dict(self) -> Optional[dict]:
         """Get state dictionary for persistence (if using consolidation)."""
         if self._consolidation_manager:
-            return self._consolidation_manager.state_dict()
+            state = self._consolidation_manager.state_dict()
+            # Inject FactStore-level metadata
+            state["fact_store_subject_vocab"] = list(self._subject_vocab)
+            return state
         return None
+
+    def load_state_dict(self, state: dict) -> None:
+        """Load state from persistence."""
+        if self._consolidation_manager:
+            # Load manager state
+            self._consolidation_manager.load_state_dict(state)
+            
+            # Sync FactStore value vocab with manager's
+            # Manager stores dict[str, Tensor], we just need keys
+            if "value_vocab" in state:
+                self._value_vocab = set(state["value_vocab"].keys())
+                
+            # Load subject vocab
+            if "fact_store_subject_vocab" in state:
+                self._subject_vocab = set(state["fact_store_subject_vocab"])
 
     def __repr__(self) -> str:
         return (

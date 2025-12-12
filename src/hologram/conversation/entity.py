@@ -230,7 +230,14 @@ class EntityExtractor:
 
         # Add from fact store
         if self._fact_store:
-            # Get subjects and objects from stored facts
+            # Neural Consolidation support: Check explicit vocabularies
+            if hasattr(self._fact_store, '_subject_vocab') and self._fact_store._subject_vocab:
+                vocab.update(s.lower() for s in self._fact_store._subject_vocab)
+            
+            if hasattr(self._fact_store, '_value_vocab') and self._fact_store._value_vocab:
+                vocab.update(v.lower() for v in self._fact_store._value_vocab)
+
+            # Standard/Chroma support: Get subjects and objects from stored facts
             facts = self._fact_store.get_all_facts() if hasattr(self._fact_store, 'get_all_facts') else []
             for fact in facts:
                 # Handle both Fact objects and dict-like objects
@@ -252,6 +259,16 @@ class EntityExtractor:
     def _get_entity_type(self, word: str) -> str:
         """Determine the type of entity."""
         if self._fact_store:
+            # Neural Consolidation support
+            if hasattr(self._fact_store, '_subject_vocab'):
+                # Optimization: Don't rebuild set every time if possible, but safely lowercasing
+                if any(s.lower() == word for s in self._fact_store._subject_vocab):
+                    return "fact_subject"
+            
+            if hasattr(self._fact_store, '_value_vocab'):
+                if any(v.lower() == word for v in self._fact_store._value_vocab):
+                    return "fact_object"
+
             facts = self._fact_store.get_all_facts() if hasattr(self._fact_store, 'get_all_facts') else []
             for fact in facts:
                 subject = getattr(fact, 'subject', '').lower()

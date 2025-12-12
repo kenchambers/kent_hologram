@@ -702,12 +702,15 @@ class ConversationalChatbot:
             stats["generator_enabled"] = True
         return stats
 
-    def save_memory(self, persist_dir: str) -> None:
+    def save_memory(self, persist_dir: str) -> bool:
         """
         Save memory state to disk (if using neural consolidation).
         
         Args:
             persist_dir: Directory to save to
+            
+        Returns:
+            True if saved successfully, False otherwise
         """
         if self._fact_store:
             state = getattr(self._fact_store, "get_state_dict", lambda: None)()
@@ -715,7 +718,12 @@ class ConversationalChatbot:
                 import torch
                 from pathlib import Path
                 path = Path(persist_dir) / "neural_memory.pt"
+                Path(persist_dir).mkdir(parents=True, exist_ok=True)
                 torch.save(state, path)
+                vocab_size = len(state.get("value_vocab", {}))
+                print(f"💾 Saved neural memory: {path} ({vocab_size} facts)")
+                return True
+        return False
                 
     def __repr__(self) -> str:
         return f"ConversationalChatbot(turns={self._memory.turn_count})"
