@@ -21,7 +21,11 @@ from hologram.modulation.sesame import StyleType
 from hologram.generation.resonant_generator import ResonantGenerator
 from hologram.generation.circuit_breaker import SimpleCircuitBreaker
 from hologram.generation.base import GenerationContext
-from hologram.config.constants import QUERY_SKIP_WORDS
+from hologram.config.constants import (
+    QUERY_SKIP_WORDS,
+    QUESTION_START_WORDS,
+    DEFAULT_UNKNOWN_ANSWER
+)
 
 
 @dataclass
@@ -436,12 +440,11 @@ class ResponseSelector:
 
         # Look for "capital of X" pattern
         # Skip question words when looking for subject
-        question_words = {"what", "who", "where", "when", "why", "how", "which", "whose"}
         if "capital" in text_lower:
             for entity in entity_names:
                 entity_lower = entity.lower()
                 # Skip question words and the predicate word itself
-                if entity_lower in question_words or entity_lower == "capital":
+                if entity_lower in QUESTION_START_WORDS or entity_lower == "capital":
                     continue
                 result = try_query(entity, "capital")
                 if result:
@@ -449,10 +452,10 @@ class ResponseSelector:
 
         # Look for "X is" pattern (subject query)
         # Skip question words and common predicate words
-        skip_words = question_words | {"is", "are", "was", "were", "capital", "creator", "color", "shape"}
+        # QUERY_SKIP_WORDS now includes all question and predicate words
         for entity in entity_names:
             entity_lower = entity.lower()
-            if entity_lower in skip_words:
+            if entity_lower in QUERY_SKIP_WORDS:
                 continue
             # Try common predicates
             for predicate in ["is", "capital", "creator", "color", "shape"]:
@@ -465,12 +468,43 @@ class ResponseSelector:
         for last_e in last_entities:
             for entity in entity_names:
                 entity_lower = entity.lower()
-                if entity_lower in skip_words:
+                if entity_lower in QUERY_SKIP_WORDS:
                     continue
                 # Try using last entity's predicate
                 result = try_query(entity, last_e.canonical_form)
                 if result:
                     return result
+
+        # Semantic search fallback: Find facts that mention the entity
+        # This handles cases like "Do you know about river?" where "river" appears
+        # in object position rather than as subject (e.g., "Nile is longest river")
+        if self._fact_store:
+            for entity in entity_names:
+                if entity.lower() in QUERY_SKIP_WORDS or len(entity) < 3:
+                    continue
+
+                # Try subject match first (entity IS the subject - highest relevance)
+                subject_matches = self._fact_store.search_facts_mentioning(
+                    entity, limit=1, match_type="subject"
+                )
+                if subject_matches:
+                    fact, base_confidence = subject_matches[0]
+                    # Return the object value - let template layer handle formatting
+                    return (fact.object, base_confidence * 0.7)
+
+                # Fallback: entity mentioned in object (lower relevance)
+                # e.g., "river" in "longest river" - return full context
+                object_matches = self._fact_store.search_facts_mentioning(
+                    entity, limit=1, match_type="object"
+                )
+                if object_matches:
+                    fact, base_confidence = object_matches[0]
+                    # Return full triple for context since entity is in object
+                    if base_confidence >= 0.4:
+                        return (
+                            f"{fact.subject} {fact.predicate} {fact.object}",
+                            base_confidence * 0.5,
+                        )
 
         return None
 
@@ -501,7 +535,7 @@ class ResponseSelector:
                 result = result.replace("{answer}", fact_answer)
             else:
                 # Use a better fallback when we don't know the answer
-                result = result.replace("{answer}", "I don't know that yet")
+                result = result.replace("{answer}", DEFAULT_UNKNOWN_ANSWER)
 
         # Fill {entity} slot with first entity
         if "{entity}" in result:
@@ -509,7 +543,7 @@ class ResponseSelector:
                 # Use the most relevant entity (not a predicate word)
                 found_suitable = False
                 for name in entity_names:
-                    if name.lower() not in ["what", "who", "where", "when", "capital", "is"]:
+                    if name.lower() not in QUERY_SKIP_WORDS:
                         result = result.replace("{entity}", name.capitalize())
                         found_suitable = True
                         break
@@ -523,10 +557,9 @@ class ResponseSelector:
         # Fill {subject} and {object} if present
         if "{subject}" in result and entity_names:
             # Find first suitable entity (same logic as {entity})
-            skip_words = ["what", "who", "where", "when", "capital", "is"]
             subject_filled = False
             for name in entity_names:
-                if name.lower() not in skip_words:
+                if name.lower() not in QUERY_SKIP_WORDS:
                     result = result.replace("{subject}", name.capitalize())
                     subject_filled = True
                     break

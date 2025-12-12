@@ -12,7 +12,13 @@ from typing import Dict, List, Optional
 
 import torch
 
-from hologram.config.constants import INTENT_CONFIDENCE_THRESHOLD
+from hologram.config.constants import (
+    INTENT_CONFIDENCE_THRESHOLD,
+    QUESTION_START_WORDS,
+    GREETING_WORDS,
+    FAREWELL_WORDS,
+    TEACHING_PATTERNS,
+)
 from hologram.core.codebook import Codebook
 from hologram.core.operations import Operations
 from hologram.core.similarity import Similarity
@@ -309,8 +315,7 @@ class IntentClassifier:
         # Heuristic adjustments for common patterns
         # (HDC with bundled prototypes has low per-example similarity)
         text_lower = text.lower().strip()
-        question_words = ["what", "who", "where", "when", "why", "how", "which", "whose"]
-        starts_with_question = any(text_lower.startswith(qw) for qw in question_words)
+        starts_with_question = any(text_lower.startswith(qw) for qw in QUESTION_START_WORDS)
         ends_with_question_mark = text.endswith("?")
         
         # Question heuristic: boost QUESTION for question-like inputs
@@ -332,21 +337,17 @@ class IntentClassifier:
                 scores["question"] *= 0.8
         
         # Greeting heuristic: boost for common greetings
-        greeting_words = ["hello", "hi", "hey", "greetings", "howdy", "yo"]
-        if any(text_lower.startswith(gw) for gw in greeting_words) or text_lower in greeting_words:
+        if any(text_lower.startswith(gw) for gw in GREETING_WORDS) or text_lower in GREETING_WORDS:
             if "greeting" in scores:
                 scores["greeting"] = max(scores["greeting"] * 10.0, 0.25)
         
         # Farewell heuristic: boost for common farewells
-        farewell_words = ["bye", "goodbye", "later", "see you", "take care"]
-        if any(fw in text_lower for fw in farewell_words):
+        if any(fw in text_lower for fw in FAREWELL_WORDS):
             if "farewell" in scores:
                 scores["farewell"] = max(scores["farewell"] * 10.0, 0.25)
         
         # Teaching heuristic: boost for declarative fact patterns
-        teaching_patterns = ["the capital of", "is the capital", "'s capital is", 
-                            "was created by", "was invented by", "is located in"]
-        if any(tp in text_lower for tp in teaching_patterns):
+        if any(tp in text_lower for tp in TEACHING_PATTERNS):
             if "teaching" in scores:
                 scores["teaching"] = max(scores["teaching"] * 10.0, 0.25)
 

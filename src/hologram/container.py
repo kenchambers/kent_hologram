@@ -540,6 +540,7 @@ class HologramContainer:
         ventriloquist_model: str = "moonshotai/kimi-k2-thinking",
         ventriloquist_mode: str = "full",
         enable_neural_consolidation: bool = False,
+        consolidation_threshold: int = 20,
     ):
         """
         Create a ConversationalChatbot with persistent fact storage.
@@ -556,6 +557,7 @@ class HologramContainer:
             enable_ventriloquist: If True, create VentriloquistGenerator for fluent SLM output (default: False)
             ventriloquist_model: Model identifier for Ventriloquist (default: moonshotai/kimi-k2-thinking)
             enable_neural_consolidation: If True, use Neural Consolidation instead of Chroma (default: False)
+            consolidation_threshold: Number of pending facts before consolidation triggers (default: 20)
 
         Returns:
             ConversationalChatbot with persistent storage
@@ -585,7 +587,10 @@ class HologramContainer:
             import torch
             import os
             
-            fact_store = self.create_fact_store(enable_neural_consolidation=True)
+            fact_store = self.create_fact_store(
+                enable_neural_consolidation=True,
+                consolidation_threshold=consolidation_threshold
+            )
             
             # Try to load existing neural state
             neural_path = Path(persist_dir) / "neural_memory.pt"

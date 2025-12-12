@@ -189,12 +189,60 @@ ENABLE_REASONING_CHAIN = True
 When True, the Ventriloquist uses GLM-4.6v to generate step-by-step reasoning."""
 
 # ==============================================================================
-# Entity Extraction
+# Language Patterns & Stop Words
 # ==============================================================================
+
+QUESTION_START_WORDS = frozenset({
+    "what", "who", "where", "when", "why", "how", "which", "whose",
+    "do", "does", "did", "can", "could", "would", "will", "is", "are", "was", "were"
+})
+"""Common words that start questions."""
+
+STOP_WORDS = frozenset({
+    "the", "a", "an", "of", "in", "on", "at", "to", "for", "is", "are",
+    "apparently", "actually", "really", "just", "also", "even", "very",
+    "first", "ever", "called", "known", "as", "yes", "no", "okay", "oh",
+    "well", "so", "and", "but", "or", "correct", "right", "exactly",
+    "indeed", "sure", "true", "false",
+    "hey", "hi", "hello", "greetings", "please", "kindly",
+    "i", "you", "he", "she", "it", "we", "they", "me", "my", "your", "his", "her", "their", "our",
+    "that", "this", "these", "those",
+    "want", "would", "like", "need", "remember", "know", "tell",
+    "do", "does", "did", "can", "could", "will", "about"
+})
+"""Stop words to ignore during fact extraction."""
+
+SENTENCE_STARTERS = frozenset({
+    "yes", "no", "oh", "well", "okay", "correct", "right",
+    "exactly", "indeed", "sure", "true", "actually", "apparently"
+})
+"""Words that often start sentences but aren't proper nouns."""
+
+CONVERSATIONAL_MARKERS = frozenset({
+    "i think", "i believe", "i feel", "seems like", "looks like", "sounds",
+    "you know", "don't you think", "isn't it"
+})
+"""Phrases indicating conversational or opinionated speech (non-factual)."""
+
+GREETING_WORDS = frozenset({
+    "hello", "hi", "hey", "greetings", "howdy", "yo"
+})
+"""Common greeting words."""
+
+FAREWELL_WORDS = frozenset({
+    "bye", "goodbye", "later", "see you", "take care"
+})
+"""Common farewell words."""
+
+TEACHING_PATTERNS = frozenset({
+    "the capital of", "is the capital", "'s capital is",
+    "was created by", "was invented by", "is located in"
+})
+"""Phrases indicating teaching intent."""
 
 QUERY_SKIP_WORDS = frozenset({
     # Question words
-    "what", "who", "where", "when", "why", "how", "which",
+    "what", "who", "where", "when", "why", "how", "which", "whose",
     # Predicate words
     "capital", "is", "are", "was", "were", "creator", "color", "shape",
     "located", "used", "currency", "language", "continent", "country",
@@ -204,6 +252,12 @@ QUERY_SKIP_WORDS = frozenset({
     "incorrect", "right", "wrong", "good", "excellent", "great", "nice",
     "i", "you", "we", "they", "he", "she", "it", "this", "that",
     "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
+    # Added for robustness
+    "do", "does", "did", "can", "could", "would", "will",
+    "know", "about", "tell", "me", "us"
 })
 """Words to skip when extracting subject entities from queries.
 These are common words that should not be treated as proper noun subjects."""
+
+DEFAULT_UNKNOWN_ANSWER = "I don't know that yet."
+"""Default response when an answer slot needs to be filled but no fact is found."""

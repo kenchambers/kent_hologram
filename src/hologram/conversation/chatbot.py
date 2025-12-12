@@ -23,6 +23,13 @@ from hologram.memory.fact_store import FactStore
 from hologram.modulation.sesame import SesameModulator, StyleType
 from hologram.generation.resonant_generator import ResonantGenerator
 from hologram.cognition.metacognition import MetacognitiveLoop
+from hologram.config.constants import (
+    INTENT_CONFIDENCE_THRESHOLD,
+    QUESTION_START_WORDS,
+    STOP_WORDS,
+    SENTENCE_STARTERS,
+    CONVERSATIONAL_MARKERS,
+)
 
 
 class ConversationalChatbot:
@@ -128,8 +135,7 @@ class ConversationalChatbot:
 
         # 2. Check if user is teaching a fact (high-confidence TEACHING intent)
         # Only learn if confidence is high AND it doesn't sound conversational
-        conversational_markers = ["i think", "i believe", "i feel", "seems like", "looks like", "sounds"]
-        is_conversational = any(marker in user_input.lower() for marker in conversational_markers)
+        is_conversational = any(marker in user_input.lower() for marker in CONVERSATIONAL_MARKERS)
         
         if not is_conversational:
             learned_fact = self._try_learn_from_statement(user_input, intent)
@@ -198,6 +204,55 @@ class ConversationalChatbot:
 
         return response
 
+    def listen(self, user_input: str) -> None:
+        """
+        Listen to a message without responding (observational learning).
+        
+        This allows the chatbot to participate in group conversations by listening
+        to other speakers, updating context, and learning facts/intents without
+        interrupting every turn.
+        
+        Args:
+            user_input: Message to observe
+        """
+        user_input = user_input.strip()
+        if not user_input:
+            return
+
+        # 1. Classify intent (for implicit learning context)
+        intent = self._intent_classifier.classify(user_input)
+
+        # 2. Try to learn facts (if teaching/statement)
+        is_conversational = any(marker in user_input.lower() for marker in CONVERSATIONAL_MARKERS)
+        
+        if not is_conversational:
+            # We ignore the confirmation string since we're just listening
+            self._try_learn_from_statement(user_input, intent)
+
+        # 3. Extract entities (updates entity memory)
+        entities = self._entity_extractor.extract(user_input)
+
+        # 4. Update style tracker (adapt to group style)
+        self._style_tracker.observe(user_input)
+        
+        # 5. Record turn in memory (updates context vector)
+        # We record it as a turn where we didn't respond
+        # Create a dummy candidate for recording
+        dummy_pattern = self._pattern_store.get_patterns_for_intent(IntentType.UNKNOWN)[0]
+        
+        self._record_turn(
+            user_input=user_input,
+            intent=intent,
+            entities=entities,
+            response="",  # No response
+            candidate=ResponseCandidate(
+                pattern=dummy_pattern,
+                filled_response="", 
+                thought_vector=self._codebook._space.empty_vector(), 
+                confidence=0.0
+            )
+        )
+
     def _try_learn_from_statement(self, text: str, intent: IntentResult) -> Optional[str]:
         """
         Try to learn a fact from a teaching statement using HDC.
@@ -225,7 +280,7 @@ class ConversationalChatbot:
         text_lower = text.lower()
         has_question = "?" in text or any(
             text_lower.strip().startswith(qw) or f" {qw} " in text_lower
-            for qw in ["what", "who", "where", "when", "why", "how", "which"]
+            for qw in QUESTION_START_WORDS
         )
 
         # Extract fact structure from individual sentences
@@ -281,7 +336,7 @@ class ConversationalChatbot:
                 continue
             
             # Skip question sentences - they don't contain facts to learn
-            if sentence.endswith("?") or sentence.lower().startswith(("what", "who", "where", "when", "why", "how", "which")):
+            if sentence.endswith("?") or sentence.lower().startswith(tuple(QUESTION_START_WORDS)):
                 continue
             
             # Skip sentences that are too long (likely conversational, not factual)
@@ -310,17 +365,6 @@ class ConversationalChatbot:
             if not before_relation or not after_relation:
                 continue
 
-            # Stop words to filter out (includes sentence starters)
-            stop_words = {"the", "a", "an", "of", "in", "on", "at", "to", "for", "is", "are",
-                          "apparently", "actually", "really", "just", "also", "even", "very",
-                          "first", "ever", "called", "known", "as", "yes", "no", "okay", "oh",
-                          "well", "so", "and", "but", "or", "correct", "right", "exactly",
-                          "indeed", "sure", "true", "false"}
-            
-            # Words that appear capitalized at sentence start but aren't proper nouns
-            sentence_starters = {"yes", "no", "oh", "well", "okay", "correct", "right",
-                                 "exactly", "indeed", "sure", "true", "actually", "apparently"}
-            
             subject = None
             predicate = "is"  # Default predicate
             obj = None
@@ -330,15 +374,15 @@ class ConversationalChatbot:
                 of_idx = before_relation.index("of")
                 if of_idx > 0 and of_idx < len(before_relation) - 1:
                     # Get predicate (word before "of")
-                    pred_tokens = [t for t in before_relation[:of_idx] if t not in stop_words]
+                    pred_tokens = [t for t in before_relation[:of_idx] if t not in STOP_WORDS]
                     if pred_tokens:
                         predicate = pred_tokens[-1]  # Last meaningful word before "of"
                     # Get subject (words after "of")
-                    subj_tokens = [t for t in before_relation[of_idx + 1:] if t not in stop_words]
+                    subj_tokens = [t for t in before_relation[of_idx + 1:] if t not in STOP_WORDS]
                     if subj_tokens:
                         subject = " ".join(subj_tokens)
                     # Get object (words after relation) - limit to reasonable length
-                    obj_tokens = [t for t in after_relation[:10] if t not in stop_words]  # Max 10 words
+                    obj_tokens = [t for t in after_relation[:10] if t not in STOP_WORDS]  # Max 10 words
                     if obj_tokens:
                         obj = " ".join(obj_tokens)
 
@@ -350,7 +394,7 @@ class ConversationalChatbot:
                         if not subject:
                             subject = token[:-2] if token.endswith("'s") else token[:-1]
                         # Predicate is words after possessive
-                        pred_tokens = [t for t in before_relation[i + 1:] if t not in stop_words]
+                        pred_tokens = [t for t in before_relation[i + 1:] if t not in STOP_WORDS]
                         if pred_tokens:
                             predicate = pred_tokens[0]
                         break
@@ -359,8 +403,8 @@ class ConversationalChatbot:
             # This avoids the bug where "Yes" at sentence start is detected as proper noun
             if subject is None:
                 # Filter out sentence starters and stop words to find real content words
-                meaningful_before = [t for t in before_relation if t not in stop_words and t not in sentence_starters]
-                meaningful_after = [t for t in after_relation[:10] if t not in stop_words and t not in sentence_starters]
+                meaningful_before = [t for t in before_relation if t not in STOP_WORDS and t not in SENTENCE_STARTERS]
+                meaningful_after = [t for t in after_relation[:10] if t not in STOP_WORDS and t not in SENTENCE_STARTERS]
                 
                 # Use meaningful tokens directly instead of regex proper noun detection
                 if meaningful_before:
@@ -370,7 +414,7 @@ class ConversationalChatbot:
 
             # Pattern 4: Simple "X is Y" - last meaningful word before relation (fallback)
             if subject is None:
-                meaningful_before = [t for t in before_relation if t not in stop_words and t not in sentence_starters]
+                meaningful_before = [t for t in before_relation if t not in STOP_WORDS and t not in SENTENCE_STARTERS]
                 if meaningful_before:
                     subject = meaningful_before[-1]
                 elif before_relation:
@@ -379,7 +423,7 @@ class ConversationalChatbot:
 
             # Extract object if not already set
             if obj is None:
-                obj_tokens = [t for t in after_relation[:10] if t not in stop_words]  # Max 10 words
+                obj_tokens = [t for t in after_relation[:10] if t not in STOP_WORDS]  # Max 10 words
                 if obj_tokens:
                     obj = " ".join(obj_tokens)
                 elif after_relation:
@@ -393,7 +437,7 @@ class ConversationalChatbot:
             generic_words = {"thing", "something", "it", "this", "that", "stuff", "one"}
             if subject.lower() in generic_words or obj.lower() in generic_words:
                 continue
-            if subject.lower() in sentence_starters:
+            if subject.lower() in SENTENCE_STARTERS:
                 continue
 
             # Additional validation: reject if fact components are too long
@@ -702,17 +746,44 @@ class ConversationalChatbot:
             stats["generator_enabled"] = True
         return stats
 
-    def save_memory(self, persist_dir: str) -> bool:
+    def save_memory(self, persist_dir: str, force_consolidation: bool = True) -> bool:
         """
         Save memory state to disk (if using neural consolidation).
         
         Args:
             persist_dir: Directory to save to
+            force_consolidation: If True, force consolidation of pending facts before saving
             
         Returns:
             True if saved successfully, False otherwise
         """
         if self._fact_store:
+            consolidation_manager = getattr(self._fact_store, "_consolidation_manager", None)
+            
+            # Force consolidation of pending facts before saving
+            if force_consolidation and consolidation_manager:
+                pending_before = consolidation_manager.pending_count
+                if pending_before > 0:
+                    print(f"  Consolidating {pending_before} pending facts before save...")
+                    consolidated_before = consolidation_manager.total_consolidated
+                    consolidation_manager.force_consolidation()
+                    
+                    # Wait for consolidation to complete (check if consolidation_count increased)
+                    # Note: pending_facts is cleared immediately when scheduled, so we wait
+                    # for the consolidation to actually complete by checking total_consolidated
+                    import time
+                    max_wait = 30.0  # 30 second timeout
+                    wait_start = time.time()
+                    while (consolidation_manager.total_consolidated == consolidated_before and 
+                           (time.time() - wait_start) < max_wait):
+                        time.sleep(0.5)
+                    
+                    if consolidation_manager.total_consolidated == consolidated_before:
+                        print(f"  ⚠️  Warning: Consolidation may not have completed (timeout)")
+                    else:
+                        newly_consolidated = consolidation_manager.total_consolidated - consolidated_before
+                        print(f"  ✓ Consolidation complete ({newly_consolidated} facts consolidated)")
+            
             state = getattr(self._fact_store, "get_state_dict", lambda: None)()
             if state:
                 import torch
@@ -721,7 +792,9 @@ class ConversationalChatbot:
                 Path(persist_dir).mkdir(parents=True, exist_ok=True)
                 torch.save(state, path)
                 vocab_size = len(state.get("value_vocab", {}))
-                print(f"💾 Saved neural memory: {path} ({vocab_size} facts)")
+                consolidated = state.get("total_consolidated", 0)
+                pending = len(state.get("pending_facts", []))
+                print(f"💾 Saved neural memory: {path} ({vocab_size} vocab, {consolidated} consolidated, {pending} pending)")
                 return True
         return False
                 

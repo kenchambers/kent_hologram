@@ -214,6 +214,10 @@ class ConsolidationManager:
             self._apply_decay_to_working_memory(snapshot.old_trace)
 
         elapsed = time.time() - start_time
+        # Log to root logger so it shows up in console
+        logging.getLogger().info(
+            f"  [Neural Consolidation] Processed {n_facts} facts in {elapsed:.2f}s (loss={loss:.4f})"
+        )
         logger.debug(
             f"Consolidation complete: {n_facts} facts, "
             f"loss={loss:.4f}, time={elapsed:.2f}s"

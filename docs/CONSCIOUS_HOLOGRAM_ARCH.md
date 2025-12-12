@@ -288,7 +288,36 @@ Multiple strategies to find stored facts, prioritized by speed and confidence.
 
 1. **Exact Match (fastest)**: Normalized key dictionary lookup - "France" + "capital" → "Paris" (1.0 confidence)
 2. **HDC Resonance (fallback)**: Cosine similarity search through bundled memory - fuzzy matching with 0.24-0.37 confidence
-3. **Learned Patterns**: Template matching for conversational responses (ResponseSelector layer)
+3. **Semantic Fact Search (new)**: Metadata search for entity mentions in any position (subject, predicate, or object)
+4. **Learned Patterns**: Template matching for conversational responses (ResponseSelector layer)
+
+#### 3. Semantic Fact Search (O(n), Low-Medium Confidence)
+
+**File**: `src/hologram/memory/fact_store.py:502-568`
+
+- **How**: Word-boundary regex search through fact metadata (`_facts` list)
+- **When used**: Fallback when structured queries fail and entity appears in non-subject position
+- **Confidence**: 0.25-0.63 depending on match location (subject > predicate > object)
+- **Example**: Query "river" finds "Nile is longest river" even though "river" is in the object
+
+**Why it's needed**: Standard S-P-O queries require the entity to be the subject. But users often ask about terms that appear in the object position:
+- User: "Do you know about river?"
+- Stored fact: "Nile is longest river in the world" (river in OBJECT)
+- Old behavior: `query("river", "is")` fails → "I don't know"
+- New behavior: Semantic search finds the mention → "Nile is longest river"
+
+**Scoring by match location**:
+| Position | Base Score | After Fallback Multiplier |
+|----------|------------|---------------------------|
+| Subject  | 0.9        | 0.63 (× 0.7)              |
+| Predicate| 0.7        | 0.49 (× 0.7)              |
+| Object   | 0.5        | 0.25 (× 0.5)              |
+
+**Limitations**:
+- Only searches in-memory `_facts` list (not persisted neural memory)
+- O(n) linear scan - acceptable for <1000 facts
+- Minimum term length: 3 characters (to avoid false positives)
+- Uses ASCII word boundaries (non-ASCII text may not match correctly)
 
 ---
 
@@ -499,7 +528,7 @@ The following features were designed as proposals but are **fully implemented**:
 **Key Files**:
 
 - `src/hologram/core/fractal.py` - FractalSpace
-- `src/hologram/memory/fact_store.py` - FactStore
+- `src/hologram/memory/fact_store.py` - FactStore + `search_facts_mentioning()` (semantic search)
 - `src/hologram/cognition/metacognition.py` - MetacognitiveLoop
-- `src/hologram/conversation/selector.py` - ResponseSelector
+- `src/hologram/conversation/selector.py` - ResponseSelector + semantic fallback in `_query_facts()`
 - `src/hologram/generation/ventriloquist.py` - VentriloquistGenerator

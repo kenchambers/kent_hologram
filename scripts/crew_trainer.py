@@ -44,6 +44,11 @@ from hologram.container import HologramContainer
 from hologram.conversation.vocabulary import ConversationalVocabulary
 from hologram.conversation.intent import IntentType
 from hologram.modulation.sesame import StyleType
+from hologram.config.constants import (
+    QUESTION_START_WORDS,
+    CONVERSATIONAL_MARKERS,
+    TEACHING_PATTERNS
+)
 
 
 # System prompts - Quiz Master Training Mode
@@ -441,6 +446,7 @@ class CrewTrainer:
         log_dir: Path = Path("./conversation_logs"),
         max_turns_per_topic: int = 8,
         max_rounds: Optional[int] = None,
+        consolidation_threshold: int = 10,  # Lower default for faster testing
     ):
         """
         Initialize trainer.
@@ -450,6 +456,7 @@ class CrewTrainer:
             log_dir: Directory for conversation logs
             max_turns_per_topic: Maximum conversation turns per topic
             max_rounds: Maximum number of conversation rounds (None for unlimited)
+            consolidation_threshold: Number of facts before neural consolidation triggers (default: 10)
         """
         self.persist_dir = persist_dir  # Store for saving
         # Load API keys
@@ -460,6 +467,10 @@ class CrewTrainer:
             raise ValueError("GEMINI_API_KEY not found in .env file")
         if not self.anthropic_key:
             raise ValueError("ANTHROPIC_API_KEY not found in .env file")
+
+        # Initialize CrewAI agents early (needed for vocabulary generation)
+        print("Initializing CrewAI agents...")
+        self._setup_agents()
 
         # Initialize vocabulary for generation
         self.vocabulary = ConversationalVocabulary()
@@ -482,15 +493,12 @@ class CrewTrainer:
             enable_ventriloquist=True,  # Enable VentriloquistGenerator for fluency
             ventriloquist_model="moonshotai/kimi-k2-thinking",  # Novita/Kimi model
             enable_neural_consolidation=True,  # Enable Neural Consolidation Layer
+            consolidation_threshold=consolidation_threshold,  # Configurable threshold
         )
         self.chatbot.start_session()
 
         # Initialize logger
         self.logger = ConversationLogger(log_dir)
-
-        # Initialize CrewAI agents
-        print("Initializing CrewAI agents...")
-        self._setup_agents()
 
         # Configuration
         self.max_turns_per_topic = max_turns_per_topic
@@ -582,26 +590,39 @@ class CrewTrainer:
         # PRE-SEED vocabulary with useful starter words
         # This prevents the "vocabulary death spiral" where generator
         # is frozen with only "unknown" and can never learn
-        # CRITICAL: Only include proper nouns and specific entities
-        # Generic words like "day", "time", "thing" pollute the resonator
         if not nouns:
             # Starter vocabulary for cold start (empty database)
-            # ONLY include: proper nouns, capitals, countries, specific concepts
-            nouns.update([
-                # Countries (proper nouns)
-                "France", "Germany", "Japan", "Australia", "Brazil", "Canada",
-                "Spain", "Italy", "China", "India", "Mexico", "Russia",
-                "England", "Scotland", "Ireland", "Wales",
-                # Capitals (proper nouns)
-                "Paris", "Berlin", "Tokyo", "Canberra", "London", "Rome",
-                "Madrid", "Beijing", "Delhi", "Moscow", "Ottawa", "Brasilia",
-                # Continents (proper nouns)
-                "Europe", "Asia", "Africa", "America", "Oceania", "Antarctica",
-                # Celestial bodies (proper nouns)
-                "Sun", "Moon", "Earth", "Mars", "Venus", "Jupiter",
-                # Famous landmarks (proper nouns)
-                "Eiffel", "Tower", "Louvre", "Colosseum",
-            ])
+            # Use LLM to generate diverse seed vocabulary instead of hardcoding
+            if hasattr(self, 'gemini_llm'):
+                try:
+                    print("Generating seed vocabulary from Gemini...")
+                    prompt = (
+                        "Generate a list of 100 diverse, common English nouns that would be useful "
+                        "for a general knowledge chatbot. Include a mix of:\n"
+                        "- Countries and cities\n"
+                        "- Scientific concepts (e.g. atom, energy)\n"
+                        "- Natural world (e.g. ocean, mountain)\n"
+                        "- Everyday objects\n"
+                        "- Abstract concepts (e.g. time, history)\n"
+                        "Output ONLY the words separated by commas, no numbering or bullets."
+                    )
+                    response = self.gemini_llm.invoke(prompt)
+                    content = response.content if hasattr(response, 'content') else str(gemini_response)
+                    words = [w.strip().lower() for w in content.split(',')]
+                    valid_words = {w for w in words if len(w) > 2 and ' ' not in w} # Single words only
+                    
+                    if valid_words:
+                        nouns.update(valid_words)
+                        print(f"Generated {len(valid_words)} seed nouns.")
+                    else:
+                        raise ValueError("No valid words generated")
+                except Exception as e:
+                    print(f"Failed to generate vocabulary from LLM: {e}")
+                    # Fallback to minimal set if LLM fails
+                    nouns.update(["thing", "person", "place", "idea", "time", "world", "life"])
+            else:
+                 # Fallback if LLM not ready
+                 nouns.update(["thing", "person", "place", "idea", "time", "world", "life"])
 
         # Add essential verbs for generating proper sentences
         verbs.update(["create", "invent", "discover", "build", "design", "develop"])
@@ -950,22 +971,7 @@ class CrewTrainer:
         if not text_lower.endswith("?"):
             return False
         
-        # Quiz question patterns
-        quiz_patterns = [
-            "what is",
-            "what are",
-            "what was",
-            "what does",
-            "where is",
-            "where are",
-            "who is",
-            "who are",
-            "who was",
-            "when is",
-            "when was",
-        ]
-        
-        return any(pattern in text_lower for pattern in quiz_patterns)
+        return any(text_lower.startswith(qw) for qw in QUESTION_START_WORDS)
     
     def _detect_quiz_feedback(self, text: str) -> Optional[bool]:
         """
@@ -1055,37 +1061,12 @@ class CrewTrainer:
         """
         text_lower = text.lower()
         
-        # Teaching patterns
-        teaching_patterns = [
-            "the capital of",
-            "is the capital",
-            "'s capital is",
-            "was created by",
-            "was invented by",
-            "is a",
-            "are",
-        ]
-        
-        # Conversational markers
-        conversational_markers = [
-            "i think",
-            "i believe",
-            "i feel",
-            "you know",
-            "i was thinking",
-            "isn't it",
-            "don't you think",
-            "maybe",
-            "perhaps",
-            "probably",
-        ]
-        
         # Check for conversational markers first
-        if any(marker in text_lower for marker in conversational_markers):
+        if any(marker in text_lower for marker in CONVERSATIONAL_MARKERS):
             return False
         
         # Check for teaching patterns
-        if any(pattern in text_lower for pattern in teaching_patterns):
+        if any(pattern in text_lower for pattern in TEACHING_PATTERNS):
             return True
         
         # Check if it ends with ? (likely conversational question)
@@ -1253,184 +1234,103 @@ class CrewTrainer:
 
         # Step 3-6: Discussion loop between Claude and Hologram
         turn = 0
+        import random
         while turn < self.max_turns_per_topic and self.running:
             turn += 1
-
-            # Claude responds to the conversation
-            # Encourage Claude to teach facts in learnable formats
-            # Check if we're stuck on the same topic (detect if last 3 facts are similar)
-            stuck_on_topic = False
-            if len(self.facts_learned) >= 3:
-                last_three = [f.lower().split()[0] for f in self.facts_learned[-3:]]
-                # If same subject appears 2+ times in last 3 facts, we're stuck
-                if len(set(last_three)) <= 2:
-                    stuck_on_topic = True
             
-            variety_hint = ""
-            if stuck_on_topic:
-                variety_hint = "\n\nNOTE: The student has learned this topic well. Please introduce a COMPLETELY DIFFERENT topic now (different country, person, or concept)."
+            # NEW: Dynamic interaction loop
+            # Speakers: Claude, Gemini, Hologram (optional)
             
-            claude_prompt = (
-                f"{CLAUDE_SYSTEM_PROMPT}\n\n"
-                f"Respond to the conversation and share a related fact.\n"
-                f"When sharing facts, use direct formats like:\n"
-                f"- 'The capital of [X] is [Y]'\n"
-                f"- '[Name] is [description]'\n"
-                f"- 'The [property] of [X] is [Y]'\n\n"
-                f"Avoid starting facts with 'I think', 'apparently', or 'I believe'.\n"
-                f"IMPORTANT: Only write YOUR response. Do NOT write dialogue for the Bot."
-                f"{variety_hint}\n"
-                # Limit context to avoid fixation - only show last turn
-                f"Last exchange: {self.conversation_history[-1][1] if self.conversation_history else 'Start teaching.'}"
-            )
-
-            # Use LangChain LLM directly
-            claude_response = self.claude_llm.invoke(claude_prompt)
-            claude_message = claude_response.content if hasattr(claude_response, 'content') else str(claude_response)
-            self.logger.log("claude", claude_message)
-            self.conversation_history.append(("claude", claude_message))
+            # Randomly decide if Claude or Gemini speaks next (bias towards Claude as "discussant")
+            # 70% Claude, 30% Gemini
+            speaker = "claude" if random.random() < 0.7 else "gemini"
             
-            # Learn vocabulary from Claude's message
-            self.vocabulary.learn_from_text(claude_message)
+            # Context for next speaker
+            last_msg = self.conversation_history[-1][1] if self.conversation_history else "Start discussion."
             
-            # Learn response if conversational
-            self._learn_response_from_llm(claude_message, "claude")
-
-            # Check for feedback on PREVIOUS quiz question
-            if self.awaiting_feedback:
-                feedback = self._detect_quiz_feedback(claude_message)
-                if feedback is not None:
-                    # Check if Hologram actually knew it (retrieve last message)
-                    last_hologram_msg = ""
-                    if len(self.conversation_history) >= 2 and self.conversation_history[-2][0] == 'hologram':
-                        last_hologram_msg = self.conversation_history[-2][1]
-                    
-                    hologram_failed = "i don't know" in last_hologram_msg.lower() or "not sure" in last_hologram_msg.lower()
-                    
-                    if feedback and not hologram_failed:
-                        self.quiz_answers_correct += 1
-                        self.logger.log("SYSTEM", f"✓ Quiz answer correct ({self.quiz_answers_correct}/{self.quiz_questions_asked})")
-                    else:
-                        self.quiz_answers_incorrect += 1
-                        self.logger.log("SYSTEM", f"✗ Quiz answer incorrect ({self.quiz_answers_incorrect}/{self.quiz_questions_asked})")
-                    
-                    # Track metacognitive state after quiz
-                    if self.chatbot._metacognitive:
-                        mood = self.chatbot._metacognitive.state.mood
-                        self.logger.log("SYSTEM", f"Metacognitive mood: {mood.value}")
-                    
-                    self.awaiting_feedback = False
-
-            # Check if Claude asked a NEW quiz question
-            if self._detect_quiz_question(claude_message):
-                self.quiz_questions_asked += 1
-                self.awaiting_feedback = True
+            prompt = ""
+            if speaker == "claude":
+                prompt = (
+                    f"{CLAUDE_SYSTEM_PROMPT}\n\n"
+                    f"Respond to the conversation naturally. Interact with Gemini (Alex) or the student.\n"
+                    f"Last message: {last_msg}"
+                )
+                response = self.claude_llm.invoke(prompt)
+            else:
+                prompt = (
+                    f"{GEMINI_SYSTEM_PROMPT}\n\n"
+                    f"Respond to the conversation naturally. Interact with Claude or the student.\n"
+                    f"Last message: {last_msg}"
+                )
+                response = self.gemini_llm.invoke(prompt)
+                
+            message = response.content if hasattr(response, 'content') else str(response)
+            self.logger.log(speaker, message)
+            self.conversation_history.append((speaker, message))
             
-            # If Claude issued a command, execute it and skip response; otherwise respond
-            if self._process_llm_command(claude_message, speaker="claude"):
+            # Learn vocabulary
+            self.vocabulary.learn_from_text(message)
+            self._learn_response_from_llm(message, speaker)
+            
+            # Check for quiz/commands
+            is_command = self._process_llm_command(message, speaker=speaker)
+            if is_command:
                 ack = "Command received and stored."
                 self.logger.log("hologram", ack)
                 self.conversation_history.append(("hologram", ack))
                 self.awaiting_feedback = False
-            else:
-                # Hologram responds to Claude (may learn if Claude teaches a fact)
-                hologram_response = self.chatbot.respond(claude_message)
-                
-                # Check if a fact was learned
-                fact_learned = self._detect_fact_learning(hologram_response)
+                continue
+
+            # Hologram Interaction Logic:
+            # 1. Listen to everything (learn facts/vocabulary/context)
+            # 2. Respond ONLY if:
+            #    a) Directly addressed ("Hologram", "student", "?")
+            #    b) High confidence response available (e.g. knows the answer)
+            #    c) Random chance (20%) to keep conversation alive
+            
+            addressed_directly = "hologram" in message.lower() or "?" in message
+            
+            # Determine if we should speak
+            should_speak = False
+            
+            if addressed_directly:
+                should_speak = True
+            elif random.random() < 0.2:  # Occasional chime-in
+                should_speak = True
+            
+            # Always listen first
+            self.chatbot.listen(message)
+            
+            # Check if we learned a fact while listening
+            if self.chatbot.did_learn_fact_this_turn():
+                fact_learned = self.chatbot.get_last_learned_fact()
                 if fact_learned:
+                    subject, predicate, obj = fact_learned
+                    fact_str = f"{subject} {predicate} {obj}"
                     self.facts_learned_count += 1
-                    self.facts_learned.append(fact_learned)
-                    self.last_taught_fact = fact_learned
-                    self.logger.log("SYSTEM", f"✓ Fact learned ({self.facts_learned_count} total): {fact_learned}")
+                    self.facts_learned.append(fact_str)
+                    self.last_taught_fact = fact_str
+                    self.logger.log("SYSTEM", f"✓ Fact learned while listening: {fact_str}")
+                    self._update_vocabulary_from_fact(fact_str)
+                # If we learned a fact, we might want to acknowledge it even if not addressed
+                if random.random() < 0.5:
+                    should_speak = True
+            self.chatbot.clear_learning_flag()
 
-                    # Update vocabulary from newly learned fact
-                    self._update_vocabulary_from_fact(fact_learned)
-
-                # Clear learning flag for next turn (explicit protocol)
-                self.chatbot.clear_learning_flag()
-                
+            if should_speak:
+                # Actually generate a response
+                # Note: We already 'listened', so context is updated.
+                # But respond() expects to process the input again.
+                # To avoid double-processing, we ideally should have separate 'generate' method.
+                # For now, calling respond() again is safe (idempotent-ish), just a bit inefficient.
+                # Optimization: In future refactor, split process/generate.
+                hologram_response = self.chatbot.respond(message)
                 self.logger.log("hologram", hologram_response)
                 self.conversation_history.append(("hologram", hologram_response))
-
-            # Every 3rd turn, Gemini joins
-            if turn % 3 == 0:
-                # Check if student is doing well - if so, introduce new topic
-                recent_correct = self.quiz_answers_correct / max(self.quiz_questions_asked, 1) if self.quiz_questions_asked > 0 else 0
-                new_topic_instruction = ""
-                if recent_correct > 0.6 and self.quiz_questions_asked >= 3:
-                    new_topic_instruction = "\n\nNOTE: The student is doing well! Please introduce a COMPLETELY NEW topic now (different subject matter)."
-                
-                gemini_prompt = (
-                    f"{GEMINI_SYSTEM_PROMPT}\n\n"
-                    f"Join the conversation naturally. "
-                    f"You can add to the discussion, ask a follow-up question, "
-                    f"or introduce a NEW related topic.\n"
-                    f"IMPORTANT: Only write YOUR response. Do NOT write dialogue for the Bot."
-                    f"{new_topic_instruction}\n"
-                    # Limit context to avoid fixation
-                    f"Last exchange: {self.conversation_history[-1][1] if self.conversation_history else 'Continue teaching.'}"
-                )
-                gemini_response = self.gemini_llm.invoke(gemini_prompt)
-                gemini_message = gemini_response.content if hasattr(gemini_response, 'content') else str(gemini_response)
-                self.logger.log("gemini", gemini_message)
-                self.conversation_history.append(("gemini", gemini_message))
-                
-                # Learn vocabulary from Gemini's message
-                self.vocabulary.learn_from_text(gemini_message)
-                
-                # Learn response if conversational
-                self._learn_response_from_llm(gemini_message, "gemini")
-
-                # Check for feedback on PREVIOUS quiz question (from Gemini)
-                if self.awaiting_feedback:
-                    feedback = self._detect_quiz_feedback(gemini_message)
-                    if feedback is not None:
-                        # Check if Hologram actually knew it
-                        last_hologram_msg = ""
-                        if len(self.conversation_history) >= 2 and self.conversation_history[-2][0] == 'hologram':
-                            last_hologram_msg = self.conversation_history[-2][1]
-                        
-                        hologram_failed = "i don't know" in last_hologram_msg.lower() or "not sure" in last_hologram_msg.lower()
-
-                        if feedback and not hologram_failed:
-                            self.quiz_answers_correct += 1
-                            self.logger.log("SYSTEM", f"✓ Quiz answer correct ({self.quiz_answers_correct}/{self.quiz_questions_asked})")
-                        else:
-                            self.quiz_answers_incorrect += 1
-                            self.logger.log("SYSTEM", f"✗ Quiz answer incorrect ({self.quiz_answers_incorrect}/{self.quiz_questions_asked})")
-                        
-                        self.awaiting_feedback = False
-
-                # Check if Gemini asked a NEW quiz question
-                if self._detect_quiz_question(gemini_message):
-                    self.quiz_questions_asked += 1
-                    self.awaiting_feedback = True
-                
-                # If Gemini issued a command, execute it and skip response; otherwise respond
-                if self._process_llm_command(gemini_message, speaker="gemini"):
-                    ack = "Command received and stored."
-                    self.logger.log("hologram", ack)
-                    self.conversation_history.append(("hologram", ack))
-                    self.awaiting_feedback = False
-                else:
-                    # Hologram responds to Gemini (may learn if Gemini teaches a fact)
-                    hologram_response = self.chatbot.respond(gemini_message)
-                    
-                    # Check if a fact was learned
-                    fact_learned = self._detect_fact_learning(hologram_response)
-                    if fact_learned:
-                        self.last_taught_fact = fact_learned
-                        self.logger.log("SYSTEM", f"✓ Fact learned: {fact_learned}")
-
-                        # Update vocabulary from newly learned fact
-                        self._update_vocabulary_from_fact(fact_learned)
-
-                    # Clear learning flag for next turn (explicit protocol)
-                    self.chatbot.clear_learning_flag()
-                    
-                    self.logger.log("hologram", hologram_response)
-                    self.conversation_history.append(("hologram", hologram_response))
+            else:
+                # Log that we are listening
+                # self.logger.log("hologram", "(listening...)")
+                pass
 
             # Keep last 20 messages for context
             if len(self.conversation_history) > 20:
@@ -1475,8 +1375,8 @@ class CrewTrainer:
                         vocab_stats = self.vocabulary.get_stats()
                         self.logger.log("SYSTEM", f"Vocabulary: {vocab_stats['total_words']} words ({vocab_stats['nouns']} nouns, {vocab_stats['verbs']} verbs)")
                         
-                        # Save neural memory
-                        self.chatbot.save_memory(self.persist_dir)
+                        # Save neural memory periodically (don't force consolidation every time)
+                        self.chatbot.save_memory(self.persist_dir, force_consolidation=False)
                     
                 except Exception as e:
                     consecutive_errors += 1
@@ -1509,9 +1409,10 @@ class CrewTrainer:
             self.logger.log("SYSTEM", f"Total facts learned: {self.facts_learned_count}")
             self.logger.log("SYSTEM", f"Total responses learned: {self.responses_learned_count}")
             
-            # Save neural memory on exit
+            # Save neural memory on exit (with forced consolidation)
             if hasattr(self, 'chatbot'):
-                self.chatbot.save_memory(self.persist_dir)
+                # Force consolidation of any pending facts before saving
+                self.chatbot.save_memory(self.persist_dir, force_consolidation=True)
                 # Ensure worker is stopped
                 self.chatbot.end_session()
             
@@ -1724,4 +1625,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-

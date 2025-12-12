@@ -9,10 +9,11 @@ Supports citation tracking for bounded hallucination.
 """
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import torch
 
@@ -497,6 +498,74 @@ class FactStore:
             List of all Fact objects stored in memory.
         """
         return list(self._facts)
+
+    def search_facts_mentioning(
+        self,
+        term: str,
+        limit: int = 5,
+        match_type: str = "any",
+    ) -> List[Tuple[Fact, float]]:
+        """
+        Find facts where subject, predicate, or object mentions the term (METADATA SEARCH).
+
+        This is O(n) metadata lookup, not a holographic query.
+        Used for semantic fallback when structured HDC queries fail.
+
+        Uses word boundary matching to avoid false positives (e.g., "can" in "Vatican").
+
+        Args:
+            term: Search term (case-insensitive, word-boundary matched)
+            limit: Maximum results to return
+            match_type: "any", "subject", or "object" - filter by match location
+
+        Returns:
+            List of (Fact, confidence) tuples, ordered by relevance.
+            Confidence: 0.9 (subject), 0.7 (predicate), 0.5 (object)
+
+        Example:
+            >>> fs.search_facts_mentioning("river", match_type="subject")
+            [(Fact("River", "is", "water body"), 0.9)]
+            >>> fs.search_facts_mentioning("river", match_type="object")
+            [(Fact("Nile", "is", "longest river"), 0.5)]
+        """
+        if not term or not term.strip():
+            return []
+
+        term_lower = term.strip().lower()
+
+        # Skip search for very short terms to avoid false positives
+        if len(term_lower) < 3:
+            return []
+
+        # Word boundary matching to avoid substring false positives
+        term_pattern = r'\b' + re.escape(term_lower) + r'\b'
+
+        scored_matches: List[Tuple[Fact, float]] = []
+
+        for fact in self._facts:
+            score = 0.0
+
+            # Score based on match location (subject > predicate > object)
+            if match_type in ("any", "subject"):
+                if re.search(term_pattern, fact.subject.lower()):
+                    score = 0.9  # Highest: subject match
+
+            if score == 0.0 and match_type == "any":
+                if re.search(term_pattern, fact.predicate.lower()):
+                    score = 0.7  # Medium: predicate match
+
+            if score == 0.0 and match_type in ("any", "object"):
+                if re.search(term_pattern, fact.object.lower()):
+                    score = 0.5  # Lowest: object mention
+
+            if score > 0:
+                scored_matches.append((fact, score))
+                if len(scored_matches) >= limit * 2:  # Gather extra for sorting
+                    break
+
+        # Sort by relevance (higher score first), then by recency
+        scored_matches.sort(key=lambda x: (x[1], x[0].timestamp), reverse=True)
+        return scored_matches[:limit]
 
     @property
     def vocabulary_size(self) -> int:
