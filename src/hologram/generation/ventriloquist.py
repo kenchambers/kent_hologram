@@ -97,6 +97,35 @@ class VentriloquistGenerator:
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._enable_reasoning = enable_reasoning
+        # Simple, model-agnostic context windows (tokens); adjust if models change
+        self._fluency_context_window = 8000
+        self._reasoning_context_window = 128000
+        self._safety_buffer = 256
+
+    def _estimate_tokens(self, text: str) -> int:
+        """Crude token estimator (~4 chars per token)."""
+        if not text:
+            return 0
+        return max(1, len(text) // 4)
+
+    def _budget_tokens(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        requested_max_tokens: int,
+        context_window: int,
+        safety_buffer: int,
+    ) -> Optional[int]:
+        """
+        Cap max_tokens so input+output fits in the assumed context window.
+
+        Returns capped max_tokens, or None if there is no room for any output.
+        """
+        input_tokens = self._estimate_tokens(system_prompt) + self._estimate_tokens(user_prompt)
+        available_for_output = context_window - input_tokens - safety_buffer
+        if available_for_output <= 0:
+            return None
+        return max(1, min(requested_max_tokens, available_for_output))
     
     def generate_with_validation(
         self,
@@ -130,9 +159,13 @@ class VentriloquistGenerator:
                 "You are a helpful assistant. Answer questions naturally and fluently "
                 "using the provided facts. Be conversational but accurate."
             )
+            episodes_text = ""
+            if context.episodes:
+                episodes_text = "Recent episodes:\n" + "\n".join(f"- {e}" for e in context.episodes[:3]) + "\n\n"
             user_prompt = (
                 f"Question: {context.query_text}\n\n"
                 f"Fact: {context.fact_answer}\n\n"
+                f"{episodes_text}"
                 f"Answer the question using the fact above. Be natural and conversational."
             )
         else:
@@ -141,7 +174,10 @@ class VentriloquistGenerator:
                 "You are a helpful assistant. Respond naturally and conversationally. "
                 "If you don't know something, say so politely."
             )
-            user_prompt = context.query_text
+            episodes_text = ""
+            if context.episodes:
+                episodes_text = "Recent episodes:\n" + "\n".join(f"- {e}" for e in context.episodes[:3]) + "\n\n"
+            user_prompt = episodes_text + context.query_text
         
         # Add style instructions
         style_instructions = {
@@ -155,6 +191,17 @@ class VentriloquistGenerator:
             system_prompt += f" {style_instructions[style_key]}"
         
         try:
+            # Apply simple context budgeting for the fluency model
+            capped_max_tokens = self._budget_tokens(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                requested_max_tokens=max_tokens,
+                context_window=self._fluency_context_window,
+                safety_buffer=self._safety_buffer,
+            )
+            if capped_max_tokens is None:
+                return None
+
             # Call Novita API (using fluency model)
             response = self._client.chat.completions.create(
                 model=self._fluency_model,
@@ -162,7 +209,7 @@ class VentriloquistGenerator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=max_tokens,
+                max_tokens=capped_max_tokens,
                 temperature=self._temperature,
             )
             
@@ -298,6 +345,16 @@ class VentriloquistGenerator:
         )
         
         try:
+            capped_max_tokens = self._budget_tokens(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                requested_max_tokens=max_tokens,
+                context_window=self._reasoning_context_window,
+                safety_buffer=self._safety_buffer * 2,
+            )
+            if capped_max_tokens is None:
+                return None
+
             # Call reasoning model (GLM-4.6v)
             response = self._client.chat.completions.create(
                 model=self._reasoning_model,
@@ -305,7 +362,7 @@ class VentriloquistGenerator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=max_tokens,
+                max_tokens=capped_max_tokens,
                 temperature=0.3,  # Lower temperature for reasoning
                 response_format={"type": "json_object"},  # Request JSON output
             )
@@ -636,6 +693,16 @@ class VentriloquistGenerator:
         user_prompt = f"{context_str}\n\nTask: {prompt}\n\nGenerate the code:"
         
         try:
+            capped_max_tokens = self._budget_tokens(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                requested_max_tokens=max_tokens,
+                context_window=self._reasoning_context_window,
+                safety_buffer=self._safety_buffer * 2,
+            )
+            if capped_max_tokens is None:
+                return None
+
             # Generate code using reasoning model (GLM-4.6v)
             response = self._client.chat.completions.create(
                 model=self._reasoning_model,
@@ -643,7 +710,7 @@ class VentriloquistGenerator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=max_tokens,
+                max_tokens=capped_max_tokens,
                 temperature=0.3,  # Lower temperature for code generation
             )
             
@@ -681,4 +748,134 @@ class VentriloquistGenerator:
             f"reasoning={self._reasoning_model}, "
             f"temperature={self._temperature})"
         )
+
+    # ------------------------------------------------------------------ #
+    # Long-form pipeline: outline -> expand -> verify
+    # ------------------------------------------------------------------ #
+    def generate_long_form(
+        self,
+        query: str,
+        facts: Optional[List[str]] = None,
+        episodes: Optional[List[str]] = None,
+        sections: int = 4,
+        section_tokens: int = 256,
+    ) -> Optional[str]:
+        """
+        Produce longer responses in two passes:
+        1) Outline in JSON with reasoning model.
+        2) Expand each section with the fluency model.
+        """
+        facts = facts or []
+        episodes = episodes or []
+
+        # --- Pass 1: Outline
+        outline_system = (
+            "You are an expert planner. Create a JSON outline for a response.\n"
+            'Respond ONLY as JSON: {"sections": ["title 1", "title 2", ...]}.'
+        )
+        context_lines = []
+        if facts:
+            context_lines.append("Known facts:")
+            context_lines.extend(f"- {f}" for f in facts[:8])
+        if episodes:
+            context_lines.append("Recent episodes:")
+            context_lines.extend(f"- {e}" for e in episodes[:3])
+        outline_user = "\n".join(context_lines + [f"Question: {query}"])
+
+        capped_outline_tokens = self._budget_tokens(
+            system_prompt=outline_system,
+            user_prompt=outline_user,
+            requested_max_tokens=128,
+            context_window=self._reasoning_context_window,
+            safety_buffer=self._safety_buffer * 2,
+        )
+        if capped_outline_tokens is None:
+            return None
+
+        try:
+            outline_resp = self._client.chat.completions.create(
+                model=self._reasoning_model,
+                messages=[
+                    {"role": "system", "content": outline_system},
+                    {"role": "user", "content": outline_user},
+                ],
+                max_tokens=capped_outline_tokens,
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+            outline_content = outline_resp.choices[0].message.content.strip()
+            outline_json = json.loads(outline_content)
+            section_titles = outline_json.get("sections", [])
+        except Exception:
+            return None
+
+        if not section_titles:
+            return None
+
+        # --- Pass 2: Expand each section
+        assembled_sections = []
+        fact_terms = self._extract_fact_terms(facts)
+        for title in section_titles[:sections]:
+            expand_system = (
+                "You are a helpful assistant. Write a concise section that stays grounded "
+                "in the provided facts/episodes. Avoid inventing new facts."
+            )
+            expand_user_parts = [f"Section: {title}", f"Question: {query}"]
+            if facts:
+                expand_user_parts.append("Facts:")
+                expand_user_parts.extend(f"- {f}" for f in facts[:8])
+            if episodes:
+                expand_user_parts.append("Episodes:")
+                expand_user_parts.extend(f"- {e}" for e in episodes[:3])
+            expand_user = "\n".join(expand_user_parts)
+
+            capped_section_tokens = self._budget_tokens(
+                system_prompt=expand_system,
+                user_prompt=expand_user,
+                requested_max_tokens=section_tokens,
+                context_window=self._fluency_context_window,
+                safety_buffer=self._safety_buffer,
+            )
+            if capped_section_tokens is None:
+                continue
+
+            try:
+                section_resp = self._client.chat.completions.create(
+                    model=self._fluency_model,
+                    messages=[
+                        {"role": "system", "content": expand_system},
+                        {"role": "user", "content": expand_user},
+                    ],
+                    max_tokens=capped_section_tokens,
+                    temperature=self._temperature,
+                )
+                section_text = section_resp.choices[0].message.content.strip()
+            except Exception:
+                continue
+
+            if not section_text:
+                continue
+
+            # Lightweight grounding check: ensure some fact terms appear
+            if fact_terms:
+                lower = section_text.lower()
+                matches = sum(1 for term in fact_terms if term in lower)
+                if matches == 0:
+                    # Skip ungrounded section
+                    continue
+
+            assembled_sections.append(f"{title}\n{section_text}")
+
+        if not assembled_sections:
+            return None
+
+        return "\n\n".join(assembled_sections)
+
+    def _extract_fact_terms(self, facts: List[str]) -> set:
+        terms = set()
+        for fact in facts:
+            for token in fact.lower().replace("--", " ").replace("-->", " ").split():
+                if len(token) > 3:
+                    terms.add(token)
+        return terms
 

@@ -9,7 +9,7 @@ This ensures type safety and allows hybrid routing without breaking changes.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Protocol, TYPE_CHECKING
 
 import torch
@@ -40,6 +40,7 @@ class GenerationContext:
         entities: List of entity names
         style: Preferred style
         expected_subject: Expected subject for validation
+        episodes: Episodic snippets to ground longer responses
     """
     query_text: str
     thought_vector: Optional[torch.Tensor]
@@ -48,6 +49,7 @@ class GenerationContext:
     entities: list[str]
     style: StyleType  # type: ignore  # Forward reference via __future__ annotations
     expected_subject: Optional[str] = None
+    episodes: list[str] = field(default_factory=list)
 
 
 class Generator(Protocol):

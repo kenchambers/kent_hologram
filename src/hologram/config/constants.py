@@ -187,3 +187,23 @@ DEFAULT_FLUENCY_MODEL = "moonshotai/kimi-k2-thinking"
 ENABLE_REASONING_CHAIN = True
 """Enable chain-of-thought reasoning for complex queries.
 When True, the Ventriloquist uses GLM-4.6v to generate step-by-step reasoning."""
+
+# ==============================================================================
+# Entity Extraction
+# ==============================================================================
+
+QUERY_SKIP_WORDS = frozenset({
+    # Question words
+    "what", "who", "where", "when", "why", "how", "which",
+    # Predicate words
+    "capital", "is", "are", "was", "were", "creator", "color", "shape",
+    "located", "used", "currency", "language", "continent", "country",
+    "city", "region", "hemisphere", "population", "largest", "smallest",
+    # Common conversation starters (look like proper nouns but aren't)
+    "yes", "no", "okay", "ok", "sure", "let", "try", "again", "correct",
+    "incorrect", "right", "wrong", "good", "excellent", "great", "nice",
+    "i", "you", "we", "they", "he", "she", "it", "this", "that",
+    "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
+})
+"""Words to skip when extracting subject entities from queries.
+These are common words that should not be treated as proper noun subjects."""

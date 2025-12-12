@@ -1,7 +1,7 @@
 # Conscious Hologram Architecture
 
-**Last Updated**: 2025-12-11
-**Status**: Implemented (All 5 Layers)
+**Last Updated**: 2025-12-12
+**Status**: Implemented (All 5 Layers + Scaling Extensions)
 
 ---
 
@@ -15,13 +15,13 @@ The **Conscious Hologram** is a 5-layer system that stores and retrieves knowled
 
 ## The 5 Layers at a Glance
 
-| Layer | Name | What It Does |
-|-------|------|--------------|
-| **1** | Fractal Substrate | Makes vectors robust - any fragment can recover the whole |
-| **2** | Memory | Stores facts as interference patterns (Subject-Predicate-Object) |
-| **3** | Metacognition | Monitors confidence and retries when confused |
-| **4** | Retrieval | Finds facts using exact match or HDC resonance search |
-| **5** | Voice | Converts retrieved facts into natural language |
+| Layer | Name              | What It Does                                                     |
+| ----- | ----------------- | ---------------------------------------------------------------- |
+| **1** | Fractal Substrate | Makes vectors robust - any fragment can recover the whole        |
+| **2** | Memory            | Stores facts as interference patterns (Subject-Predicate-Object) |
+| **3** | Metacognition     | Monitors confidence and retries when confused                    |
+| **4** | Retrieval         | Finds facts using exact match or HDC resonance search            |
+| **5** | Voice             | Converts retrieved facts into natural language                   |
 
 ---
 
@@ -31,7 +31,7 @@ The **Conscious Hologram** is a 5-layer system that stores and retrieves knowled
 
 ### The Idea
 
-Bentov's hologram metaphor: *"Cut a hologram in half - you get the whole rose, just fuzzier."*
+Bentov's hologram metaphor: _"Cut a hologram in half - you get the whole rose, just fuzzier."_
 
 Every concept is stored as a **64-dimensional "DNA seed"** that expands into **10,000 dimensions**. If part of the vector is corrupted, you can recover the original from any surviving fragment.
 
@@ -45,6 +45,7 @@ Every concept is stored as a **64-dimensional "DNA seed"** that expands into **1
 4. **Multi-shard averaging**: Multiple shards can be averaged for cleaner recovery
 
 **Implementation** (`src/hologram/core/fractal.py:79-237`):
+
 ```python
 space = FractalSpace(dimensions=10000, dna_dimensions=64)
 
@@ -62,6 +63,7 @@ recovered_dna = space.recover_dna(shard, block_index=78)
 ```
 
 **Empirical Properties**:
+
 - **Recovery accuracy**: cosine similarity > 0.95 (rotation matrices are orthogonal, so recovery is nearly perfect)
 - **Noise tolerance**: Recovers original DNA even if shard is corrupted by ~30% noise
 - **Multi-shard averaging**: Multiple recovered DNAs can be averaged for even cleaner results (`recover_dna_from_multiple_shards()`)
@@ -86,6 +88,7 @@ Facts are stored as **Subject-Predicate-Object triples** using two HDC operation
 ### How It Works
 
 **Storing "France capital Paris":**
+
 ```
 key = bind(France, capital)      # Create unique lookup key
 fact = bind(key, Paris)          # Attach the answer
@@ -93,6 +96,7 @@ memory = bundle(memory, fact)    # Add to holographic storage
 ```
 
 **Retrieving:**
+
 ```
 key = bind(France, capital)
 result = unbind(memory, key)     # Extract ~Paris from interference pattern
@@ -106,20 +110,24 @@ Facts are stored selectively based on how "surprising" (novel) they are relative
 **How it works** (`src/hologram/memory/memory_trace.py:90-174`):
 
 1. **Dual Surprise Metrics**:
+
    - **Current surprise**: How different is this fact from existing memory? `surprise = 1.0 - cosine(memory, fact)`
    - **Momentum surprise**: How different from recent learning direction? `momentum_surprise = 1.0 - cosine(momentum, fact)`
    - **Combined**: `combined_surprise = 0.7 * current + 0.3 * momentum` (weighted blend)
 
 2. **Learning Rate Modulation**:
+
    - Only facts with `combined_surprise >= SURPRISE_THRESHOLD (0.1)` trigger memory updates
    - Below threshold = "already known" → skip learning
    - Update strength = `combined_surprise * learning_rate`, so novel facts encode more strongly
 
 3. **Warm-up Period** (First 10 Facts):
+
    - Reduces learning rate: `learning_rate * (fact_count + 1) / 10`
    - Prevents instability during initial learning phase
 
 4. **Momentum Tracking** (Exponential Moving Average):
+
    - Tracks recent learning direction: `momentum = 0.9 * old_momentum + 0.1 * new_fact`
    - Allows system to detect when it's learning "in a direction" (higher momentum_surprise for novel directions)
    - Decay factor (0.9) means recent facts influence momentum more than old ones
@@ -129,6 +137,7 @@ Facts are stored selectively based on how "surprising" (novel) they are relative
    - Enables active memory management (Titans insight: prevents saturation)
 
 **Example**: Teaching the same fact twice:
+
 ```python
 surprise1 = trace.store_with_surprise(france_capital_key, paris)  # 0.8 (novel!)
 surprise2 = trace.store_with_surprise(france_capital_key, paris)  # 0.02 (known)
@@ -139,31 +148,33 @@ surprise2 = trace.store_with_surprise(france_capital_key, paris)  # 0.02 (known)
 
 ### Capacity and Scaling
 
-**HDC Holographic Storage Capacity**: ~100 facts in a single bundled vector before interference becomes too noisy. This is fundamental to how holographic storage works - bundling too many facts together creates interference patterns that degrade retrieval confidence.
+**Capacity is heuristic, not guaranteed.** `constants.py` documents a rule-of-thumb (dimensions ÷ 100), while `MemoryTrace.saturation_estimate` uses √dimensions. Both are unproven; treat capacity as empirical and monitor confidence, not a hard limit.
 
-**Scaling Beyond 100: HierarchicalFactStore** (`src/hologram/memory/fact_store.py:472-598`)
+**Scaling Beyond the Hot Layer: HierarchicalFactStore** (`src/hologram/memory/fact_store.py:472-598`)
 
-The system solves the 100-fact limit with a two-tier architecture:
+Use the two-tier architecture when you need headroom:
 
-| Layer | Storage | Lookup | Capacity | Confidence |
-|-------|---------|--------|----------|------------|
-| **Hot** | HDC FactStore | O(1) exact key lookup | ~100 facts (fuzzy) | ~1.0 (exact) or 0.24-0.37 (resonance) |
-| **Cold** | FAISS vector DB | O(log n) similarity search | Unlimited | 0.20-0.40 (similar to hot) |
+| Layer    | Storage         | Lookup                     | Capacity                                                  | Confidence                                      |
+| -------- | --------------- | -------------------------- | --------------------------------------------------------- | ----------------------------------------------- |
+| **Hot**  | HDC FactStore   | O(1) exact key lookup      | Heuristic: tens to low hundreds before interference grows | Exact ≈ 1.0; resonance varies with interference |
+| **Cold** | FAISS vector DB | O(log n) similarity search | Operationally unbounded                                   | Similarity per FAISS scoring                    |
 
 **How it works**:
-1. Store facts in both hot (HDC) and cold (FAISS) layers simultaneously
-2. Query hot layer first (fast exact match via normalized key dictionary)
-3. If hot confidence < 0.7, fall back to FAISS cold search
-4. Both layers use same fact encoding (Subject-Predicate-Object triples)
+
+1. Store facts in both hot (HDC) and cold (FAISS) layers simultaneously.
+2. Query hot layer first (exact match via normalized key dictionary).
+3. If hot confidence < 0.7, fall back to FAISS cold search.
+4. Both layers use the same fact encoding (Subject-Predicate-Object triples).
 
 **Result**: Exact key lookups work at unlimited scale; fuzzy resonance searches gracefully degrade to cold storage when confidence drops.
 
 **Usage**:
+
 ```python
 from hologram import HologramContainer
 
 container = HologramContainer(dimensions=10000)
-# Creates HierarchicalFactStore automatically if FAISS is installed
+# Create HierarchicalFactStore explicitly (requires faiss installed)
 fact_store = container.create_hierarchical_fact_store(
     hot_confidence_threshold=0.7,  # Fall back to FAISS if below this
     faiss_path="./data/faiss_index"
@@ -179,11 +190,23 @@ answer, confidence = fact_store.query("Entity_9999", "property")
 ```
 
 **Capacity Profile**:
-- **Exact match queries** (normalized key lookup): Works at unlimited scale (O(1) dictionary)
-- **Fuzzy holographic queries** (resonance): ~100-150 facts in hot layer before degradation
-- **Cold layer queries**: Unlimited facts, but slightly lower confidence (0.20-0.40 vs. 0.24-0.37)
 
-This is the implemented solution to the capacity problem - no proposal needed.
+- **Exact match queries** (normalized key lookup): O(1) dictionary; scales with metadata, not the bundled vector.
+- **Fuzzy holographic queries** (resonance): Practically limited; treat “tens to low hundreds” as a heuristic before interference grows.
+- **Cold layer queries**: Operationally unbounded; similarity reflects FAISS scoring.
+
+This is the implemented scaling path; monitor confidence empirically.
+
+### New: Episodic Memory Layer
+
+**File**: `src/hologram/conversation/memory.py`
+
+In addition to semantic facts, the system now stores **conversation episodes** (user-response pairs) in a dedicated vector store (FAISS/Chroma).
+
+- **Purpose**: Provides "long effective context" without filling the prompt window.
+- **Mechanism**: Stores `bind(user_vec, response_vec)` + metadata.
+- **Retrieval**: Top-k episodes are retrieved for every turn and passed to the Ventriloquist.
+- **Benefit**: The hologram remembers what you said 50 turns ago without reprocessing the whole history.
 
 ---
 
@@ -194,6 +217,7 @@ This is the implemented solution to the capacity problem - no proposal needed.
 ### The Idea
 
 The system monitors its own confidence and tracks its "mood":
+
 - **NEUTRAL** → starting state
 - **CONFIDENT** → high confidence answers
 - **CONFUSED** → low confidence, triggers retry
@@ -213,6 +237,7 @@ The system maintains a persistent **self_vector** that accumulates mood signals 
 4. **Retry if needed** with modified internal state
 
 **Example**: Query fails with low confidence
+
 ```python
 # Initial query: confidence = 0.15 (too low)
 state.update_from_confidence(0.15)
@@ -220,11 +245,12 @@ state.update_from_confidence(0.15)
 # This modulation affects future queries (though current implementation is observational)
 ```
 
-**What "rewiring" means**: The system doesn't rewrite the *query text*, but it **does** modulate its *internal state* by bundling mood vectors. This changes the system's perspective for retries.
+**What "rewiring" means**: The system doesn't rewrite the _query text_, but it **does** modulate its _internal state_ by bundling mood vectors. This changes the system's perspective for retries.
 
 **Note**: Current implementation uses mood tracking for observability and enables retry logic. Future work will use `self_vector` modulation to influence retrieval (e.g., inject curiosity into the query context).
 
 **Mood States** (`src/hologram/cognition/metacognition.py`):
+
 - NEUTRAL → Starting state
 - CONFIDENT → High confidence (>= 0.8)
 - CONFUSED → Low confidence (<= 0.2), triggers exploration
@@ -250,28 +276,30 @@ Multiple strategies to find stored facts, prioritized by speed and confidence.
 **FactStore provides two complementary retrieval strategies** (`src/hologram/memory/fact_store.py:219-285`):
 
 #### 1. Exact Match (O(1), High Confidence)
+
 - **How**: Normalized key dictionary lookup (`_exact_index`)
 - **Confidence**: ≈ 1.0 (perfect match)
 - **Speed**: O(1) constant time
 - **When used**: First attempt (lines 250-257)
 - **Example**: `query("France", "capital")` → exact key match → "Paris" with confidence 1.0
 
-#### 2. HDC Resonance Search (O(n), Lower Confidence)
-- **How**: Unbind key from bundled memory, measure cosine similarity to all vocabulary words
-- **Confidence**: 0.24-0.37 (typical for holographic retrieval due to interference)
-- **Speed**: O(n) where n = vocabulary size
-- **When used**: Fallback if exact match fails (lines 259-285)
-- **Example**: Fuzzy query with typos or novel phrasing
+#### 2. HDC Resonance Search (O(n), Confidence varies with interference)
+
+- **How**: Unbind key from bundled memory, measure cosine similarity to all vocabulary words.
+- **Confidence**: Depends on interference; use thresholds, not fixed ranges.
+- **Speed**: O(n) where n = vocabulary size.
+- **When used**: Fallback if exact match fails (lines 259-285).
+- **Example**: Fuzzy query with typos or novel phrasing.
 
 **Confidence Breakdown**:
-- **Exact match queries**: ~1.0 (deterministic key lookup)
-- **Holographic (bundled) retrieval**: 0.24-0.37 (interference from other facts reduces signal)
-- **Thresholds**:
-  - Response threshold (0.20): Provide answer if confidence ≥ 0.20
-  - Refusal threshold (0.10): Say "I don't know" if confidence < 0.10
-  - Hedge zone (0.10-0.20): Uncertain response
 
-**Why the difference?** In holographic storage, bundling multiple facts into one vector creates interference patterns. The query vibrates the surface, and the target fact's signal competes with noise from other facts. Hence normal retrieval gives 20-40% similarity, not 100%.
+- **Exact match queries**: ~1.0 (deterministic key lookup).
+- **Holographic (bundled) retrieval**: Confidence is interference-sensitive; rely on thresholds:
+  - Response threshold (0.20): Provide answer if confidence ≥ 0.20.
+  - Refusal threshold (0.10): Say "I don't know" if confidence < 0.10.
+  - Hedge zone (0.10-0.20): Uncertain response.
+
+**Why the difference?** Bundling multiple facts creates interference. The query vibrates the surface, and the target fact's signal competes with noise, so similarities are well below 1.0 and should be interpreted via thresholds.
 
 ### Strategies (Layered Priority)
 
@@ -289,14 +317,15 @@ Multiple strategies to find stored facts, prioritized by speed and confidence.
 
 Two ways to speak the retrieved facts:
 
-| Mode | When Used | Output Style |
-|------|-----------|--------------|
-| **ResonantGenerator** | HDC-native fallback | Concise, constrained to vocabulary |
-| **VentriloquistGenerator** | Preferred (via SLM API) | Fluent, natural conversation |
+| Mode                       | When Used               | Output Style                       |
+| -------------------------- | ----------------------- | ---------------------------------- |
+| **ResonantGenerator**      | HDC-native fallback     | Concise, constrained to vocabulary |
+| **VentriloquistGenerator** | Preferred (via SLM API) | Fluent, natural conversation       |
 
 ### How Routing Works
 
 In practice, **Ventriloquist is preferred when available**:
+
 1. If Ventriloquist is enabled → use it
 2. If not available → fall back to ResonantGenerator
 3. If generation fails → use template response
@@ -320,6 +349,22 @@ In practice, **Ventriloquist is preferred when available**:
 
 HDC controls **what** to say. SLM controls **how** to say it.
 
+**Token limits (current wiring):**
+
+- ResponseSelector passes **10 tokens** to the HDC generator path.
+- ResponseSelector passes **256 tokens** to the Ventriloquist path.
+- `MAX_GENERATION_TOKENS` in `constants.py` is not enforced by the selector; the per-call caps above are operative.
+
+**New: Token Budgeting**:
+A `_budget_tokens` method now calculates available space in the context window before every call, ensuring prompts never exceed model limits regardless of `max_tokens` settings.
+
+**New: Long-Output Pipeline (Multi-Pass)**:
+For complex queries, the Ventriloquist now uses a **multi-pass strategy**:
+
+1. **Outline**: Generate a JSON structure of sections (using reasoning model).
+2. **Expand**: Generate content for each section separately (using fluency model).
+3. **Verify**: Check that expanded sections are grounded in retrieved facts.
+
 ---
 
 ## Complete Data Flow
@@ -327,7 +372,7 @@ HDC controls **what** to say. SLM controls **how** to say it.
 ```
 User: "What is the capital of France?"
     ↓
-[Layer 1] Encode query as fractal vector
+[Layer 1] Encode query via Codebook (fractal/semantic codebook optional)
     ↓
 [Layer 4] Find fact: France → capital → Paris (confidence: 1.0)
     ↓
@@ -343,14 +388,14 @@ User: "What is the capital of France?"
 ```python
 from hologram import HologramContainer
 
-# Create container with FractalSpace (default)
+# Create container (fractal/semantic codebook are optional flags)
 container = HologramContainer(dimensions=10000, use_fractal=True)
 
 # Create chatbot with persistence
 chatbot = container.create_persistent_chatbot(
     persist_dir="./data/hologram_facts",
     enable_metacognition=True,
-    enable_ventriloquist=True,  # For natural fluency
+    enable_ventriloquist=False,  # Default is False; set True to enable voice
 )
 
 # Teach and query
@@ -363,13 +408,13 @@ chatbot.respond("What is the capital of France?")
 
 ## Key Properties
 
-| Property | How It's Achieved |
-|----------|-------------------|
-| **Cannot hallucinate** | Can only retrieve stored vocabulary |
-| **Corruption-resistant** | Fractal vectors recover from fragments |
-| **Self-monitoring** | Metacognition tracks confidence trends |
-| **Natural output** | SLM speaks fluently while HDC controls content |
-| **Citable** | Every fact traces back to a source |
+| Property                 | How It's Achieved                              |
+| ------------------------ | ---------------------------------------------- |
+| **Cannot hallucinate**   | Can only retrieve stored vocabulary            |
+| **Corruption-resistant** | Fractal vectors recover from fragments         |
+| **Self-monitoring**      | Metacognition tracks confidence trends         |
+| **Natural output**       | SLM speaks fluently while HDC controls content |
+| **Citable**              | Every fact traces back to a source             |
 
 ---
 
@@ -378,11 +423,13 @@ chatbot.respond("What is the capital of France?")
 ### Quiz Accuracy Metrics
 
 **HDC Fact Retrieval**: ~81% accuracy on knowledge quiz (target: 90%+)
+
 - Tested with `scripts/crew_trainer.py` and `scripts/benchmark_tasks.py`
 - Uses both fictional and real-world facts to verify HDC grounding
 - See test results: `tests/test_hdc_fact_grounding.py` (800+ fact test cases)
 
 **How to reproduce**:
+
 ```bash
 # Run benchmark
 uv run python scripts/benchmark_tasks.py
@@ -395,6 +442,7 @@ uv run pytest tests/test_hdc_fact_grounding.py -v
 ```
 
 **Test Coverage**:
+
 - Fictional facts (e.g., "Zorbaxia capital Flumpton") - ensures HDC, not LLM training
 - Contradictory facts (e.g., "France capital Berlin") - overrides LLM knowledge
 - Complex multi-word facts (e.g., "secure quantum communication")
@@ -404,15 +452,15 @@ uv run pytest tests/test_hdc_fact_grounding.py -v
 
 ### Capacity and Performance
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Hot layer capacity** | ~100 facts | Single bundled vector before degradation |
-| **Cold layer capacity** | Unlimited | FAISS with vector similarity search |
-| **Exact match lookups** | O(1) | Normalized key dictionary |
-| **Fuzzy search** | O(n) | Resonance through bundled memory |
-| **Vocabulary growth** | Dynamic | Grows with each new entity/predicate/object |
-| **Vector dimensions** | 10,000 | Configurable, empirically tuned |
-| **Fractal DNA dimensions** | 64 | Creates ~156 holographic echoes |
+| Metric                     | Value                   | Notes                                       |
+| -------------------------- | ----------------------- | ------------------------------------------- |
+| **Hot layer capacity**     | Heuristic/empirical     | Bundled vector before interference grows    |
+| **Cold layer capacity**    | Operationally unbounded | FAISS with vector similarity search         |
+| **Exact match lookups**    | O(1)                    | Normalized key dictionary                   |
+| **Fuzzy search**           | O(n)                    | Resonance through bundled memory            |
+| **Vocabulary growth**      | Dynamic                 | Grows with each new entity/predicate/object |
+| **Vector dimensions**      | 10,000                  | Configurable, empirically tuned             |
+| **Fractal DNA dimensions** | 64                      | Creates ~156 holographic echoes             |
 
 ---
 
@@ -421,34 +469,43 @@ uv run pytest tests/test_hdc_fact_grounding.py -v
 The following features were designed as proposals but are **fully implemented**:
 
 ### 1. Surprise-Gated Learning (IMPLEMENTED)
+
 - **Previously**: Labeled as "Holographic Surprise" proposal
 - **Status**: ✅ **Implemented** in `src/hologram/memory/memory_trace.py:90-174`
 - **What it does**: Dual-surprise metrics (current + momentum) prevent duplicate learning and optimize learning rate
 - **See**: "Surprise Gating" section above
 
 ### 2. Ventriloquist Architecture (IMPLEMENTED)
+
 - **Previously**: Proposed as "Full SLM integration"
 - **Status**: ✅ **Implemented** in `src/hologram/generation/ventriloquist.py`
-- **What it does**: SLM wrapper that validates LLM output uses HDC-retrieved facts
+- **What it does**: SLM wrapper that validates LLM output uses HDC-retrieved facts. Now includes token budgeting and multi-pass generation.
 - **See**: Layer 5 (Voice) section; full architecture in `docs/VENTRILOQUIST_ARCHITECTURE.md`
 
 ### 3. Hierarchical Fact Store (IMPLEMENTED)
+
 - **Previously**: Proposed as "Neural Consolidation" to break 100-fact limit
 - **Status**: ✅ **Implemented** in `src/hologram/memory/fact_store.py:472-598`
 - **What it does**: Two-tier storage (hot HDC + cold FAISS) for unlimited scalability
 - **See**: "Capacity and Scaling" section above
 
+### 4. Episodic Memory (IMPLEMENTED)
+
+- **Status**: ✅ **Implemented** in `src/hologram/conversation/memory.py`
+- **What it does**: Stores user-response pairs in vector storage for long-term context retrieval.
+
 ---
 
 ## References
 
-- Bentov, I. (1977). *Stalking the Wild Pendulum*
+- Bentov, I. (1977). _Stalking the Wild Pendulum_
 - Google Titans architecture (surprise gating inspiration)
 - Hyperdimensional Computing literature
 
 ---
 
 **Key Files**:
+
 - `src/hologram/core/fractal.py` - FractalSpace
 - `src/hologram/memory/fact_store.py` - FactStore
 - `src/hologram/cognition/metacognition.py` - MetacognitiveLoop

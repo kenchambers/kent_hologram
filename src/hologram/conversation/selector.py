@@ -21,6 +21,7 @@ from hologram.modulation.sesame import StyleType
 from hologram.generation.resonant_generator import ResonantGenerator
 from hologram.generation.circuit_breaker import SimpleCircuitBreaker
 from hologram.generation.base import GenerationContext
+from hologram.config.constants import QUERY_SKIP_WORDS
 
 
 @dataclass
@@ -65,6 +66,7 @@ class ResponseSelector:
         response_corpus: Optional[ResponseCorpus] = None,
         resonant_generator: Optional[ResonantGenerator] = None,
         ventriloquist_generator: Optional[object] = None,  # VentriloquistGenerator
+        voice_mode: str = "full",  # off | rewrite | full
     ):
         """
         Initialize response selector.
@@ -85,6 +87,7 @@ class ResponseSelector:
         self._corpus = response_corpus
         self._generator = resonant_generator
         self._ventriloquist = ventriloquist_generator
+        self._voice_mode = voice_mode
         
         # Initialize circuit breaker for generation failure detection
         self._circuit_breaker = SimpleCircuitBreaker(
@@ -133,6 +136,11 @@ class ResponseSelector:
             if result:
                 fact_answer, fact_confidence = result
 
+        # Retrieve episodic snippets for additional grounding
+        episodes = []
+        if hasattr(self._memory, "retrieve_episodes"):
+            episodes = self._memory.retrieve_episodes(text, top_k=3)
+
         # Step 2: Hybrid generation routing
         # - Factual questions with high confidence: Use ResonantGenerator (HDC-native)
         # - Conversational or low confidence: Use VentriloquistGenerator (SLM for fluency)
@@ -142,7 +150,8 @@ class ResponseSelector:
         is_factual_question = is_question and fact_answer is not None
 
         # Try generation if we have facts or if ventriloquist is available for conversation
-        if (fact_answer and has_facts) or (self._ventriloquist and not is_question):
+        voice_enabled = self._ventriloquist and self._voice_mode == "full"
+        if (fact_answer and has_facts) or (voice_enabled and not is_question):
             # Build GenerationContext for unified interface
             thought_vec = None
             if fact_answer:
@@ -157,10 +166,11 @@ class ResponseSelector:
                 entities=entity_names,
                 style=style or StyleType.NEUTRAL,
                 expected_subject=expected_subject,
+                episodes=episodes,
             )
             
             # Hybrid routing: Prioritize Ventriloquist for fluency + grounding
-            if self._ventriloquist:
+            if voice_enabled:
                 # Always prefer Ventriloquist if available (provides both fluency and fact grounding)
                 generated_response = self._generate_response_with_context(context, use_ventriloquist=True)
             elif is_factual_question and fact_confidence >= confidence_threshold and self._generator:
@@ -338,6 +348,18 @@ class ResponseSelector:
                 entity_names,
             )
             score = 0.2
+
+        # Optional rewrite-only mode: rewrite the composed response with the voice
+        if (
+            self._voice_mode == "rewrite"
+            and self._ventriloquist
+            and filled_response
+        ):
+            rewritten = self._rewrite_with_voice(
+                filled_response, style or StyleType.NEUTRAL, episodes
+            )
+            if rewritten:
+                filled_response = rewritten
 
         # Create thought vector for potential generation
         thought_vec = self._create_thought_vector(
@@ -614,26 +636,12 @@ class ResponseSelector:
         
         # Parse entities to identify subject and predicate
         if entity_names:
-            # Words to skip when finding subject (same as _extract_expected_subject)
-            skip_words = {
-                # Question words
-                "what", "who", "where", "when", "why", "how", "which",
-                # Predicate words  
-                "capital", "is", "are", "was", "were", "creator", "color", "shape",
-                "located", "used", "currency", "language", "continent", "country",
-                "city", "region", "hemisphere", "population", "largest", "smallest",
-                # Common conversation starters (look like proper nouns but aren't)
-                "yes", "no", "okay", "ok", "sure", "let", "try", "again", "correct",
-                "incorrect", "right", "wrong", "good", "excellent", "great", "nice",
-                "i", "you", "we", "they", "he", "she", "it", "this", "that",
-                "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
-            }
             predicate_words = {"capital", "is", "creator", "color", "shape", "currency", "language"}
             
             # Subject is the first proper noun (capitalized) that isn't in skip_words
             for entity in entity_names:
                 entity_lower = entity.lower()
-                if entity_lower in skip_words or len(entity_lower) < 3:
+                if entity_lower in QUERY_SKIP_WORDS or len(entity_lower) < 3:
                     # But check if it's a predicate word to capture
                     if entity_lower in predicate_words:
                         predicate_str = entity_lower
@@ -647,7 +655,7 @@ class ResponseSelector:
             if subject_str is None:
                 for entity in entity_names:
                     entity_lower = entity.lower()
-                    if entity_lower not in skip_words and len(entity_lower) >= 3:
+                    if entity_lower not in QUERY_SKIP_WORDS and len(entity_lower) >= 3:
                         subject_str = entity
                         break
         
@@ -773,6 +781,7 @@ class ResponseSelector:
             entities=entity_names,
             style=style or StyleType.NEUTRAL,
             expected_subject=expected_subject,
+            episodes=[],
         )
         
         return self._generate_response_with_context(context, use_ventriloquist=False)
@@ -787,25 +796,10 @@ class ResponseSelector:
         if not entity_names:
             return None
         
-        # Words to skip (lowercase for comparison) - same logic as _create_thought_vector
-        skip_words = {
-            # Question words
-            "what", "who", "where", "when", "why", "how", "which",
-            # Predicate words  
-            "capital", "is", "are", "was", "were", "creator", "color", "shape",
-            "located", "used", "currency", "language", "continent", "country",
-            "city", "region", "hemisphere", "population", "largest", "smallest",
-            # Common conversation starters (CRITICAL: these look like proper nouns but aren't)
-            "yes", "no", "okay", "ok", "sure", "let", "try", "again", "correct",
-            "incorrect", "right", "wrong", "good", "excellent", "great", "nice",
-            "i", "you", "we", "they", "he", "she", "it", "this", "that",
-            "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
-        }
-        
         for entity in entity_names:
             entity_lower = entity.lower()
             # Skip if in stop words OR if it's too short to be meaningful
-            if entity_lower in skip_words or len(entity_lower) < 3:
+            if entity_lower in QUERY_SKIP_WORDS or len(entity_lower) < 3:
                 continue
             # Only accept proper nouns (capitalized) that are likely country/place names
             if entity[0].isupper():
@@ -814,7 +808,7 @@ class ResponseSelector:
         # Fallback: return first non-stop-word entity
         for entity in entity_names:
             entity_lower = entity.lower()
-            if entity_lower not in skip_words and len(entity_lower) >= 3:
+            if entity_lower not in QUERY_SKIP_WORDS and len(entity_lower) >= 3:
                 return entity
         
         return None
@@ -823,3 +817,25 @@ class ResponseSelector:
         corpus_info = f", corpus={self._corpus.get_entry_count() if self._corpus else 0}" if self._corpus else ""
         generator_info = ", generator=enabled" if self._generator else ""
         return f"ResponseSelector(patterns={self._pattern_store.pattern_count}{corpus_info}{generator_info})"
+
+    def _rewrite_with_voice(self, text: str, style: StyleType, episodes: list[str]) -> Optional[str]:
+        """Use the ventriloquist as a renderer to rewrite an existing response."""
+        if not self._ventriloquist:
+            return None
+
+        context = GenerationContext(
+            query_text=text,
+            thought_vector=None,
+            intent=IntentType.STATEMENT,
+            fact_answer=None,
+            entities=[],
+            style=style,
+            expected_subject=None,
+            episodes=episodes,
+        )
+
+        try:
+            result = self._ventriloquist.generate_with_validation(context, max_tokens=256)
+            return result.text if result else None
+        except Exception:
+            return None

@@ -105,6 +105,9 @@ class FactStore:
         self._value_vectors_cache: dict[str, torch.Tensor] = {}
         # Cached encoded subject vectors (for reverse queries)
         self._subject_vectors_cache: dict[str, torch.Tensor] = {}
+        # Optional FAISS prefilter for large vocabularies (lazily created)
+        self._value_faiss = None
+        self._value_faiss_threshold = 500  # Use FAISS prefilter when vocab exceeds this
 
     def add_fact(
         self,
@@ -199,6 +202,11 @@ class FactStore:
             self._exact_index[exact_key] = fact
             self._value_vectors_cache[obj] = o_vec
             self._subject_vectors_cache[subject] = s_vec  # Cache subject vector
+            if self._value_faiss:
+                try:
+                    self._value_faiss.store(o_vec, {"value": obj})
+                except Exception:
+                    pass
             return fact
 
         # Duplicate/low surprise - no new learning occurred
@@ -262,12 +270,16 @@ class FactStore:
         p_vec = self._codebook.encode(predicate_norm)
         key = Operations.bind(s_vec, p_vec)
 
-        # Get all candidate value vectors (use cache if available)
-        value_list = sorted(self._value_vocab)  # Sort for deterministic ordering
-        
+        value_list = sorted(self._value_vocab)  # Deterministic ordering
+
+        # Optional FAISS prefilter for large vocabularies
+        candidate_values = value_list
+        if len(value_list) > self._value_faiss_threshold:
+            candidate_values = self._prefilter_values_with_faiss(value_list, key)
+
         # Build candidates from cache or encode on-the-fly
         candidates_list = []
-        for v in value_list:
+        for v in candidate_values:
             if v in self._value_vectors_cache:
                 candidates_list.append(self._value_vectors_cache[v])
             else:
@@ -282,7 +294,7 @@ class FactStore:
         best_idx = torch.argmax(similarities).item()
         confidence = float(similarities[best_idx].item())
 
-        return value_list[best_idx], confidence
+        return candidate_values[best_idx], confidence
 
     def query_subject(self, predicate: str, obj: str) -> tuple[str, float]:
         """
@@ -467,6 +479,64 @@ class FactStore:
             f"vocabulary={self.vocabulary_size}, "
             f"saturation={self.saturation_estimate:.2%})"
         )
+
+    # ------------------------------------------------------------------ #
+    # Optional FAISS prefilter for value cleanup at scale
+    # ------------------------------------------------------------------ #
+    def _ensure_value_faiss(self, value_list: list[str]) -> None:
+        """Create or expand the value FAISS index if threshold exceeded."""
+        if self._value_faiss is None:
+            try:
+                from hologram.persistence.faiss_adapter import FaissAdapter
+            except ImportError:
+                return
+
+            try:
+                self._value_faiss = FaissAdapter(
+                    self._memory._space.dimensions, "/tmp/hologram_value_faiss"
+                )
+            except Exception:
+                self._value_faiss = None
+                return
+
+            for v in value_list:
+                vec = self._value_vectors_cache.get(v) or self._codebook.encode(v)
+                self._value_vectors_cache[v] = vec
+                try:
+                    self._value_faiss.store(vec, {"value": v})
+                except Exception:
+                    continue
+        else:
+            # Add any missing values to the existing index
+            indexed_meta = getattr(self._value_faiss, "metadata", {})
+            for v in value_list:
+                if isinstance(indexed_meta, dict) and v in indexed_meta.values():
+                    continue
+                vec = self._value_vectors_cache.get(v) or self._codebook.encode(v)
+                self._value_vectors_cache[v] = vec
+                try:
+                    self._value_faiss.store(vec, {"value": v})
+                except Exception:
+                    continue
+
+    def _prefilter_values_with_faiss(self, value_list: list[str], key_vec: torch.Tensor) -> list[str]:
+        """Use FAISS to prefilter candidate values before resonance cleanup."""
+        self._ensure_value_faiss(value_list)
+        if not self._value_faiss:
+            return value_list
+
+        try:
+            results = self._value_faiss.query(key_vec, k=min(100, len(value_list)))
+        except Exception:
+            return value_list
+
+        candidates = []
+        for _, _, meta in results:
+            value = meta.get("value")
+            if value:
+                candidates.append(value)
+
+        return candidates or value_list
 
 
 class HierarchicalFactStore:

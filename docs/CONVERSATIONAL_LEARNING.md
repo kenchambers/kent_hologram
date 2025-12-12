@@ -36,8 +36,8 @@ No gradient descent. No backpropagation. No external API calls. Pure vector alge
 │ EntityExtractor │ │  StyleTracker   │ │ConversationMem  │
 │                 │ │                 │ │                 │
 │ Resonance match │ │ Bundle user     │ │ Holographic     │
-│ against vocab   │ │ messages into   │ │ trace of turns  │
-│                 │ │ style trace     │ │                 │
+│ against vocab   │ │ messages into   │ │ trace + Episode │
+│                 │ │ style trace     │ │ Retrieval       │
 └────────┬────────┘ └────────┬────────┘ └────────┬────────┘
          │                   │                   │
          └───────────────────┼───────────────────┘
@@ -46,7 +46,7 @@ No gradient descent. No backpropagation. No external API calls. Pure vector alge
 │                    ResponseSelector                              │
 │  1. Match patterns via resonance                                 │
 │  2. Query FactStore for knowledge                                │
-│  3. Fill template slots                                          │
+│  3. Retrieve Episodic Memories                                   │
 │  4. Return ResponseCandidate                                     │
 └─────────────────────────────┬───────────────────────────────────┘
                               │
@@ -89,6 +89,7 @@ prototype = normalize(v₁ + v₂ + ... + vₙ)
 ```
 
 Due to the properties of high-dimensional spaces:
+
 - `cosine(prototype, vᵢ) ≈ 1/√n` for any component vᵢ
 - `cosine(prototype, unrelated) ≈ 0`
 
@@ -146,6 +147,7 @@ class ResponsePattern:
 #### Pattern Matching
 
 Patterns are matched via cosine similarity against a query vector constructed from:
+
 - Intent vector
 - Entity vectors
 - Context vector (from conversation memory)
@@ -182,11 +184,13 @@ def implicit_learning(current_intent, last_pattern):
 ```
 
 **Confusion signals**:
+
 - User intent is UNKNOWN
 - User repeats same intent with low confidence
 - User says "what?" or "huh?"
 
 **Flow signals**:
+
 - Different intent than previous turn
 - Higher confidence classification
 
@@ -249,6 +253,7 @@ def get_inferred_style(self) -> StyleType:
 ```
 
 Style prototypes are built from characteristic words:
+
 - FORMAL: "therefore", "subsequently", "moreover"
 - CASUAL: "cool", "yeah", "like", "awesome"
 - URGENT: "now", "immediately", "urgent", "asap"
@@ -257,13 +262,15 @@ Style prototypes are built from characteristic words:
 
 The inferred style influences pattern selection, preferring patterns tagged with matching style.
 
-### 4. Conversation Memory
+### 4. Conversation Memory (Dual-Layer)
 
-Short-term context using holographic encoding.
+The memory system now combines holographic short-term context with episodic retrieval for long-term context.
 
-#### Turn Encoding
+#### A. Holographic Short-Term Context
 
-Each conversation turn is encoded as:
+Recent turns are encoded as holographic traces to maintain immediate context.
+
+**Turn Encoding**:
 
 ```python
 turn_vector = bind(
@@ -273,9 +280,7 @@ turn_vector = bind(
 )
 ```
 
-#### Context Vector
-
-Recent turns are bundled into a context vector:
+**Context Vector**:
 
 ```python
 def get_context_vector(lookback: int = 3) -> Tensor:
@@ -289,9 +294,30 @@ def get_context_vector(lookback: int = 3) -> Tensor:
     return context
 ```
 
-This enables follow-up understanding:
-- "What is the capital of France?" → "Paris"
-- "And Germany?" → System retrieves context about "capital" queries
+#### B. Episodic Long-Term Context (FAISS/Chroma)
+
+Every turn is also stored as an **episode** in a vector database.
+
+**Episode Storage**:
+
+```python
+episode_vec = bind(user_vec, response_vec)
+episodic_store.add(episode_vec, metadata={
+    "user": "What about Germany?",
+    "response": "Berlin is the capital.",
+    "turn": 42
+})
+```
+
+**Episode Retrieval**:
+When the user speaks, we retrieve the top-k most similar past episodes:
+
+```python
+episodes = episodic_store.query(current_query_vec, k=3)
+# These episodes are injected into the generation context
+```
+
+This allows the system to recall conversations from hundreds of turns ago without keeping them all in the active prompt window.
 
 ### 5. Teaching Detection (TEACHING Intent)
 
@@ -339,6 +365,7 @@ def _extract_fact_structure(self, text: str) -> Optional[tuple]:
 #### Why No Regex?
 
 Using regex for fact extraction would contradict the HDC learning philosophy:
+
 - **Regex**: Hardcoded patterns that don't generalize
 - **HDC**: Learned patterns that generalize to similar inputs
 
@@ -526,6 +553,7 @@ The learning mechanisms are grounded in:
 - **Hebbian Learning** (Hebb, 1949): Synaptic strengthening through co-activation
 
 The key insight is that in high-dimensional spaces (~10,000D), random vectors are nearly orthogonal with high probability. This enables:
+
 - **Clean bundling**: Superposition without destructive interference
 - **Reversible binding**: Associations that can be queried
 - **Content-addressable memory**: Retrieval via similarity

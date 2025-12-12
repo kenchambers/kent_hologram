@@ -8,12 +8,15 @@ The architecture uses the right tool for the right job:
 
 - **Factual Questions**: `ResonantGenerator` (HDC-native, bounded hallucination)
 - **Conversational/Fluency**: `VentriloquistGenerator` (SLM for natural language)
+- **Complex Reasoning**: `VentriloquistGenerator` (Reasoning Mode via GLM-4.6v)
+- **Long Output**: `VentriloquistGenerator` (Multi-pass outline/expand/verify)
 
 This hybrid approach ensures:
 
 - **Accuracy**: HDC generator prevents hallucination for factual questions
 - **Fluency**: SLM generator provides natural, conversational responses
 - **Backward Compatibility**: Both generators coexist via shared protocol
+- **Cost/Latency Scaling**: Token budgeting ensures requests stay within limits
 
 ## Architecture Components
 
@@ -31,6 +34,7 @@ class GenerationContext:
     entities: List[str]
     style: StyleType
     expected_subject: Optional[str] = None
+    episodes: List[str] = field(default_factory=list) # Episodic memory context
 ```
 
 This solves the critical interface mismatch: `ResponseSelector` passes `thought_vector`, but SLMs need text. The context carries both, allowing either generator type to work.
@@ -62,12 +66,33 @@ The `ResonantGenerator` uses HDC operations for constrained generation:
 
 ### 4. VentriloquistGenerator (SLM-Based)
 
-The `VentriloquistGenerator` uses Novita API (Kimi model) for fluent generation:
+The `VentriloquistGenerator` uses Novita API (Kimi/GLM models) for fluent generation. It includes several advanced pipelines:
 
-- **Input**: `query_text` and `fact_answer` from `GenerationContext`
+#### A. Standard Fluency Mode (Kimi K2)
+- **Input**: `query_text` and `fact_answer`
 - **Process**: Construct prompt → Call SLM API → Validate fact incorporation
-- **Output**: Fluent `GenerationResult` (with empty trace/metrics for SLM)
-- **Use Case**: Conversational responses where fluency is important
+- **Output**: Fluent natural language response
+- **Budgeting**: Uses `_budget_tokens()` to safely cap prompt length
+
+#### B. Reasoning Mode (GLM-4.6v)
+- **Method**: `generate_reasoning_chain()`
+- **Process**: Generates step-by-step deduction chain in JSON
+- **Verification**: Each step is checked against the FactStore for grounding
+- **Use Case**: Complex multi-hop queries
+
+#### C. Long-Output Pipeline (Multi-Pass)
+- **Method**: `generate_long_form()`
+- **Process**:
+    1. **Outline**: Generate JSON section plan (Reasoning Model)
+    2. **Expand**: Generate text for each section independently (Fluency Model)
+    3. **Verify**: Check each section for fact grounding
+- **Use Case**: Reports, summaries, long explanations
+
+#### D. Code Generation (Dual-Retrieval)
+- **Method**: `generate_code_with_context()`
+- **Process**: Retrieves from both `ConceptStore` (patterns) and `ProjectFactStore` (APIs)
+- **Verification**: `verify_code()` checks imports, function calls, and classes against index
+- **Use Case**: Accurate, project-aware coding assistance
 
 ## Hybrid Routing Logic
 
@@ -84,6 +109,7 @@ else:
 
 - **Factual Questions** (with high confidence fact answer): Use HDC generator
 - **Conversational** (or low confidence): Use SLM generator
+- **Voice Mode**: Can be toggled ("off", "rewrite-only", "full")
 
 ## Configuration
 
@@ -134,6 +160,7 @@ self.chatbot = self.container.create_persistent_chatbot(
    - `thought_vector`: HDC thought vector (if facts available)
    - `fact_answer`: Retrieved fact (if available)
    - `entities`, `intent`, `style`: Context information
+   - `episodes`: Retrieved episodic memories
 
 2. **Hybrid Routing** selects generator based on:
 
@@ -151,6 +178,7 @@ Both generators validate output:
 
 - **ResonantGenerator**: Validates against `expected_subject` and `fact_answer`
 - **VentriloquistGenerator**: Validates that `fact_answer` appears in generated text
+- **Code Verification**: Checks AST against known symbols
 
 If validation fails, generators return `None`, causing fallback to template responses.
 

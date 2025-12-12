@@ -151,7 +151,9 @@ class HologramContainer:
             FaissAdapter instance
         """
         from hologram.persistence.faiss_adapter import FaissAdapter
-        return FaissAdapter(self._space.dimensions, str(path))
+        path_obj = Path(path)
+        path_obj.mkdir(parents=True, exist_ok=True)
+        return FaissAdapter(self._space.dimensions, str(path_obj))
 
     # =========================================================================
     # Resonant Cavity Architecture Components
@@ -350,6 +352,7 @@ class HologramContainer:
         enable_metacognition: bool = True,
         enable_ventriloquist: bool = True,
         ventriloquist_model: str = "moonshotai/kimi-k2-thinking",
+        ventriloquist_mode: str = "full",
     ):
         """
         Create a fully wired ConversationalChatbot.
@@ -390,7 +393,18 @@ class HologramContainer:
         # Use FastIntentClassifier for accurate, fast intent classification
         intent_classifier = FastIntentClassifier()
         entity_extractor = EntityExtractor(self._codebook, fact_store)
-        conversation_memory = ConversationMemory(self._space, self._codebook)
+        # Optional episodic store (FAISS) for long-context retrieval
+        episodic_store = None
+        try:
+            episodic_store = self.create_faiss_adapter(Path("./data/episodic_memory"))
+        except Exception:
+            episodic_store = None
+
+        conversation_memory = ConversationMemory(
+            self._space,
+            self._codebook,
+            episodic_store=episodic_store,
+        )
         pattern_store = ResponsePatternStore(self._space, self._codebook)
         sesame_modulator = self.create_sesame_modulator()
         style_tracker = UserStyleTracker(self._codebook, sesame_modulator)
@@ -426,6 +440,7 @@ class HologramContainer:
             response_corpus=response_corpus,
             resonant_generator=resonant_generator,
             ventriloquist_generator=ventriloquist_generator,
+            voice_mode=ventriloquist_mode,
         )
 
         return ConversationalChatbot(
@@ -480,6 +495,7 @@ class HologramContainer:
         enable_metacognition: bool = True,
         enable_ventriloquist: bool = False,
         ventriloquist_model: str = "moonshotai/kimi-k2-thinking",
+        ventriloquist_mode: str = "full",
     ):
         """
         Create a ConversationalChatbot with persistent fact storage.
@@ -530,7 +546,17 @@ class HologramContainer:
         # Use FastIntentClassifier for accurate, fast intent classification
         intent_classifier = FastIntentClassifier()
         entity_extractor = EntityExtractor(self._codebook, fact_store)
-        conversation_memory = ConversationMemory(self._space, self._codebook)
+        episodic_store = None
+        try:
+            episodic_store = self.create_faiss_adapter(Path("./data/episodic_memory"))
+        except Exception:
+            episodic_store = None
+
+        conversation_memory = ConversationMemory(
+            self._space,
+            self._codebook,
+            episodic_store=episodic_store,
+        )
         pattern_store = ResponsePatternStore(self._space, self._codebook)
         sesame_modulator = self.create_sesame_modulator()
         style_tracker = UserStyleTracker(self._codebook, sesame_modulator)
@@ -569,6 +595,7 @@ class HologramContainer:
             response_corpus=response_corpus,
             resonant_generator=resonant_generator,
             ventriloquist_generator=ventriloquist_generator,
+            voice_mode=ventriloquist_mode,
         )
 
         return ConversationalChatbot(

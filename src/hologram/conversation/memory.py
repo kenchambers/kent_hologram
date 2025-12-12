@@ -7,7 +7,7 @@ enabling context-aware follow-up understanding.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict
 
 import torch
 
@@ -64,6 +64,7 @@ class ConversationMemory:
         space: VectorSpace,
         codebook: Codebook,
         max_turns: int = MAX_CONVERSATION_TURNS,
+        episodic_store: Optional[object] = None,
     ):
         """
         Initialize conversation memory.
@@ -78,6 +79,9 @@ class ConversationMemory:
         self._max_turns = max_turns
         self._turns: List[ConversationTurn] = []
         self._context_trace = MemoryTrace(space)
+        # Optional FAISS/Chroma-like episodic store (expects .store/.query)
+        self._episodic_store = episodic_store
+        self._episodic_entries: List[Tuple[torch.Tensor, Dict]] = []
 
     def add_turn(self, turn: ConversationTurn) -> None:
         """
@@ -97,6 +101,9 @@ class ConversationMemory:
         # Store in holographic trace
         # Key: position, Value: turn content
         self._context_trace.store(position_vec, turn_vec)
+
+        # Store episodic snapshot (bind user/response) for long-context retrieval
+        self._store_episode(turn, position=len(self._turns) - 1)
 
         # Trim if exceeds max
         if len(self._turns) > self._max_turns:
@@ -231,10 +238,56 @@ class ConversationMemory:
         # Return entities appearing more than once
         return [e for e, count in entity_counts.items() if count > 1]
 
+    def retrieve_episodes(self, query_text: str, top_k: int = 3) -> List[str]:
+        """
+        Retrieve top-k episodic snippets similar to the query.
+
+        Args:
+            query_text: Current user message
+            top_k: Number of episodes to return
+        """
+        if not query_text:
+            return []
+
+        query_vec = self._codebook.encode(query_text)
+
+        # If we have an external store (e.g., FaissAdapter), use it
+        if self._episodic_store:
+            try:
+                results = self._episodic_store.query(query_vec, k=top_k)
+            except Exception:
+                results = []
+            snippets = []
+            for _, _, meta in results:
+                user_txt = meta.get("user", "")
+                resp_txt = meta.get("response", "")
+                turn_idx = meta.get("turn_index", "?")
+                snippets.append(f"[t{turn_idx}] {user_txt} -> {resp_txt}")
+            return snippets
+
+        # Fallback: in-memory cosine retrieval
+        if not self._episodic_entries:
+            return []
+
+        scored = []
+        for vec, meta in self._episodic_entries:
+            sim = Similarity.cosine(query_vec, vec)
+            scored.append((float(sim), meta))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        snippets = []
+        for _, meta in scored[:top_k]:
+            user_txt = meta.get("user", "")
+            resp_txt = meta.get("response", "")
+            turn_idx = meta.get("turn_index", "?")
+            snippets.append(f"[t{turn_idx}] {user_txt} -> {resp_txt}")
+        return snippets
+
     def clear(self) -> None:
         """Clear session memory."""
         self._turns = []
         self._context_trace = MemoryTrace(self._space)
+        self._episodic_entries = []
 
     @property
     def turn_count(self) -> int:
@@ -243,3 +296,31 @@ class ConversationMemory:
 
     def __repr__(self) -> str:
         return f"ConversationMemory(turns={self.turn_count}, max={self._max_turns})"
+
+    def _store_episode(self, turn: ConversationTurn, position: int) -> None:
+        """Persist an episode vector plus metadata to FAISS/Chroma or in-memory."""
+        try:
+            user_vec = self._codebook.encode(turn.user_input)
+            resp_vec = self._codebook.encode(turn.response)
+        except Exception:
+            return
+
+        episode_vec = Operations.bind(user_vec, resp_vec)
+        meta = {
+            "user": turn.user_input,
+            "response": turn.response,
+            "intent": turn.intent.value,
+            "entities": [e.canonical_form for e in turn.entities],
+            "turn_index": position,
+            "timestamp": turn.timestamp.isoformat(),
+        }
+
+        if self._episodic_store:
+            try:
+                self._episodic_store.store(episode_vec, meta)
+                return
+            except Exception:
+                # Fall back to in-memory if the external store fails
+                pass
+
+        self._episodic_entries.append((episode_vec, meta))
