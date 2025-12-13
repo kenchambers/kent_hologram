@@ -1,4 +1,5 @@
 # Understanding Holographic Memory
+
 ## A Plain-English Guide to How This System Thinks
 
 ---
@@ -24,6 +25,7 @@ Every word or idea gets a unique "fingerprint" - a pattern that represents it.
 - "Paris" has a fingerprint
 
 These fingerprints are:
+
 - **Deterministic**: "France" always produces the same fingerprint
 - **Unique**: "France" and "Germany" have completely different fingerprints
 - **Distinguishable**: We can tell them apart reliably
@@ -43,12 +45,14 @@ France + capital → [unique combination fingerprint]
 ```
 
 This combination fingerprint is:
+
 - Different from both "France" and "capital" (like purple is different from red and blue)
 - Reversible - you can "unmix" it to recover the original parts
 
 **Real-world analogy**: Think of mixing paint colors. Red + Blue = Purple. Purple is unique - it's not red, and it's not blue. But here's the magic: if you know the mixture is purple AND you know one ingredient was red, you can figure out the other ingredient was blue.
 
 That's what linking does:
+
 ```
 link(France, capital) = [combination]
 ```
@@ -141,6 +145,7 @@ Let's walk through exactly what happens when we teach the system "Rome is Italy'
 ### Storing the Fact
 
 **Step 1: Create fingerprints**
+
 ```
 "Italy"   → [fingerprint A - unique pattern for Italy]
 "capital" → [fingerprint B - unique pattern for capital]
@@ -148,24 +153,29 @@ Let's walk through exactly what happens when we teach the system "Rome is Italy'
 ```
 
 **Step 2: Link subject and predicate (create the "question")**
+
 ```
 link(Italy, capital) → [fingerprint Q - the question "Italy's capital?"]
 ```
 
 **Step 3: Link the question to the answer**
+
 ```
 link(Q, Rome) → [fingerprint F - the complete fact]
 ```
 
 **Step 4: Layer into memory**
+
 ```
 memory = layer(existing_memory, F)
 ```
+
 Now the fact lives in the pond alongside all other facts.
 
 ### Retrieving the Fact
 
 **Step 1: Form the question**
+
 ```
 "What is Italy's capital?"
 → link(Italy, capital)
@@ -173,67 +183,104 @@ Now the fact lives in the pond alongside all other facts.
 ```
 
 **Step 2: Ask the memory**
+
 ```
 recall(memory, Q) → [fuzzy fingerprint ~C]
 ```
+
 The memory "resonates" back something close to Rome's fingerprint.
 
 **Step 3: Clean up the answer**
+
 ```
 recognize(~C) → "Rome" (94% confidence)
 ```
+
 Compare the fuzzy result to all known words. "Rome" is the closest match.
 
 **Step 4: Return with confidence**
+
 ```
 Answer: "Rome"
 Confidence: 94%
 ```
+
 High confidence = clear resonance = trustworthy answer.
 
 ---
 
-## The Five-Layer System
+## The Six-Layer System
 
 ### Layer 1: The Foundation (Fractal Substrate)
+
 **What it does**: Makes fingerprints robust
 
 Like a hologram you can cut in half and still see the whole image, our fingerprints contain redundant information. Damage part of a fingerprint? The rest can reconstruct it.
 
 ### Layer 2: Memory Storage
+
 **What it does**: Stores facts as linked fingerprints
 
 Facts follow the pattern: **Subject → Predicate → Object**
 
 Example: "France's capital is Paris" is stored as:
+
 1. First, link Subject and Predicate: `link(France, capital)` → creates a "question" fingerprint
 2. Then, link that question to the Object: `link([question], Paris)` → creates the complete fact
 
 This nested structure means you can ask "France + capital = ?" and get back "Paris".
 
 ### Layer 3: Self-Awareness (Metacognition)
-**What it does**: Knows when it's confused
+
+**What it does**: Knows when it's confused AND adapts its behavior
 
 Every retrieval produces a **confidence score** (0-100%). This measures how clearly the answer "resonated" from memory:
+
 - **High confidence (80%+)**: The answer rang out loud and clear
 - **Medium confidence (40-80%)**: Some interference, but answer seems right
 - **Low confidence (<40%)**: Too much noise - can't be sure
 
-The system tracks its state:
-- **Confident**: "I'm sure this is right" → gives the answer
-- **Confused**: "I'm not sure" → admits "I don't know" or tries again
-- **Curious**: "This is interesting" → asks follow-up questions
+The system tracks its **mood** and adapts:
 
-If confidence is too low, it admits "I don't know" rather than guessing.
+- **Confident**: "I'm sure this is right" → narrows search, gives the answer
+- **Confused**: "I'm stuck" → **widens search** to explore more possibilities
+- **Curious**: "This is interesting" → moderate expansion, asks follow-up questions
+- **Anxious**: "Something's off" → slight expansion, proceeds carefully
+
+**Key Innovation**: When stuck, the system doesn't give up - it changes its search strategy and tries again. This is the **UltraThink** loop:
+
+```
+Attempt 1: Try with baseline search (20 candidates)
+  → Partial match (2/3 pairs)
+  → Update mood to CONFUSED
+
+Attempt 2: Widen search (50 candidates due to CONFUSED)
+  → Full match found!
+  → Return verified solution
+```
+
+If confidence is too low after multiple attempts, it admits "I don't know" rather than guessing.
 
 ### Layer 4: Retrieval Strategies
+
 **What it does**: Multiple ways to find facts
 
 1. **Exact Match**: Direct lookup (fastest, most confident)
 2. **Resonance Search**: Fuzzy matching when exact fails
 3. **Semantic Search**: Find facts mentioning a term anywhere
+4. **Adaptive Search**: Adjust search width based on metacognitive feedback
 
-### Layer 5: Voice Generation
+### Layer 5: Verification
+
+**What it does**: Ensures answers are correct
+
+Before returning an answer, the system **verifies** it against known examples:
+- For ARC puzzles: Apply the transformation to all training pairs
+- Only accept if it produces the correct output for ALL examples
+- This preserves the **no-hallucination guarantee**
+
+### Layer 6: Voice Generation
+
 **What it does**: Turns retrieved facts into natural speech
 
 Retrieved: `("Paris", confidence=0.95)`
@@ -244,15 +291,19 @@ Output: "The capital of France is Paris."
 ## Why This Matters
 
 ### No Hallucination
+
 Traditional AI generates text word-by-word, sometimes making things up. This system can only return facts it actually stored.
 
 ### Confidence Scores
+
 Every answer comes with a confidence level. Low confidence? The system says "I don't know" instead of guessing.
 
 ### Efficient Storage
+
 Thousands of facts live in one pattern. No separate database entries - everything is distributed holographically.
 
 ### Graceful Degradation
+
 Damage part of the memory? Unlike a database where losing one record loses that data forever, holographic storage degrades gradually - facts get fuzzier but don't disappear entirely.
 
 ---
@@ -260,15 +311,21 @@ Damage part of the memory? Unlike a database where losing one record loses that 
 ## Common Questions
 
 ### "How many facts can it hold?"
+
 There's no hard limit, but quality degrades as you add more. Think of it like a pond - eventually too many ripples create noise. The system monitors "saturation" and warns when memory is getting full.
 
+**Update (v0.4.0)**: We significantly improved capacity by switching to **Bipolar Vectors** (+1/-1 ripples instead of random waves) and **Mass-Preserving Updates**. This reduced the "background noise" of the pond, allowing it to hold ~5x more facts before the water gets too choppy to read.
+
 ### "What if I store the same fact twice?"
+
 The system measures how **novel** each incoming fact is. If you try to store "France's capital is Paris" twice, the second time the system recognizes "I already know this" and skips it. This prevents noise from repetition - only genuinely new information gets added to memory.
 
 ### "Can it learn new concepts?"
+
 Yes! Any new word gets a new fingerprint automatically. The system's vocabulary grows with use.
 
 ### "What happens when memory fills up?"
+
 The system uses **Neural Consolidation** - inspired by how the human brain works during sleep:
 
 1. **Working memory** (the pond) handles new facts quickly but has limited capacity
@@ -282,20 +339,23 @@ This is why the system can learn thousands of facts without degradation - recent
 
 ## Glossary
 
-| Term | Plain English |
-|------|---------------|
-| **Fingerprint** (Vector) | A unique pattern representing a concept |
-| **Linking** (Binding) | Connecting two concepts to create a relationship |
-| **Layering** (Bundling) | Stacking multiple memories into one pattern |
-| **Recall** (Unbinding) | Extracting a memory using a question |
-| **Recognition** (Cleanup) | Matching a fuzzy result to known concepts |
-| **Resonance** (Similarity) | How strongly two patterns match |
-| **Saturation** | How "full" the memory is (more facts = more noise) |
-| **Novelty** | How new/different a fact is from existing memory (duplicates are skipped) |
-| **Confidence** | How clearly an answer resonated (0-100%) |
-| **Consolidation** | Moving facts from working memory to long-term neural storage (like sleep) |
-| **Working Memory** | The fast holographic "pond" - quick access, limited capacity |
-| **Long-Term Memory** | Neural network storage - unlimited capacity, permanent |
+| Term                       | Plain English                                                             |
+| -------------------------- | ------------------------------------------------------------------------- |
+| **Fingerprint** (Vector)   | A unique pattern representing a concept                                   |
+| **Linking** (Binding)      | Connecting two concepts to create a relationship                          |
+| **Layering** (Bundling)    | Stacking multiple memories into one pattern                               |
+| **Recall** (Unbinding)     | Extracting a memory using a question                                      |
+| **Recognition** (Cleanup)  | Matching a fuzzy result to known concepts                                 |
+| **Resonance** (Similarity) | How strongly two patterns match                                           |
+| **Saturation**             | How "full" the memory is (more facts = more noise)                        |
+| **Novelty**                | How new/different a fact is from existing memory (duplicates are skipped) |
+| **Confidence**             | How clearly an answer resonated (0-100%)                                  |
+| **Consolidation**          | Moving facts from working memory to long-term neural storage (like sleep) |
+| **Working Memory**         | The fast holographic "pond" - quick access, limited capacity              |
+| **Long-Term Memory**       | Neural network storage - unlimited capacity, permanent                    |
+| **Mood**                   | System's self-assessed state (Confident, Confused, Curious, Anxious)      |
+| **UltraThink**             | Self-referential loop that adapts search when stuck                       |
+| **Verification**           | Checking answers against all training examples before accepting           |
 
 ---
 

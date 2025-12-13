@@ -10,6 +10,7 @@ Implements the Bentov "water surface" metaphor where:
 This is the core of the holographic storage system.
 """
 
+import math
 from typing import Optional
 
 import torch
@@ -173,9 +174,16 @@ class MemoryTrace:
             self._trace = fact
         else:
             weighted_fact = fact * update_strength
-            self._trace = Operations.bundle(self._trace, weighted_fact)
-
-            # Normalize to prevent drift
+            
+            # SCALING FIX: Maintain equal weights for all facts.
+            # If we simply bundle(trace, fact) and normalize, the trace (holding N facts)
+            # is treated as 1 fact, causing exponential decay of old facts.
+            # We scale the trace by sqrt(fact_count) to represent its accumulated mass.
+            # This ensures (Sum_N + Fact) is treated as (N+1) facts.
+            scaled_trace = self._trace * math.sqrt(self._fact_count)
+            self._trace = Operations.bundle(scaled_trace, weighted_fact)
+            
+            # Normalize to prevent magnitude drift over many facts
             norm = torch.norm(self._trace)
             if norm > 1e-6:
                 self._trace = self._trace / norm

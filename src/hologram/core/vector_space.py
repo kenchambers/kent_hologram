@@ -59,12 +59,15 @@ class VectorSpace:
         
         CRITICAL: Returns unit vector (norm=1) to ensure consistent magnitude
         with Operations.bind/bundle results.
+        
+        Uses BIPOLAR (+1/-1) logic scaled to unit norm to satisfy MAP algebra.
+        (Gaussian vectors have noisy identity A*A, whereas Bipolar has A*A=const).
 
         Args:
             seed: Integer seed for random number generation.
 
         Returns:
-            Tensor of shape (dimensions,) with values from N(0, 1/D).
+            Tensor of shape (dimensions,) with values +/- 1/sqrt(D).
             Norm is exactly 1.0.
 
         Example:
@@ -74,9 +77,16 @@ class VectorSpace:
             tensor(1.)
         """
         gen = torch.Generator().manual_seed(seed)
+        # Generate Gaussian noise
         vec = torch.randn(self.dimensions, dtype=self.dtype, generator=gen)
         
+        # Convert to Bipolar (+1/-1) via sign
+        # Handle 0 case (rare) by mapping to 1
+        vec = torch.sign(vec)
+        vec[vec == 0] = 1.0
+        
         # Normalize to unit length
+        # For bipolar vectors, this makes values +/- 1/sqrt(D)
         norm = torch.norm(vec)
         if norm > 1e-6:
             vec = vec / norm

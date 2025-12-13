@@ -88,3 +88,12 @@ logs/
 conversation_logs/*
 !conversation_logs/.gitkeep
 training_*.log
+
+# EmbeddixDB - Complete installation (repo-agnostic setup)
+embeddixdb/
+embeddix/
+.embeddixdb/
+*.embeddixdb.yml
+
+# MCP config (contains API keys)
+.mcp.json

@@ -231,6 +231,9 @@ class NeuralMemory:
         This is the core consolidation operation, typically called
         from a background thread.
 
+        IMPORTANT: Lock is only held briefly for data preparation and
+        replay sampling to allow queries to proceed during training.
+
         Args:
             facts: New facts to learn
             epochs: Number of training epochs
@@ -240,10 +243,11 @@ class NeuralMemory:
         Returns:
             Final training loss
         """
-        with self._lock:
-            if not facts:
-                return 0.0
+        if not facts:
+            return 0.0
 
+        # Phase 1: Data preparation (holds lock briefly)
+        with self._lock:
             self._network.train()
             optimizer = self._ensure_optimizer()
 
@@ -262,54 +266,62 @@ class NeuralMemory:
             keys_tensor = torch.stack(key_vectors)
             targets_tensor = torch.tensor(target_indices, dtype=torch.long)
 
-            total_loss = 0.0
-            n_batches = 0
+            # Snapshot label_to_index for replay target lookup
+            label_to_index_snapshot = dict(self._label_to_index)
 
-            for epoch in range(epochs):
-                # Shuffle for each epoch
-                perm = torch.randperm(len(keys_tensor))
-                keys_shuffled = keys_tensor[perm]
-                targets_shuffled = targets_tensor[perm]
+        # Phase 2: Training (lock-free for most operations)
+        total_loss = 0.0
+        n_batches = 0
 
-                for i in range(0, len(keys_shuffled), batch_size):
-                    batch_keys = keys_shuffled[i:i + batch_size]
-                    batch_targets = targets_shuffled[i:i + batch_size]
+        for epoch in range(epochs):
+            # Shuffle for each epoch
+            perm = torch.randperm(len(keys_tensor))
+            keys_shuffled = keys_tensor[perm]
+            targets_shuffled = targets_tensor[perm]
 
-                    # Mix in replay samples
-                    if self._replay_buffer and replay_ratio > 0:
-                        n_replay = max(1, int(len(batch_keys) * replay_ratio))
+            for i in range(0, len(keys_shuffled), batch_size):
+                batch_keys = keys_shuffled[i:i + batch_size]
+                batch_targets = targets_shuffled[i:i + batch_size]
+
+                # Mix in replay samples (briefly acquire lock for sampling)
+                if self._replay_buffer and replay_ratio > 0:
+                    n_replay = max(1, int(len(batch_keys) * replay_ratio))
+                    with self._lock:
                         replay_samples = self._sample_replay(n_replay)
 
-                        if replay_samples:
-                            replay_keys = torch.stack([f.key_vector for f in replay_samples])
-                            replay_targets = torch.tensor(
-                                [self._label_to_index.get(f.value_label, 0) for f in replay_samples],
-                                dtype=torch.long
-                            )
-                            batch_keys = torch.cat([batch_keys, replay_keys])
-                            batch_targets = torch.cat([batch_targets, replay_targets])
+                    if replay_samples:
+                        replay_keys = torch.stack([f.key_vector for f in replay_samples])
+                        replay_targets = torch.tensor(
+                            [label_to_index_snapshot.get(f.value_label, 0) for f in replay_samples],
+                            dtype=torch.long
+                        )
+                        batch_keys = torch.cat([batch_keys, replay_keys])
+                        batch_targets = torch.cat([batch_targets, replay_targets])
 
-                    # Forward pass
-                    optimizer.zero_grad()
+                # Forward pass (briefly acquire lock for network access)
+                optimizer.zero_grad()
+                with self._lock:
                     logits = self._network(batch_keys)
 
-                    # Clamp targets to valid range
-                    batch_targets = batch_targets.clamp(0, logits.shape[-1] - 1)
+                # Clamp targets to valid range (lock-free)
+                batch_targets = batch_targets.clamp(0, logits.shape[-1] - 1)
+                loss = F.cross_entropy(logits, batch_targets)
 
-                    loss = F.cross_entropy(logits, batch_targets)
-
-                    # Backward pass
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self._network.parameters(), 1.0)
+                # Backward pass (lock-free except for parameter update)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self._network.parameters(), 1.0)
+                with self._lock:
                     optimizer.step()
 
-                    total_loss += loss.item()
-                    n_batches += 1
+                total_loss += loss.item()
+                n_batches += 1
 
+        # Phase 3: Finalize (briefly acquire lock)
+        with self._lock:
             self._trained_samples += len(facts)
             self._network.eval()
 
-            return total_loss / max(1, n_batches)
+        return total_loss / max(1, n_batches)
 
     def _sample_replay(self, n: int) -> List[ConsolidationFact]:
         """Sample n random items from replay buffer."""

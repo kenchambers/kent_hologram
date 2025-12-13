@@ -34,6 +34,7 @@ dependencies = [
     "langchain-anthropic>=0.1.0",
     "sentence-transformers>=2.2.0",
     "openai>=2.9.0",
+    "arckit>=1.0.1",
 ]
 
 [project.optional-dependencies]

@@ -50,6 +50,20 @@ wheels = [
 ]
 
 [[package]]
+name = "arckit"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "drawsvg" },
+    { name = "numpy" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6a/48/1018e884a2cfc7f35802c9de1f1e50877cd6528ed810d020cfbfb8b1a30b/arckit-1.0.1.tar.gz", hash = "sha256:2ed3e2b0a5b69d8e5202115bf985127914cb2bfe1ee51f5a9893e996ff7f155c", size = 1371795, upload-time = "2025-08-22T14:26:34.123Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/92/b2aff973d38db442929360139cd1d6ae13cf999d6733cc71620498430500/arckit-1.0.1-py3-none-any.whl", hash = "sha256:f8b61ad91c09737307f72c1167fb30735b95d3547cd9f36853996fd5072e5dc7", size = 1418245, upload-time = "2025-08-22T14:26:32.435Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "25.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -428,6 +442,14 @@ wheels = [
 ]
 
 [[package]]
+name = "drawsvg"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/ca/a8e5ae0e13d7c874e138c5d0e8313856b91f97359781fd78b0c9e34ae791/drawsvg-2.4.0-py3-none-any.whl", hash = "sha256:85b54044956390f05053bc2651e2414d54a4939b57a2be0a043e5cec2e04f1bb", size = 44062, upload-time = "2024-06-23T02:08:15.649Z" },
+]
+
+[[package]]
 name = "durationpy"
 version = "0.10"
 source = { registry = "https://pypi.org/simple" }
@@ -678,6 +700,7 @@ name = "hologram"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "arckit" },
     { name = "chromadb" },
     { name = "faiss-cpu" },
     { name = "langchain-anthropic" },
@@ -712,6 +735,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "arckit", specifier = ">=1.0.1" },
     { name = "chromadb", specifier = ">=0.4.0" },
     { name = "faiss-cpu", specifier = ">=1.7.4" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.0" },

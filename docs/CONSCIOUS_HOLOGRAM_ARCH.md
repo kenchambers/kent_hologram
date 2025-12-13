@@ -85,6 +85,15 @@ Facts are stored as **Subject-Predicate-Object triples** using two HDC operation
 - **Binding**: Combines two concepts into a unique pattern (reversible)
 - **Bundling**: Superimposes multiple facts into one vector (holographic storage)
 
+**New in v0.4.0: Bipolar Vector Architecture**
+We have switched from Gaussian vectors (random noise) to **Bipolar vectors (+1/-1)**. This ensures that:
+
+1. **Self-Cancellation**: `A * A = 1` (Identity). Binding a vector to itself cancels it out perfectly.
+2. **Noise Reduction**: In the retrieval equation `(A*A)*B`, Gaussian noise left a residue `(1+noise)*B`. Bipolar vectors yield exactly `1*B`, removing the noise floor entirely for clean operations.
+
+**New in v0.4.0: Mass-Preserving Updates**
+We now scale the memory trace by `sqrt(N)` before adding a new fact. This ensures that old memories (mass N) and the new fact (mass 1) are weighted equally, preventing the "vanishing memory" problem where new facts drowned out old ones.
+
 ### How It Works
 
 **Storing "France capital Paris":**
@@ -301,6 +310,7 @@ Multiple strategies to find stored facts, prioritized by speed and confidence.
 - **Example**: Query "river" finds "Nile is longest river" even though "river" is in the object
 
 **Why it's needed**: Standard S-P-O queries require the entity to be the subject. But users often ask about terms that appear in the object position:
+
 - User: "Do you know about river?"
 - Stored fact: "Nile is longest river in the world" (river in OBJECT)
 - Old behavior: `query("river", "is")` fails → "I don't know"
@@ -309,11 +319,12 @@ Multiple strategies to find stored facts, prioritized by speed and confidence.
 **Scoring by match location**:
 | Position | Base Score | After Fallback Multiplier |
 |----------|------------|---------------------------|
-| Subject  | 0.9        | 0.63 (× 0.7)              |
-| Predicate| 0.7        | 0.49 (× 0.7)              |
-| Object   | 0.5        | 0.25 (× 0.5)              |
+| Subject | 0.9 | 0.63 (× 0.7) |
+| Predicate| 0.7 | 0.49 (× 0.7) |
+| Object | 0.5 | 0.25 (× 0.5) |
 
 **Limitations**:
+
 - Only searches in-memory `_facts` list (not persisted neural memory)
 - O(n) linear scan - acceptable for <1000 facts
 - Minimum term length: 3 characters (to avoid false positives)
