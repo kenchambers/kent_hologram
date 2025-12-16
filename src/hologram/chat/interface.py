@@ -54,6 +54,7 @@ class ChatInterface:
         persistent: bool = True,
         persist_dir: str = "./data/hologram_facts",
         force_neural: bool = False,
+        enable_ventriloquist: bool = True,
     ):
         """
         Initialize chat interface.
@@ -64,11 +65,13 @@ class ChatInterface:
             persistent: Use ChromaDB for fact persistence (default True)
             persist_dir: Directory for persistent storage
             force_neural: Force neural consolidation mode even if no file exists
+            enable_ventriloquist: Enable the SLM-based 'ventriloquist' generator
         """
         self.force_neural = force_neural
         self.container = HologramContainer(dimensions=dimensions)
         self.persistent = persistent
         self.persist_dir = persist_dir
+        self.enable_ventriloquist = enable_ventriloquist
 
         # Conversational mode with optional persistence
         self.conversational = conversational
@@ -86,7 +89,7 @@ class ChatInterface:
                 
                 self.chatbot = self.container.create_persistent_chatbot(
                     persist_dir=persist_dir,
-                    enable_ventriloquist=True,
+                    enable_ventriloquist=self.enable_ventriloquist,
                     ventriloquist_model="zai-org/glm-4.6v",
                     enable_neural_consolidation=use_neural,
                 )
@@ -200,6 +203,8 @@ class ChatInterface:
             self._cmd_load(args)
         elif cmd == "/stats":
             self._cmd_stats()
+        elif cmd == "/code":
+            self._cmd_code(args)
         else:
             print(f"Unknown command: {cmd}. Use /help for commands.")
 
@@ -469,6 +474,41 @@ Commands:
         if self.conversational and self.chatbot:
             print(f"\nSession: {self.chatbot.get_session_stats()}")
 
+    @property
+    def code_generator(self):
+        """Lazy-loaded code generator."""
+        if not hasattr(self, '_code_generator') or self._code_generator is None:
+            self._code_generator = self.container.create_code_generator(
+                fact_store=self.fact_store
+            )
+        return self._code_generator
+
+    def _cmd_code(self, args: str) -> None:
+        """Handle /code command for code generation."""
+        if not args:
+            print("Usage: /code <issue description>")
+            print("Example: /code Add input validation to process()")
+            return
+
+        from hologram.swe import SWETask
+        task = SWETask(
+            task_id="chat_task",
+            repo="interactive",
+            issue_text=args,
+            code_before={},
+            code_after={},
+        )
+
+        try:
+            result = self.code_generator.generate(task)
+            print(f"\nGenerated {len(result.patches)} patch(es):")
+            for patch in result.patches:
+                print(f"  {patch.file}: {patch.operation} at {patch.location}")
+                print(f"    {patch.content[:60]}...")
+            print(f"\nConfidence: {result.confidence:.2f}")
+        except Exception as e:
+            print(f"Code generation failed: {e}")
+
 
 def main():
     """Main entry point."""
@@ -510,6 +550,12 @@ Examples:
         action="store_true",
         help="Force neural consolidation mode (auto-detected if neural_memory.pt exists)"
     )
+
+    parser.add_argument(
+        "--no-ventriloquist",
+        action="store_true",
+        help="Disable the SLM-based ventriloquist generator (use direct HDC output)"
+    )
     
     args = parser.parse_args()
     
@@ -517,6 +563,7 @@ Examples:
         persist_dir=args.persist_dir,
         persistent=not args.no_persist,
         force_neural=args.neural,
+        enable_ventriloquist=not args.no_ventriloquist,
     )
     interface.start()
 

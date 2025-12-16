@@ -83,7 +83,7 @@ class ChromaFactStore:
                     "hnsw:space": "cosine",  # Use cosine distance for HDC vectors
                 },
             )
-        except Exception as e:
+        except BaseException as e:
             # Handle ChromaDB corruption errors
             error_msg = str(e)
             is_corruption_error = (
@@ -431,7 +431,7 @@ class ChromaResponseCorpus:
                     "hnsw:space": "cosine",
                 },
             )
-        except Exception as e:
+        except BaseException as e:
             if auto_recover:
                 logger.warning("ChromaDB corpus appears corrupted. Attempting recovery...")
                 self._recover_from_corruption()

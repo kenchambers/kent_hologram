@@ -9,7 +9,7 @@ Architecture for constrained generation.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from hologram.config.constants import (
     CREATIVITY_TEMPERATURE,
@@ -22,6 +22,9 @@ from hologram.core.fractal import FractalSpace
 from hologram.memory.fact_store import FactStore
 from hologram.memory.memory_trace import MemoryTrace
 from hologram.memory.sequence_encoder import SequenceEncoder
+
+if TYPE_CHECKING:
+    from hologram.introspection import SelfImprovementManager, CircuitObserver
 
 
 class HologramContainer:
@@ -137,6 +140,35 @@ class HologramContainer:
             decay_factor=decay_factor,
             neural_hidden_dim=neural_hidden_dim,
         )
+
+    def create_self_improvement_manager(
+        self,
+        persist_path: Optional[str] = None,
+    ) -> 'SelfImprovementManager':
+        """
+        Create a SelfImprovementManager for tracking what works and what doesn't.
+
+        The self-improvement manager learns from outcomes:
+        - Tracks which vocabulary items, transformations, and query patterns succeed
+        - Suggests pruning consistently failing patterns
+        - Suggests reinforcing consistently succeeding patterns
+        - Persists learned patterns across sessions
+
+        Args:
+            persist_path: Path to persist learned patterns (default: ./data/learned_patterns.json)
+
+        Returns:
+            SelfImprovementManager instance
+        """
+        from hologram.introspection import SelfImprovementManager
+
+        if persist_path is None:
+            persist_path = "./data/learned_patterns.json"
+
+        # Ensure directory exists
+        Path(persist_path).parent.mkdir(parents=True, exist_ok=True)
+
+        return SelfImprovementManager(persist_path=persist_path)
 
     def create_hierarchical_fact_store(
         self,
@@ -282,10 +314,97 @@ class HologramContainer:
             creativity_temperature=creativity,
         )
 
+    def create_cadence_memory(
+        self,
+        hidden_dim: int = 256,
+        persist_path: Optional[str] = None,
+    ):
+        """
+        Create a CadenceMemory for learning sentence structure patterns.
+
+        The cadence memory learns which structures work best for which contexts,
+        enabling human-like response generation without hallucination.
+
+        Args:
+            hidden_dim: Neural network hidden dimension
+            persist_path: Optional path to load/save cadence state
+
+        Returns:
+            CadenceMemory instance
+        """
+        from hologram.generation.cadence_memory import CadenceMemory
+
+        memory = CadenceMemory(
+            dimensions=self._space.dimensions,
+            hidden_dim=hidden_dim,
+        )
+
+        # Load persisted state if path exists
+        if persist_path:
+            import torch
+            from pathlib import Path
+            state_path = Path(persist_path) / "cadence_memory.pt"
+            if state_path.exists():
+                try:
+                    state = torch.load(state_path, weights_only=False)
+                    memory.load_state_dict(state)
+                    print(f"Loaded cadence memory from {state_path}")
+                except Exception as e:
+                    print(f"Failed to load cadence memory: {e}")
+
+        return memory
+
+    def create_cadence_jazz(self):
+        """
+        Create a CadenceJazz for cadence-based composition.
+
+        CadenceJazz composes responses by binding content facts with
+        learned cadence structure templates.
+
+        Returns:
+            CadenceJazz instance
+        """
+        from hologram.generation.jazz import CadenceJazz
+        return CadenceJazz(self._codebook)
+
+    def create_dreamer(
+        self,
+        noise_scale: float = 0.1,
+        max_iterations: int = 10,
+        confidence_threshold: float = 0.5,
+    ):
+        """
+        Create a Dreamer for creative exploration when confidence is low.
+
+        The Dreamer injects noise and explores alternative structures
+        using gradient-free optimization.
+
+        Args:
+            noise_scale: Scale of noise injection
+            max_iterations: Maximum exploration iterations
+            confidence_threshold: Target confidence to reach
+
+        Returns:
+            Dreamer instance
+        """
+        from hologram.generation.dreamer import Dreamer
+        from hologram.core.resonator import Resonator
+
+        # Create resonator for thought factorization
+        resonator = Resonator(self._codebook)
+
+        return Dreamer(
+            resonator=resonator,
+            noise_scale=noise_scale,
+            max_iterations=max_iterations,
+            confidence_threshold=confidence_threshold,
+        )
+
     def create_metacognitive_loop(
         self,
         max_retries: int = 2,
         retry_threshold: float = 0.3,
+        circuit_observer: Optional['CircuitObserver'] = None,
     ):
         """
         Create a MetacognitiveLoop for self-monitoring and adaptive behavior.
@@ -297,16 +416,20 @@ class HologramContainer:
         Args:
             max_retries: Maximum retry attempts (default: 2)
             retry_threshold: Confidence below which to retry (default: 0.3)
+            circuit_observer: Optional CircuitObserver for self-improvement learning
 
         Returns:
             MetacognitiveLoop using shared Codebook
         """
         from hologram.cognition.metacognition import MetacognitiveLoop
-        return MetacognitiveLoop(
+        loop = MetacognitiveLoop(
             codebook=self._codebook,
             max_retries=max_retries,
             retry_threshold=retry_threshold,
         )
+        if circuit_observer is not None:
+            loop.set_circuit_observer(circuit_observer)
+        return loop
 
     def create_ventriloquist_generator(
         self,
@@ -382,6 +505,39 @@ class HologramContainer:
             vocabulary=vocabulary,
         )
 
+    def create_code_generator(
+        self,
+        fact_store: Optional[FactStore] = None,
+        neural_memory=None,
+        enable_dependency_graph: bool = True,
+        circuit_observer: Optional['CircuitObserver'] = None,
+    ):
+        """Create CodeGenerator with dependency tracking."""
+        from hologram.swe import CodeEncoder, CodeResonator, CodeGenerator
+        from hologram.swe.dependency_graph import CodeDependencyGraph
+        from hologram.arc.transform_resonator import TransformationResonator
+        from hologram.arc.encoder import ObjectEncoder
+
+        code_encoder = CodeEncoder(self._space, self._codebook)
+        arc_encoder = ObjectEncoder(self._space, self._codebook)
+        transform_resonator = TransformationResonator(arc_encoder, self._codebook)
+        code_resonator = CodeResonator(code_encoder, transform_resonator)
+
+        # Create dependency graph if requested and fact_store available
+        dependency_graph = None
+        if enable_dependency_graph and fact_store:
+            dependency_graph = CodeDependencyGraph(fact_store)
+
+        generator = CodeGenerator(
+            encoder=code_encoder,
+            resonator=code_resonator,
+            neural_memory=neural_memory,
+            circuit_observer=circuit_observer,
+            dependency_graph=dependency_graph,
+        )
+
+        return generator
+
     # =========================================================================
     # Conversational Chatbot Components
     # =========================================================================
@@ -396,6 +552,10 @@ class HologramContainer:
         enable_ventriloquist: bool = True,
         ventriloquist_model: str = "moonshotai/kimi-k2-thinking",
         ventriloquist_mode: str = "full",
+        enable_self_improvement: bool = True,
+        self_improvement_path: Optional[str] = None,
+        enable_cadence: bool = True,
+        cadence_persist_path: Optional[str] = None,
     ):
         """
         Create a fully wired ConversationalChatbot.
@@ -411,6 +571,10 @@ class HologramContainer:
             enable_metacognition: If True, create MetacognitiveLoop for self-monitoring (default: True)
             enable_ventriloquist: If True, create VentriloquistGenerator for fluent SLM output (default: False)
             ventriloquist_model: Model identifier for Ventriloquist (default: moonshotai/kimi-k2-thinking)
+            enable_self_improvement: If True, enable self-improvement learning (default: True)
+            self_improvement_path: Path to persist learned patterns (default: ./data/chat_learned_patterns.json)
+            enable_cadence: If True, enable cadence-based generation (default: True)
+            cadence_persist_path: Path to persist cadence patterns (default: None)
 
         Returns:
             Configured ConversationalChatbot
@@ -470,10 +634,31 @@ class HologramContainer:
                 fluency_model=ventriloquist_model
             )
 
-        # Create optional metacognitive loop
+        # Create optional self-improvement manager
+        self_improvement_manager = None
+        if enable_self_improvement:
+            if self_improvement_path is None:
+                self_improvement_path = "./data/chat_learned_patterns.json"
+            self_improvement_manager = self.create_self_improvement_manager(
+                persist_path=self_improvement_path
+            )
+
+        # Create optional metacognitive loop (with self-improvement if enabled)
         metacognitive_loop = None
         if enable_metacognition:
-            metacognitive_loop = self.create_metacognitive_loop()
+            circuit_observer = self_improvement_manager.observer if self_improvement_manager else None
+            metacognitive_loop = self.create_metacognitive_loop(
+                circuit_observer=circuit_observer
+            )
+
+        # Create optional cadence components for human-like response generation
+        cadence_memory = None
+        cadence_jazz = None
+        dreamer = None
+        if enable_cadence:
+            cadence_memory = self.create_cadence_memory(persist_path=cadence_persist_path)
+            cadence_jazz = self.create_cadence_jazz()
+            dreamer = self.create_dreamer()
 
         response_selector = ResponseSelector(
             pattern_store=pattern_store,
@@ -484,9 +669,13 @@ class HologramContainer:
             resonant_generator=resonant_generator,
             ventriloquist_generator=ventriloquist_generator,
             voice_mode=ventriloquist_mode,
+            cadence_memory=cadence_memory,
+            metacog=metacognitive_loop,
+            dreamer=dreamer,
+            cadence_jazz=cadence_jazz,
         )
 
-        return ConversationalChatbot(
+        chatbot = ConversationalChatbot(
             intent_classifier=intent_classifier,
             entity_extractor=entity_extractor,
             response_selector=response_selector,
@@ -500,6 +689,11 @@ class HologramContainer:
             resonant_generator=resonant_generator,
             metacognitive_loop=metacognitive_loop,
         )
+
+        # Attach self-improvement manager to chatbot for access
+        chatbot._self_improvement = self_improvement_manager
+
+        return chatbot
 
     def create_chroma_fact_store(
         self,
@@ -541,6 +735,10 @@ class HologramContainer:
         ventriloquist_mode: str = "full",
         enable_neural_consolidation: bool = False,
         consolidation_threshold: int = 20,
+        enable_self_improvement: bool = True,
+        self_improvement_path: Optional[str] = None,
+        enable_cadence: bool = True,
+        cadence_persist_path: Optional[str] = None,
     ):
         """
         Create a ConversationalChatbot with persistent fact storage.
@@ -558,6 +756,10 @@ class HologramContainer:
             ventriloquist_model: Model identifier for Ventriloquist (default: moonshotai/kimi-k2-thinking)
             enable_neural_consolidation: If True, use Neural Consolidation instead of Chroma (default: False)
             consolidation_threshold: Number of pending facts before consolidation triggers (default: 20)
+            enable_self_improvement: If True, enable self-improvement learning (default: True)
+            self_improvement_path: Path to persist learned patterns (default: {persist_dir}/learned_patterns.json)
+            enable_cadence: If True, enable cadence-based generation (default: True)
+            cadence_persist_path: Path to persist cadence patterns (default: {persist_dir})
 
         Returns:
             ConversationalChatbot with persistent storage
@@ -660,10 +862,33 @@ class HologramContainer:
                 fluency_model=ventriloquist_model
             )
 
-        # Create optional metacognitive loop
+        # Create optional self-improvement manager
+        self_improvement_manager = None
+        if enable_self_improvement:
+            if self_improvement_path is None:
+                self_improvement_path = str(Path(persist_dir) / "learned_patterns.json")
+            self_improvement_manager = self.create_self_improvement_manager(
+                persist_path=self_improvement_path
+            )
+
+        # Create optional metacognitive loop (with self-improvement if enabled)
         metacognitive_loop = None
         if enable_metacognition:
-            metacognitive_loop = self.create_metacognitive_loop()
+            circuit_observer = self_improvement_manager.observer if self_improvement_manager else None
+            metacognitive_loop = self.create_metacognitive_loop(
+                circuit_observer=circuit_observer
+            )
+
+        # Create optional cadence components for human-like response generation
+        cadence_memory = None
+        cadence_jazz = None
+        dreamer = None
+        if enable_cadence:
+            # Default cadence persist path to persist_dir for persistent chatbot
+            effective_cadence_path = cadence_persist_path if cadence_persist_path else persist_dir
+            cadence_memory = self.create_cadence_memory(persist_path=effective_cadence_path)
+            cadence_jazz = self.create_cadence_jazz()
+            dreamer = self.create_dreamer()
 
         response_selector = ResponseSelector(
             pattern_store=pattern_store,
@@ -674,9 +899,13 @@ class HologramContainer:
             resonant_generator=resonant_generator,
             ventriloquist_generator=ventriloquist_generator,
             voice_mode=ventriloquist_mode,
+            cadence_memory=cadence_memory,
+            metacog=metacognitive_loop,
+            dreamer=dreamer,
+            cadence_jazz=cadence_jazz,
         )
 
-        return ConversationalChatbot(
+        chatbot = ConversationalChatbot(
             intent_classifier=intent_classifier,
             entity_extractor=entity_extractor,
             response_selector=response_selector,
@@ -690,6 +919,11 @@ class HologramContainer:
             resonant_generator=resonant_generator,
             metacognitive_loop=metacognitive_loop,
         )
+
+        # Attach self-improvement manager to chatbot for access
+        chatbot._self_improvement = self_improvement_manager
+
+        return chatbot
 
     def _create_chroma_bridge(self, chroma_store):
         """

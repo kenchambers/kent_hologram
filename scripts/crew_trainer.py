@@ -10,6 +10,7 @@ All conversations are logged and facts persist via ChromaDB.
 
 import argparse
 import os
+import random
 import signal
 import sys
 import json
@@ -17,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Any
 
+import torch
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -31,19 +33,26 @@ except ImportError:
     sys.exit(1)
 
 # Optional: Import web search (gracefully handle if not installed)
+# Try the new 'ddgs' package first, fall back to legacy 'duckduckgo_search'
 try:
-    from duckduckgo_search import DDGS
+    from ddgs import DDGS
     WEB_SEARCH_AVAILABLE = True
 except ImportError:
-    WEB_SEARCH_AVAILABLE = False
-    print("Note: duckduckgo-search not installed. Web teaching mode unavailable.")
-    print("To enable: pip install duckduckgo-search")
+    try:
+        from duckduckgo_search import DDGS
+        WEB_SEARCH_AVAILABLE = True
+    except ImportError:
+        WEB_SEARCH_AVAILABLE = False
+        print("Note: ddgs not installed. Web teaching mode unavailable.")
+        print("To enable: pip install ddgs")
 
 # Import Hologram components
 from hologram.container import HologramContainer
 from hologram.conversation.vocabulary import ConversationalVocabulary
 from hologram.conversation.intent import IntentType
 from hologram.modulation.sesame import StyleType
+from hologram.generation.cadence_extractor import CadenceExtractor
+from hologram.generation.cadence_memory import CadenceMemory
 from hologram.config.constants import (
     QUESTION_START_WORDS,
     CONVERSATIONAL_MARKERS,
@@ -84,6 +93,9 @@ EXAMPLES:
 - "Correct! Water boils at 100 degrees."
 - "What temperature does water boil at?"
 
+CRITICAL: Only write YOUR OWN response. NEVER write dialogue for other speakers (Claude, Hologram, Bot, Student).
+NEVER simulate a conversation. Just state your ONE fact or question and STOP.
+
 Your goal is to teach diverse facts, pragmatic intent, and word shading, while testing understanding."""
 
 CLAUDE_SYSTEM_PROMPT = """You are a teacher named Claude guiding a young AI named Hologram toward natural, nuanced conversation.
@@ -109,6 +121,9 @@ EXAMPLES:
 - "Yes, the sun is a star. Stars produce light."
 - "What is the sun? What do stars produce?"
 - "Correct! Water boils at 100 degrees. Ice melts at 0 degrees."
+
+CRITICAL: Only write YOUR OWN response. NEVER write dialogue for Alex, Gemini, Hologram, Bot, or Student.
+NEVER simulate a multi-turn conversation. Just state your ONE response and STOP.
 
 Your goal is to reinforce facts, add related knowledge, and model human-like flow with concise prompts and commands."""
 
@@ -144,7 +159,7 @@ class WebTeacher:
             if not api_key:
                 raise ValueError("ANTHROPIC_API_KEY not found")
             self.llm = ChatAnthropic(
-                model="claude-3-5-sonnet-20241022",
+                model=os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307"),
                 api_key=api_key,
                 temperature=0.3,
             )
@@ -163,18 +178,19 @@ class WebTeacher:
     def search_web(self, query: str, max_results: int = 5) -> List[Dict[str, str]]:
         """
         Search the web for information.
-        
+
         Args:
             query: Search query
             max_results: Maximum number of results to return
-            
+
         Returns:
             List of dicts with 'title', 'body', 'href'
         """
         try:
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=max_results))
-                return results
+            # New ddgs API doesn't use context manager
+            ddgs = DDGS()
+            results = ddgs.text(query, max_results=max_results)
+            return results if isinstance(results, list) else list(results)
         except Exception as e:
             print(f"Web search failed: {e}")
             return []
@@ -513,6 +529,21 @@ class CrewTrainer:
         self.facts_learned: List[str] = []
         self.responses_learned_count = 0
         
+        # NEW: Cadence extraction and memory
+        self._cadence_extractor = CadenceExtractor(self.container._codebook)
+        dimensions = self.container._space.dimensions
+        self._cadence_memory = CadenceMemory(dimensions=dimensions)
+
+        # Load existing cadence memory if available
+        cadence_path = Path(persist_dir) / "cadence_memory.pt"
+        if cadence_path.exists():
+            try:
+                cadence_state = torch.load(cadence_path, weights_only=False)
+                self._cadence_memory.load_state_dict(cadence_state)
+                print(f"Loaded cadence memory from {cadence_path} ({self._cadence_memory.pattern_count} patterns)")
+            except Exception as e:
+                print(f"Warning: Could not load cadence memory: {e}")
+        
         # Quiz tracking
         self.quiz_questions_asked = 0
         self.quiz_answers_correct = 0
@@ -710,11 +741,19 @@ class CrewTrainer:
                 continue
             
             # Fallback: /teach <subject> <predicate> <object...>
-            parts = line.split()
-            if len(parts) >= 4:
-                subject = parts[1]
-                predicate = parts[2]
-                obj = " ".join(parts[3:])
+            # Try to extract clean S-P-O from various formats
+
+            # First try: look for simple pattern "X is Y" or "X <predicate> Y"
+            simple_match = re.match(
+                r'^/teach\s+["\']?(\w+)["\']?\s+(?:is|capital|color|has|was)\s+["\']?(.+?)["\']?\.?\s*$',
+                line, re.IGNORECASE
+            )
+            if simple_match:
+                subject = simple_match.group(1).strip('"\'')
+                obj = simple_match.group(2).strip('"\'.')
+                # Extract predicate from line
+                pred_match = re.search(r'\s+(is|capital|color|has|was)\s+', line, re.IGNORECASE)
+                predicate = pred_match.group(1) if pred_match else "is"
                 try:
                     confirmation = self.chatbot.teach_fact(subject, predicate, obj)
                     if confirmation is not None:
@@ -723,6 +762,44 @@ class CrewTrainer:
                         processed = True
                 except Exception as exc:
                     self.logger.log("ERROR", f"Failed to teach fact: {exc}")
+                continue
+
+            # Second try: handle "The X of Y is Z" pattern
+            capital_match = re.match(
+                r'^/teach\s+["\']?(?:The\s+)?capital\s+of\s+(\w+)\s+is\s+(\w+)["\']?\.?\s*$',
+                line, re.IGNORECASE
+            )
+            if capital_match:
+                subject = capital_match.group(1).strip('"\'')
+                obj = capital_match.group(2).strip('"\'.')
+                try:
+                    confirmation = self.chatbot.teach_fact(subject, "capital", obj)
+                    if confirmation is not None:
+                        self.logger.log("SYSTEM", f"✓ Taught fact via command: {subject} capital {obj}")
+                        self.last_taught_fact = f"{subject} capital {obj}"
+                        processed = True
+                except Exception as exc:
+                    self.logger.log("ERROR", f"Failed to teach fact: {exc}")
+                continue
+
+            # Last fallback: simple space split with quote stripping
+            parts = line.split()
+            if len(parts) >= 4:
+                subject = parts[1].strip('"\'')
+                predicate = parts[2].strip('"\'')
+                obj = " ".join(parts[3:]).strip('"\'.').strip()
+                # Clean up common issues
+                obj = re.sub(r'^the\s+', '', obj, flags=re.IGNORECASE)  # Remove leading "the"
+                obj = re.sub(r'\s*of\s+\w+\.?$', '', obj)  # Remove trailing "of X"
+                if obj:
+                    try:
+                        confirmation = self.chatbot.teach_fact(subject, predicate, obj)
+                        if confirmation is not None:
+                            self.logger.log("SYSTEM", f"✓ Taught fact via command: {subject} {predicate} {obj}")
+                            self.last_taught_fact = f"{subject} {predicate} {obj}"
+                            processed = True
+                    except Exception as exc:
+                        self.logger.log("ERROR", f"Failed to teach fact: {exc}")
                 continue
         
         return processed
@@ -1076,6 +1153,45 @@ class CrewTrainer:
         # Default: assume conversational
         return False
 
+    def _process_llm_response_for_cadence(
+        self, response: str, context_vec: Optional[torch.Tensor]
+    ) -> None:
+        """
+        Process LLM response to extract both facts AND cadence patterns.
+
+        Args:
+            response: LLM response text
+            context_vec: Context vector for cadence storage
+        """
+        if context_vec is None:
+            return
+
+        # Extract entities from response (simple: capitalized words)
+        import re
+        entities = re.findall(r'\b[A-Z][a-z]+\b', response)
+        
+        # Extract cadence patterns
+        try:
+            cadence = self._cadence_extractor.extract_multi_sentence_cadence(
+                response, entities
+            )
+            
+            # Store each pattern
+            for pattern in cadence.patterns:
+                self._cadence_memory.store_cadence(context_vec, pattern)
+            
+            # Log cadence learning
+            if cadence.transitions:
+                transition_str = ", ".join([t.value for t in cadence.transitions])
+                self.logger.log(
+                    "SYSTEM",
+                    f"  [Cadence] Learned {len(cadence.patterns)} patterns, "
+                    f"transitions: [{transition_str}]"
+                )
+        except Exception as e:
+            # Silently fail cadence extraction (non-critical)
+            pass
+
     def _learn_response_from_llm(self, message: str, speaker: str) -> None:
         """
         Learn a response from Claude/Gemini if it's conversational (not teaching).
@@ -1137,6 +1253,9 @@ class CrewTrainer:
         if learned_count > 0:
             self.responses_learned_count += learned_count
             self.logger.log("SYSTEM", f"✓ Learned {learned_count} atomic responses from {speaker}")
+            
+            # NEW: Extract and store cadence patterns from LLM responses
+            self._process_llm_response_for_cadence(message, context_vec)
 
     def run_conversation_round(self) -> None:
         """Run a single conversation round (topic + discussion)."""
@@ -1171,17 +1290,17 @@ class CrewTrainer:
         if recent_topics:
             topics_str = ", ".join(recent_topics)
             diversity_instruction = f"\n\nIMPORTANT: We recently discussed: {topics_str}. Please teach a DIFFERENT topic now (different country, person, or concept). Introduce variety!"
-        
+
         topic_prompt = (
             f"{GEMINI_SYSTEM_PROMPT}\n\n"
-            "Share an interesting fact with me. Use ONE of these exact formats:\n"
+            "Pick a RANDOM topic and teach ONE fact about it. Be creative and unpredictable!\n"
+            "Choose from categories like: world capitals, famous inventors, science facts, "
+            "animals, geography, history, art, music, sports, food, technology, or anything interesting.\n\n"
+            "Use ONE of these exact formats:\n"
             "- 'The capital of [country] is [city]'\n"
-            "- '[Country]'s capital is [city]'\n"
-            "- '[Person] is [description]'\n"
+            "- '[Person] invented/discovered [thing]'\n"
             "- '[Thing] is [property]'\n"
             "- 'The [property] of [thing] is [value]'\n\n"
-            "Examples: 'The capital of Japan is Tokyo', 'Einstein is a physicist', "
-            "'The color of the sky is blue', 'Python's creator is Guido van Rossum'.\n"
             "IMPORTANT: State the fact directly without preamble like 'apparently' or 'I think'."
             f"{simplify_instruction}"
             f"{diversity_instruction}"
@@ -1377,7 +1496,21 @@ class CrewTrainer:
                         
                         # Save neural memory periodically (don't force consolidation every time)
                         self.chatbot.save_memory(self.persist_dir, force_consolidation=False)
-                    
+                        
+                        # NEW: Consolidate and save cadence memory periodically
+                        cadence_loss = self._cadence_memory.consolidate(epochs=30)
+                        if cadence_loss > 0:
+                            self.logger.log(
+                                "SYSTEM",
+                                f"  [Cadence Consolidation] Loss: {cadence_loss:.4f}, "
+                                f"Patterns: {self._cadence_memory.pattern_count}"
+                            )
+                            # Save cadence memory periodically
+                            cadence_state = self._cadence_memory.get_state_dict()
+                            if cadence_state:
+                                cadence_path = Path(self.persist_dir) / "cadence_memory.pt"
+                                torch.save(cadence_state, cadence_path)
+
                 except Exception as e:
                     consecutive_errors += 1
                     error_msg = f"Error in round {round_num}: {str(e)}"
@@ -1413,6 +1546,28 @@ class CrewTrainer:
             if hasattr(self, 'chatbot'):
                 # Force consolidation of any pending facts before saving
                 self.chatbot.save_memory(self.persist_dir, force_consolidation=True)
+                
+                # NEW: Final cadence consolidation
+                cadence_loss = self._cadence_memory.consolidate(epochs=50)
+                if cadence_loss > 0:
+                    self.logger.log(
+                        "SYSTEM",
+                        f"  [Final Cadence Consolidation] Loss: {cadence_loss:.4f}, "
+                        f"Patterns: {self._cadence_memory.pattern_count}"
+                    )
+
+                # Save cadence memory to disk
+                cadence_state = self._cadence_memory.get_state_dict()
+                if cadence_state:
+                    cadence_path = Path(self.persist_dir) / "cadence_memory.pt"
+                    torch.save(cadence_state, cadence_path)
+                    self.logger.log(
+                        "SYSTEM",
+                        f"💾 Saved cadence memory: {cadence_path} "
+                        f"({self._cadence_memory.pattern_count} patterns)"
+                    )
+                    print(f"💾 Cadence memory saved: {cadence_path}")
+
                 # Ensure worker is stopped
                 self.chatbot.end_session()
             

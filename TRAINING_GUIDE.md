@@ -155,7 +155,7 @@ ANTHROPIC_MODEL=claude-3-haiku-20240307
 
 # Or more capable models
 GEMINI_MODEL=gemini-1.5-pro
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-haiku-20240307
 ```
 
 ### Cost Estimates

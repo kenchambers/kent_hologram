@@ -112,6 +112,26 @@ class ConversationalChatbot:
         self._last_learned_fact: Optional[tuple] = None  # (subject, predicate, object)
         self._fact_learned_this_turn: bool = False
 
+        # Activity callback for streaming dashboard
+        self._activity_callback = None
+
+    def set_activity_callback(self, callback) -> None:
+        """
+        Set callback for streaming activity events to dashboard.
+
+        Callback receives dict with: {"type": str, ...event_data}
+        Event types: "intent", "fact", "thinking"
+        """
+        self._activity_callback = callback
+
+    def _emit_activity(self, event_type: str, **data) -> None:
+        """Emit activity event if callback is set."""
+        if self._activity_callback:
+            try:
+                self._activity_callback({"type": event_type, **data})
+            except Exception:
+                pass  # Don't let callback errors break chat
+
     def respond(self, user_input: str) -> str:
         """
         Generate response to user input with continuous learning.
@@ -128,6 +148,13 @@ class ConversationalChatbot:
 
         # 1. Classify intent
         intent = self._intent_classifier.classify(user_input)
+
+        # Emit intent activity for dashboard
+        self._emit_activity(
+            "intent",
+            intent=intent.intent.value,
+            confidence=round(intent.confidence, 3)
+        )
 
         # Handle commands specially
         if intent.intent == IntentType.COMMAND:
@@ -625,6 +652,14 @@ class ConversationalChatbot:
                 # ONLY set flag if fact is actually new
                 self._last_learned_fact = (subject, predicate, obj)
                 self._fact_learned_this_turn = True
+
+                # Emit fact activity for dashboard
+                self._emit_activity(
+                    "fact",
+                    subject=subject,
+                    predicate=predicate,
+                    object=obj
+                )
 
                 return f"Got it! I'll remember that {subject} {predicate} {obj}."
             else:

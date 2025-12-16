@@ -15,7 +15,7 @@ This avoids "Holographic Saturation" by keeping each step lightweight.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Set
+from typing import List, Optional, Set, TYPE_CHECKING
 import hashlib
 
 import torch
@@ -25,6 +25,10 @@ from hologram.arc.encoder import ObjectEncoder
 from hologram.arc.transform_resonator import TransformationResonator, TransformResult
 from hologram.arc.executor import TransformationExecutor
 from hologram.arc.detector import ObjectDetector
+from hologram.arc.constraint_accumulator import ConstraintAccumulator
+
+if TYPE_CHECKING:
+    from hologram.introspection import CircuitObserver
 
 
 @dataclass
@@ -92,6 +96,8 @@ class IterativeSolver:
         max_steps: int = MAX_STEPS,
         convergence_threshold: float = CONVERGENCE_THRESHOLD,
         refusal_threshold: float = REFUSAL_THRESHOLD,
+        use_constraint_learning: bool = True,
+        circuit_observer: Optional['CircuitObserver'] = None,
     ):
         """
         Initialize iterative solver.
@@ -104,6 +110,8 @@ class IterativeSolver:
             max_steps: Maximum iterations (default: 5)
             convergence_threshold: Grid similarity threshold (default: 0.95)
             refusal_threshold: Confidence threshold (default: 0.01)
+            use_constraint_learning: Use ConstraintAccumulator to learn from failures (default: True)
+            circuit_observer: Optional CircuitObserver for cross-task learning (self-improvement)
         """
         self._encoder = encoder
         self._resonator = resonator
@@ -112,10 +120,15 @@ class IterativeSolver:
         self._max_steps = max_steps
         self._convergence_threshold = convergence_threshold
         self._refusal_threshold = refusal_threshold
+        self._use_constraint_learning = use_constraint_learning
+        self._circuit_observer = circuit_observer
 
     def solve(self, task: ARCTask) -> IterativeResult:
         """
         Attempt to solve an ARC task iteratively.
+
+        Now with constraint learning (Phase 1.1): tracks failures and biases
+        search toward variations of partial successes.
 
         Args:
             task: ARC task with training pairs and test input
@@ -127,6 +140,13 @@ class IterativeSolver:
         transform_chain: List[TransformResult] = []
         visited_states: Set[str] = {self._state_hash(current_state)}
 
+        # Phase 1.1: Initialize constraint accumulator for this task
+        accumulator = ConstraintAccumulator() if self._use_constraint_learning else None
+
+        # Attach circuit observer for cross-task learning (self-improvement)
+        if accumulator is not None and self._circuit_observer is not None:
+            accumulator.set_circuit_observer(self._circuit_observer)
+
         for step in range(self._max_steps):
             # 1. Observe: What's the delta between current and target?
             observation = self._observe_remaining_delta(current_state, task.training)
@@ -135,8 +155,22 @@ class IterativeSolver:
                 # No objects to transform, or no valid delta
                 break
 
-            # 2. Resonate: Find SINGLE best transform for this step
-            result = self._resonator.resonate(observation)
+            # 2. Resonate: Find best transform for this step
+            if accumulator and len(accumulator) > 0:
+                # Phase 1.1: Use top-k and filter already-tried
+                candidates = self._resonator.resonate_topk(observation, k=10)
+
+                # Filter out already-tried transformations
+                untried = [c for c in candidates if not accumulator.has_tried(c)]
+
+                if not untried:
+                    # All candidates have been tried - no progress possible
+                    break
+
+                result = untried[0]  # Best untried candidate
+            else:
+                # Standard single-shot resonance
+                result = self._resonator.resonate(observation)
 
             if result.min_confidence < self._refusal_threshold:
                 # No confident transform found
@@ -153,9 +187,26 @@ class IterativeSolver:
             )
 
             # 3a. Verify progress: Check if transformation had any effect
-            if new_state == current_state:
+            progress_made = new_state != current_state
+
+            # Phase 1.1: Record attempt with partial success score
+            if accumulator:
+                # Compute partial success: did this transformation make any progress?
+                partial_score = 0.0
+                if progress_made:
+                    # Measure how close we got to solution
+                    best_match = max(
+                        self._grid_similarity(new_state, pair.output)
+                        for pair in task.training
+                    )
+                    partial_score = best_match
+
+                accumulator.record_attempt(result, partial_score)
+
+            if not progress_made:
                 # No progress made - transformation was ineffective
-                break
+                # But we recorded it, so next iteration will try something else
+                continue  # Try next iteration with different transform
 
             transform_chain.append(result)
 

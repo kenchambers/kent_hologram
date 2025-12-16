@@ -4,10 +4,21 @@ Response selection and preparation.
 Selects the best response based on intent, entities, context, and facts.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
 import torch
+
+# Enable debug logging for introspection
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# Add console handler if not present
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter('[SELECTOR] %(message)s'))
+    logger.addHandler(handler)
 
 from hologram.core.codebook import Codebook
 from hologram.core.operations import Operations
@@ -21,6 +32,11 @@ from hologram.modulation.sesame import StyleType
 from hologram.generation.resonant_generator import ResonantGenerator
 from hologram.generation.circuit_breaker import SimpleCircuitBreaker
 from hologram.generation.base import GenerationContext
+from hologram.generation.cadence_memory import CadenceMemory
+from hologram.generation.cadence_extractor import CadencePattern
+from hologram.generation.jazz import CadenceJazz
+from hologram.generation.dreamer import Dreamer
+from hologram.cognition.metacognition import MetacognitiveLoop
 from hologram.config.constants import (
     QUERY_SKIP_WORDS,
     QUESTION_START_WORDS,
@@ -71,6 +87,10 @@ class ResponseSelector:
         resonant_generator: Optional[ResonantGenerator] = None,
         ventriloquist_generator: Optional[object] = None,  # VentriloquistGenerator
         voice_mode: str = "full",  # off | rewrite | full
+        cadence_memory: Optional[CadenceMemory] = None,
+        metacog: Optional[MetacognitiveLoop] = None,
+        dreamer: Optional[Dreamer] = None,
+        cadence_jazz: Optional[CadenceJazz] = None,
     ):
         """
         Initialize response selector.
@@ -92,6 +112,10 @@ class ResponseSelector:
         self._generator = resonant_generator
         self._ventriloquist = ventriloquist_generator
         self._voice_mode = voice_mode
+        self._cadence_memory = cadence_memory
+        self._metacog = metacog
+        self._dreamer = dreamer
+        self._cadence_jazz = cadence_jazz
         
         # Initialize circuit breaker for generation failure detection
         self._circuit_breaker = SimpleCircuitBreaker(
@@ -127,6 +151,15 @@ class ResponseSelector:
 
         # Check for follow-up context (e.g., "And Germany?" after capital question)
         entity_names = self._enrich_with_context(entity_names, text)
+
+        # Step 0: Try cadence-based composition if available
+        # This provides human-like responses while maintaining 0% hallucination
+        if self._cadence_memory and self._cadence_jazz and context_vec is not None:
+            cadence_result = self._try_cadence_composition(
+                intent, entities, entity_names, text, context_vec, style
+            )
+            if cadence_result is not None:
+                return cadence_result
 
         # Step 1: Try to answer from fact store if it's a question
         # CRITICAL FIX: Also check for questions in TEACHING/STATEMENT intents (mixed intent)
@@ -416,22 +449,39 @@ class ResponseSelector:
         Returns:
             (answer, confidence) tuple if found, None otherwise
         """
+        logger.debug(f"=== FACT QUERY START ===")
+        logger.debug(f"  Text: {text}")
+        logger.debug(f"  Entities: {entity_names}")
+        logger.debug(f"  FactStore: {self._fact_store}")
+
         if not self._fact_store or not entity_names:
+            logger.debug(f"  SKIP: fact_store={bool(self._fact_store)}, entities={bool(entity_names)}")
             return None
+
+        # Log fact store stats
+        try:
+            fact_count = len(self._fact_store._facts) if hasattr(self._fact_store, '_facts') else 'unknown'
+            logger.debug(f"  FactStore has {fact_count} facts loaded")
+        except Exception as e:
+            logger.debug(f"  Could not get fact count: {e}")
 
         # Helper to try multiple case variants
         # Returns (answer, confidence) tuple
         def try_query(subject: str, predicate: str) -> Optional[tuple[str, float]]:
             # Try original, capitalized, and lowercase
+            logger.debug(f"  try_query({subject}, {predicate})")
             best_answer = None
             best_conf = 0.0
             for variant in [subject, subject.capitalize(), subject.lower()]:
                 answer, conf = self._fact_store.query(variant, predicate)
+                logger.debug(f"    variant '{variant}' -> answer='{answer}', conf={conf:.3f}")
                 if conf > 0.1 and conf > best_conf:
                     best_answer = answer
                     best_conf = conf
             if best_answer:
+                logger.debug(f"  FOUND: {best_answer} (conf={best_conf:.3f})")
                 return (best_answer, best_conf)
+            logger.debug(f"  NOT FOUND for {subject}/{predicate}")
             return None
 
         # Try to parse question structure
@@ -822,13 +872,13 @@ class ResponseSelector:
     def _extract_expected_subject(self, entity_names: List[str]) -> Optional[str]:
         """
         Extract the expected subject from entity names for validation.
-        
+
         Returns the first proper noun (capitalized entity) that isn't a question word
         or predicate word. This should match what _create_thought_vector uses.
         """
         if not entity_names:
             return None
-        
+
         for entity in entity_names:
             entity_lower = entity.lower()
             # Skip if in stop words OR if it's too short to be meaningful
@@ -837,14 +887,313 @@ class ResponseSelector:
             # Only accept proper nouns (capitalized) that are likely country/place names
             if entity[0].isupper():
                 return entity
-        
+
         # Fallback: return first non-stop-word entity
         for entity in entity_names:
             entity_lower = entity.lower()
             if entity_lower not in QUERY_SKIP_WORDS and len(entity_lower) >= 3:
                 return entity
-        
+
         return None
+
+    def _try_cadence_composition(
+        self,
+        intent: IntentResult,
+        entities: List[Entity],
+        entity_names: List[str],
+        text: str,
+        context_vec: torch.Tensor,
+        style: Optional[StyleType],
+    ) -> Optional[ResponseCandidate]:
+        """
+        Try to compose response using learned cadence patterns.
+
+        This method queries the CadenceMemory for a structure pattern that
+        matches the current context, then uses CadenceJazz to compose a
+        response by filling the template with facts from FactStore.
+
+        Returns ResponseCandidate if successful, None to fall back to standard path.
+        """
+        # Constants for confidence thresholds
+        CADENCE_CONFIDENCE_THRESHOLD = 0.3
+        COMPOSITION_CONFIDENCE_THRESHOLD = 0.4
+
+        # Query for matching cadence pattern
+        cadence = self._cadence_memory.query_cadence(context_vec)
+        if cadence is None:
+            return None  # No learned pattern matches - fall back to standard path
+
+        # Get facts for composition (only HDC facts - 0% hallucination)
+        content_facts = []
+        fact_answer = None
+
+        if self._fact_store:
+            # Query for facts related to entities
+            fact_result = self._query_facts(entity_names, text)
+            if fact_result:
+                fact_answer, fact_conf = fact_result
+                if fact_answer and fact_conf >= CADENCE_CONFIDENCE_THRESHOLD:
+                    # Create fact vector
+                    fact_vec = self._codebook.encode(fact_answer)
+                    content_facts.append((fact_answer, fact_vec))
+
+        # If no facts, we can't compose a grounded response
+        if not content_facts:
+            return None  # Fall back to standard path
+
+        # Compose response using cadence + facts
+        composed = self._cadence_jazz.compose_with_cadence(content_facts, cadence)
+
+        # Check composition confidence
+        if composed.confidence < COMPOSITION_CONFIDENCE_THRESHOLD:
+            # Low confidence - try Dreamer exploration if available
+            if self._dreamer and self._generator:
+                thought_vec = self._create_thought_vector(
+                    intent.intent, entity_names, fact_answer
+                )
+                noun_vocab = getattr(self._generator, "_vocabulary", {}).get("nouns", [])
+                verb_vocab = getattr(self._generator, "_vocabulary", {}).get("verbs", [])
+
+                if noun_vocab and verb_vocab:
+                    dream_result = self._dreamer.dream(
+                        thought_vec,
+                        noun_vocabulary=noun_vocab,
+                        verb_vocabulary=verb_vocab,
+                    )
+                    if dream_result.converged and dream_result.best_confidence > composed.confidence:
+                        # Use dream result instead
+                        composed_text = self._format_dream_result(dream_result)
+                        composed = type(composed)(
+                            text=composed_text,
+                            vector=composed.vector,
+                            confidence=dream_result.best_confidence,
+                        )
+
+        # Still low confidence? Fall back to standard path
+        if composed.confidence < COMPOSITION_CONFIDENCE_THRESHOLD:
+            return None
+
+        # Apply Sesame disfluency if confidence is moderate
+        final_text = composed.text
+        if self._generator and hasattr(self._generator, "_sesame"):
+            sesame = self._generator._sesame
+            if sesame.should_inject_disfluency(composed.confidence):
+                filler = sesame.select_filler(composed.confidence)
+                final_text = f"{filler.value}, {final_text}"
+
+        # Create thought vector for the response
+        thought_vec = self._create_thought_vector(
+            intent.intent, entity_names, fact_answer
+        )
+
+        # Get best pattern for structure
+        best_pattern = self._get_fallback_pattern(intent.intent)
+
+        return ResponseCandidate(
+            pattern=best_pattern,
+            filled_response=final_text,
+            thought_vector=thought_vec,
+            confidence=composed.confidence,
+            fact_answer=fact_answer,
+        )
+
+    def select_with_metacognition(
+        self,
+        intent: IntentResult,
+        entities: List[Entity],
+        text: str,
+        context_vec: Optional[torch.Tensor] = None,
+        style: Optional[StyleType] = None,
+    ) -> ResponseCandidate:
+        """
+        Select response using metacognitive loop for exploration.
+
+        When confidence is low, doesn't refuse - uses Dreamer to explore
+        alternative structure patterns until finding one that works.
+
+        Args:
+            intent: Classified intent result
+            entities: Extracted entities
+            text: Original user input
+            context_vec: Optional context vector
+            style: Optional preferred style
+
+        Returns:
+            ResponseCandidate with best response found
+        """
+        if context_vec is None:
+            context_vec = self._memory.get_context_vector()
+
+        # Initialize metacognitive state if available
+        if self._metacog:
+            self._metacog.state.reset()
+
+        def generate_attempt(
+            query_text: str, context: Optional[torch.Tensor] = None
+        ) -> Tuple[str, float]:
+            """Generate a single attempt with cadence."""
+            # Parallel retrieval
+            entity_names = [e.canonical_form for e in entities]
+            facts = []
+            
+            # Query fact store
+            if self._fact_store:
+                fact_result = self._query_facts(entity_names, query_text)
+                if fact_result:
+                    fact_answer, fact_conf = fact_result
+                    # Create fact vectors
+                    if fact_answer:
+                        fact_vec = self._codebook.encode(fact_answer)
+                        facts.append((fact_answer, fact_vec))
+
+            if not facts:
+                return "", 0.0
+
+            # Query cadence memory
+            cadence = None
+            if self._cadence_memory and context is not None:
+                cadence = self._cadence_memory.query_cadence(context)
+
+            # Compose response
+            if cadence and self._cadence_jazz:
+                # Compose with learned cadence
+                response = self._cadence_jazz.compose_with_cadence(facts, cadence)
+                return response.text, response.confidence
+            else:
+                # Fall back to pattern templates
+                matches = self._pattern_store.match(
+                    intent=intent.intent,
+                    entities=entity_names,
+                    context_vec=context,
+                    style=style,
+                )
+                if matches:
+                    pattern, score = matches[0]
+                    filled = self._fill_template(
+                        pattern.response_template,
+                        entities,
+                        facts[0][0] if facts else None,
+                        entity_names,
+                    )
+                    return filled, score
+                return "", 0.0
+
+        # Execute with metacognitive retry loop
+        if self._metacog:
+            result, confidence = self._metacog.execute_query(
+                query_func=lambda q: generate_attempt(q, context_vec),
+                query_text=text,
+                context_vector=context_vec,
+            )
+        else:
+            # Fallback without metacognition
+            result, confidence = generate_attempt(text, context_vec)
+
+        # Get facts for later use
+        entity_names = [e.canonical_form for e in entities]
+        fact_answer = None
+        if self._fact_store:
+            fact_result = self._query_facts(entity_names, text)
+            if fact_result:
+                fact_answer, _ = fact_result
+
+        # If still low confidence, use Dreamer for exploration
+        if confidence < 0.4 and self._dreamer and self._generator:
+            # Get vocabulary from generator
+            noun_vocab = getattr(self._generator, "_vocabulary", {}).get("nouns", [])
+            verb_vocab = getattr(self._generator, "_vocabulary", {}).get("verbs", [])
+            
+            if noun_vocab and verb_vocab:
+                # Create thought vector from context
+                thought_vec = self._create_thought_vector(
+                    intent.intent,
+                    entity_names,
+                    fact_answer,
+                )
+                
+                dream_result = self._dreamer.dream(
+                    thought_vec,
+                    noun_vocabulary=noun_vocab,
+                    verb_vocabulary=verb_vocab,
+                )
+                if dream_result.converged:
+                    # Use dream result
+                    result = self._format_dream_result(dream_result)
+                    confidence = dream_result.best_confidence
+
+        # Apply Sesame style and disfluency if available
+        if hasattr(self, "_sesame_modulate"):
+            result = self._sesame_modulate(result, confidence, intent.intent)
+        elif self._generator and hasattr(self._generator, "_sesame"):
+            # Apply disfluency if confidence is low
+            sesame = self._generator._sesame
+            if sesame.should_inject_disfluency(confidence):
+                filler = sesame.select_filler(confidence)
+                result = f"{filler.value}, {result}"
+
+        # Create thought vector
+        thought_vec = self._create_thought_vector(
+            intent.intent,
+            entity_names,
+            fact_answer,
+        )
+
+        # Get best pattern for structure
+        best_pattern = self._get_fallback_pattern(intent.intent)
+
+        return ResponseCandidate(
+            pattern=best_pattern,
+            filled_response=result,
+            thought_vector=thought_vec,
+            confidence=confidence,
+            fact_answer=fact_answer,
+        )
+
+    def _format_dream_result(self, dream_result) -> str:
+        """
+        Format dream result into text response.
+
+        Args:
+            dream_result: DreamResult from Dreamer
+
+        Returns:
+            Formatted text string
+        """
+        resonator_result = dream_result.resonator_result
+        parts = []
+        
+        if resonator_result.subject_word:
+            parts.append(resonator_result.subject_word)
+        if resonator_result.verb_word:
+            parts.append(resonator_result.verb_word)
+        if resonator_result.object_word:
+            parts.append(resonator_result.object_word)
+        
+        return " ".join(parts) if parts else ""
+
+    def _sesame_modulate(
+        self, text: str, confidence: float, intent: IntentType
+    ) -> str:
+        """
+        Apply Sesame style modulation and disfluency.
+
+        Args:
+            text: Response text
+            confidence: Confidence score
+            intent: Intent type
+
+        Returns:
+            Modulated text
+        """
+        if not self._generator or not hasattr(self._generator, "_sesame"):
+            return text
+
+        sesame = self._generator._sesame
+        if sesame.should_inject_disfluency(confidence):
+            filler = sesame.select_filler(confidence)
+            return f"{filler.value}, {text}"
+        
+        return text
 
     def __repr__(self) -> str:
         corpus_info = f", corpus={self._corpus.get_entry_count() if self._corpus else 0}" if self._corpus else ""

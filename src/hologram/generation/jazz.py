@@ -8,13 +8,15 @@ The Jazz metaphor: Content is the melody (what you're saying), Structure
 is the rhythm/form (how you're saying it). Together they create the song.
 """
 
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import torch
 
 from hologram.core.codebook import Codebook
 from hologram.core.operations import Operations
+from hologram.generation.cadence_extractor import CadencePattern
 
 
 class StructureType(Enum):
@@ -160,3 +162,113 @@ class JazzTemplate:
 
     def __repr__(self) -> str:
         return f"JazzTemplate(type={self._structure_type.value}, roles_cached={len(self._role_structures)})"
+
+
+@dataclass
+class ComposedResponse:
+    """Result of cadence-based composition."""
+    text: str  # Filled template text
+    vector: torch.Tensor  # Composed vector
+    confidence: float  # Composition confidence
+
+
+class CadenceJazz(JazzTemplate):
+    """
+    Extended Jazz for cadence-based composition.
+
+    Instead of fixed structure types, uses learned cadence patterns.
+    """
+
+    def compose_with_cadence(
+        self,
+        content_facts: List[Tuple[str, torch.Tensor]],  # [(fact_text, fact_vector), ...]
+        cadence_pattern: CadencePattern,
+    ) -> ComposedResponse:
+        """
+        Compose response by binding content with cadence structure.
+
+        Formula: Response = Cadence_Structure ⊗ Content_Facts
+
+        Args:
+            content_facts: Facts retrieved from HDC (0% hallucination)
+            cadence_pattern: Structure pattern from Neural Cadence Memory
+
+        Returns:
+            ComposedResponse with text and confidence
+        """
+        # Fill slots in cadence template with content
+        filled_template = cadence_pattern.template
+
+        # Replace slot markers with actual content
+        slot_index = 0
+        for fact_text, _ in content_facts:
+            if slot_index == 0:
+                # Replace first entity slot
+                if "__SLOT_ENTITY__" in filled_template:
+                    filled_template = filled_template.replace(
+                        "__SLOT_ENTITY__", fact_text, 1
+                    )
+                    slot_index += 1
+            else:
+                # Replace subsequent entity slots
+                if "__SLOT_ENTITY__" in filled_template:
+                    filled_template = filled_template.replace(
+                        "__SLOT_ENTITY__", fact_text, 1
+                    )
+
+        # Bind content vectors with structure vector
+        composed_vector = cadence_pattern.structure_vector
+        for _, fact_vec in content_facts:
+            composed_vector = Operations.bind(composed_vector, fact_vec)
+
+        # Calculate composition confidence
+        confidence = self._calculate_composition_confidence(
+            content_facts, cadence_pattern
+        )
+
+        return ComposedResponse(
+            text=filled_template,
+            vector=composed_vector,
+            confidence=confidence,
+        )
+
+    def _calculate_composition_confidence(
+        self,
+        content_facts: List[Tuple[str, torch.Tensor]],
+        cadence_pattern: CadencePattern,
+    ) -> float:
+        """
+        Calculate confidence for composition.
+
+        Higher confidence when:
+        - More facts match slots
+        - Structure vector is well-formed
+
+        Args:
+            content_facts: List of (text, vector) tuples
+            cadence_pattern: Cadence pattern being used
+
+        Returns:
+            Confidence score [0, 1]
+        """
+        if not content_facts:
+            return 0.0
+
+        # Count how many slots we can fill
+        slot_count = cadence_pattern.template.count("__SLOT_ENTITY__")
+        fact_count = len(content_facts)
+
+        # Match ratio: how many slots can be filled
+        if slot_count == 0:
+            match_ratio = 1.0  # No slots needed
+        else:
+            match_ratio = min(fact_count / slot_count, 1.0)
+
+        # Structure quality: check if structure vector is non-zero
+        structure_norm = torch.norm(cadence_pattern.structure_vector).item()
+        structure_quality = min(structure_norm / 100.0, 1.0)  # Normalize
+
+        # Combined confidence
+        confidence = (match_ratio * 0.7) + (structure_quality * 0.3)
+
+        return float(confidence)

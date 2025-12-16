@@ -47,6 +47,14 @@ Unlike traditional LLMs that predict the next token, Hologram:
 - **CitationEnforcer**: Every claim must trace to a stored fact
 - **ConfidenceScorer**: Quantifies certainty of answers
 
+### Developer Tools (NEW)
+
+- 🔍 **Semantic Code Search**: AI-powered codebase navigation via EmbeddixDB
+  - Natural language queries: "how does neural consolidation work?"
+  - Ranked results by relevance with code context
+  - Integrated with Claude Code for faster development
+  - See [SEMANTIC_SEARCH.md](./SEMANTIC_SEARCH.md) for details
+
 ## Installation
 
 This project uses [UV](https://docs.astral.sh/uv/) for fast, reliable dependency management.

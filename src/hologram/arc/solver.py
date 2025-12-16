@@ -14,7 +14,8 @@ transformations that match the vocabulary.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from pathlib import Path
+from typing import List, Optional, Tuple, TYPE_CHECKING
 import torch
 
 from hologram.arc.types import Grid, Object, ARCTask, TrainingPair
@@ -33,6 +34,10 @@ from hologram.core.codebook import Codebook
 from hologram.core.operations import Operations
 from hologram.core.similarity import Similarity
 from hologram.core.vector_space import VectorSpace
+from hologram.introspection import SelfImprovementManager
+
+if TYPE_CHECKING:
+    from hologram.introspection import CircuitObserver
 
 
 @dataclass
@@ -78,7 +83,8 @@ class HolographicARCSolver:
     DEFAULT_CONFIDENCE_THRESHOLD = 0.005
 
     # Minimum confidence for neural memory skill lookup
-    SKILL_CONFIDENCE_THRESHOLD = 0.7
+    # Phase 1.2: Lowered from 0.7 to 0.6 for analogical transfer (try similar tasks)
+    SKILL_CONFIDENCE_THRESHOLD = 0.6
 
     def __init__(
         self,
@@ -90,6 +96,8 @@ class HolographicARCSolver:
         search_k: int = 20,
         search_slot_k: int = 5,
         isolate_memory: bool = False,
+        enable_self_improvement: bool = True,
+        self_improvement_path: Optional[str] = None,
     ):
         """
         Initialize solver with all components.
@@ -105,6 +113,8 @@ class HolographicARCSolver:
             isolate_memory: If True, disable skill memory (for benchmark). Default: False.
                            When False (default), memory persists and hologram gets smarter.
                            When True, fresh solver without cross-task learning (for honest eval).
+            enable_self_improvement: Enable circuit observer for self-improvement (default: True)
+            self_improvement_path: Path to persist learned patterns (default: ./data/arc_learned_patterns.json)
         """
         # Core components
         self._space = VectorSpace(dimensions=dimensions)
@@ -133,6 +143,18 @@ class HolographicARCSolver:
                 detector=self._detector,
             )
 
+        # Self-improvement manager (learns from transformation outcomes)
+        self._self_improvement: Optional[SelfImprovementManager] = None
+        if enable_self_improvement and not isolate_memory:
+            # Default persistence path for learned patterns
+            if self_improvement_path is None:
+                self_improvement_path = "./data/arc_learned_patterns.json"
+            # Ensure directory exists
+            Path(self_improvement_path).parent.mkdir(parents=True, exist_ok=True)
+            self._self_improvement = SelfImprovementManager(
+                persist_path=self_improvement_path
+            )
+
         # Iterative solver for multi-step reasoning
         if iterative:
             self._iterative_solver = IterativeSolver(
@@ -141,6 +163,7 @@ class HolographicARCSolver:
                 executor=self._executor,
                 detector=self._detector,
                 max_steps=max_steps,
+                circuit_observer=self._self_improvement.observer if self._self_improvement else None,
             )
 
         # Skill memory using NeuralMemory for O(1) lookup
@@ -578,6 +601,33 @@ class HolographicARCSolver:
 
         correct = result.output == task.test_output
         return correct, result.message
+
+    def get_improvement_report(self) -> str:
+        """
+        Get a report of what the solver has learned from self-improvement.
+
+        Returns:
+            Human-readable report of learned patterns, or message if disabled.
+        """
+        if self._self_improvement is None:
+            return "Self-improvement is disabled (isolate_memory=True or enable_self_improvement=False)"
+        return self._self_improvement.get_improvement_report()
+
+    def get_improvement_stats(self) -> dict:
+        """
+        Get statistics about self-improvement learning.
+
+        Returns:
+            Dictionary with learning statistics, or empty dict if disabled.
+        """
+        if self._self_improvement is None:
+            return {}
+        return self._self_improvement.get_statistics()
+
+    def save_learned_patterns(self) -> None:
+        """Save learned patterns to disk (if self-improvement is enabled)."""
+        if self._self_improvement is not None:
+            self._self_improvement.save()
 
 
 def create_simple_task(

@@ -97,3 +97,5 @@ embeddix/
 
 # MCP config (contains API keys)
 .mcp.json
+web/frontend/node_modules/
+web/frontend/.next/

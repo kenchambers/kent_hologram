@@ -14,12 +14,15 @@ This transforms the system from reactive (query → answer) to adaptive
 import logging
 import inspect
 from enum import Enum
-from typing import Optional, Callable, Tuple, Any
+from typing import Optional, Callable, Tuple, Any, List, TYPE_CHECKING
 
 import torch
 
 from hologram.core.codebook import Codebook
 from hologram.core.operations import Operations
+
+if TYPE_CHECKING:
+    from hologram.introspection.circuit_observer import CircuitObserver
 
 
 logger = logging.getLogger(__name__)
@@ -242,6 +245,34 @@ class MetacognitiveLoop:
         self.state = MetacognitiveState(codebook)
         self.max_retries = max_retries
         self.retry_threshold = retry_threshold
+        # Self-improvement integration
+        self._circuit_observer: Optional['CircuitObserver'] = None
+
+    def set_circuit_observer(self, observer: 'CircuitObserver') -> None:
+        """
+        Attach circuit observer for self-improvement tracking.
+
+        Args:
+            observer: CircuitObserver instance to receive observations
+        """
+        self._circuit_observer = observer
+
+    def _extract_query_items(self, query_text: str) -> List[str]:
+        """
+        Extract vocabulary items from query text.
+
+        Simple tokenization that filters out very short words.
+        More sophisticated extraction could be added in the future.
+
+        Args:
+            query_text: Query string to extract from
+
+        Returns:
+            List of vocabulary items (words)
+        """
+        # Simple word extraction: lowercase, filter short words
+        words = query_text.lower().split()
+        return [w.strip('.,!?;:()[]{}') for w in words if len(w) > 2]
     
     def execute_query(
         self,
@@ -286,7 +317,17 @@ class MetacognitiveLoop:
             
             # Step 3: Observe and update state
             self.state.update_from_confidence(confidence)
-            
+
+            # Report to circuit observer for self-improvement learning
+            if self._circuit_observer is not None:
+                items = self._extract_query_items(query_text)
+                self._circuit_observer.observe(
+                    items=items,
+                    success=(confidence >= self.retry_threshold),
+                    confidence=confidence,
+                    context="metacognitive_query"
+                )
+
             # Track best result
             if confidence > best_confidence:
                 best_result = result
