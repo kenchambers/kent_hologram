@@ -1,0 +1,912 @@
+{
+  "summary": {
+    "accuracy": 1.0,
+    "solve_rate": 0.03,
+    "tasks_evaluated": 100,
+    "total_time_s": 40.83139610290527,
+    "errors_count": 0
+  },
+  "results": [
+    {
+      "task_id": "00576224",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 222.9940891265869
+    },
+    {
+      "task_id": "007bbfb7",
+      "solved": true,
+      "correct": true,
+      "confidence": 1.0,
+      "message": "Verified (attempt 1, mood=confident): tile(all_objects, by_pattern)",
+      "from_cache": false,
+      "time_ms": 71.78807258605957
+    },
+    {
+      "task_id": "009d5c81",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 332.20696449279785
+    },
+    {
+      "task_id": "00d62c1b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 393.0821418762207
+    },
+    {
+      "task_id": "00dbd492",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 608.2890033721924
+    },
+    {
+      "task_id": "017c7c7b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 257.3418617248535
+    },
+    {
+      "task_id": "025d127b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 231.5049171447754
+    },
+    {
+      "task_id": "03560426",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 250.0612735748291
+    },
+    {
+      "task_id": "045e512c",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 330.11603355407715
+    },
+    {
+      "task_id": "0520fde7",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 214.3232822418213
+    },
+    {
+      "task_id": "05269061",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 300.9910583496094
+    },
+    {
+      "task_id": "05a7bcf2",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 444.8370933532715
+    },
+    {
+      "task_id": "05f2a901",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 235.321044921875
+    },
+    {
+      "task_id": "0607ce86",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 706.6233158111572
+    },
+    {
+      "task_id": "0692e18c",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 202.43573188781738
+    },
+    {
+      "task_id": "06df4c85",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 569.6010589599609
+    },
+    {
+      "task_id": "070dd51e",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 247.6329803466797
+    },
+    {
+      "task_id": "08ed6ac7",
+      "solved": true,
+      "correct": true,
+      "confidence": 1.0,
+      "message": "Verified (attempt 1, mood=confident): enumerate(all_objects, to_red)",
+      "from_cache": false,
+      "time_ms": 97.81408309936523
+    },
+    {
+      "task_id": "09629e4f",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 575.3679275512695
+    },
+    {
+      "task_id": "0962bcdd",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 204.29682731628418
+    },
+    {
+      "task_id": "09c534e7",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 477.2069454193115
+    },
+    {
+      "task_id": "0a1d4ef5",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 1146.52681350708
+    },
+    {
+      "task_id": "0a2355a6",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 343.3263301849365
+    },
+    {
+      "task_id": "0a938d79",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 398.1492519378662
+    },
+    {
+      "task_id": "0b148d64",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 447.07727432250977
+    },
+    {
+      "task_id": "0b17323b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 225.9531021118164
+    },
+    {
+      "task_id": "0bb8deee",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 409.04712677001953
+    },
+    {
+      "task_id": "0becf7df",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 253.60774993896484
+    },
+    {
+      "task_id": "0c786b71",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 243.90697479248047
+    },
+    {
+      "task_id": "0c9aba6e",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 325.1798152923584
+    },
+    {
+      "task_id": "0ca9ddb6",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 227.85091400146484
+    },
+    {
+      "task_id": "0d3d703e",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 391.0360336303711
+    },
+    {
+      "task_id": "0d87d2a6",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 346.876859664917
+    },
+    {
+      "task_id": "0e206a2e",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 364.90392684936523
+    },
+    {
+      "task_id": "0e671a1a",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 440.1988983154297
+    },
+    {
+      "task_id": "0f63c0b9",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 627.0761489868164
+    },
+    {
+      "task_id": "103eff5b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 567.9051876068115
+    },
+    {
+      "task_id": "10fcaaa3",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 226.55010223388672
+    },
+    {
+      "task_id": "11852cab",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 465.65699577331543
+    },
+    {
+      "task_id": "1190bc91",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 220.78895568847656
+    },
+    {
+      "task_id": "1190e5a7",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 821.4061260223389
+    },
+    {
+      "task_id": "11dc524f",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 389.83821868896484
+    },
+    {
+      "task_id": "11e1fe23",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 212.07022666931152
+    },
+    {
+      "task_id": "12422b43",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 243.90292167663574
+    },
+    {
+      "task_id": "12997ef3",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 253.6640167236328
+    },
+    {
+      "task_id": "12eac192",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 397.8288173675537
+    },
+    {
+      "task_id": "13713586",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 280.48205375671387
+    },
+    {
+      "task_id": "137eaa0f",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 239.6831512451172
+    },
+    {
+      "task_id": "137f0df0",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 389.0380859375
+    },
+    {
+      "task_id": "13f06aa5",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 437.1192455291748
+    },
+    {
+      "task_id": "140c817e",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 350.91304779052734
+    },
+    {
+      "task_id": "14754a24",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 643.4361934661865
+    },
+    {
+      "task_id": "1478ab18",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 256.7417621612549
+    },
+    {
+      "task_id": "14b8e18c",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 315.57393074035645
+    },
+    {
+      "task_id": "150deff5",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 527.1639823913574
+    },
+    {
+      "task_id": "15113be4",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 632.7929496765137
+    },
+    {
+      "task_id": "15660dd6",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 529.4420719146729
+    },
+    {
+      "task_id": "15663ba9",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 514.6949291229248
+    },
+    {
+      "task_id": "15696249",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 433.9938163757324
+    },
+    {
+      "task_id": "17829a00",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 419.3921089172363
+    },
+    {
+      "task_id": "178fcbfb",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 218.7798023223877
+    },
+    {
+      "task_id": "17b80ad2",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 312.1039867401123
+    },
+    {
+      "task_id": "17b866bd",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 622.7946281433105
+    },
+    {
+      "task_id": "17cae0c1",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 256.79993629455566
+    },
+    {
+      "task_id": "18286ef8",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 445.6362724304199
+    },
+    {
+      "task_id": "182e5d0f",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 319.72694396972656
+    },
+    {
+      "task_id": "18419cfa",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 619.2989349365234
+    },
+    {
+      "task_id": "18447a8d",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 353.287935256958
+    },
+    {
+      "task_id": "184a9768",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 437.999963760376
+    },
+    {
+      "task_id": "195ba7dc",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 446.7020034790039
+    },
+    {
+      "task_id": "1990f7a8",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 306.121826171875
+    },
+    {
+      "task_id": "19bb5feb",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 319.80013847351074
+    },
+    {
+      "task_id": "1a07d186",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 299.18479919433594
+    },
+    {
+      "task_id": "1a244afd",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 521.6388702392578
+    },
+    {
+      "task_id": "1a2e2828",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 328.73010635375977
+    },
+    {
+      "task_id": "1a6449f1",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 802.2737503051758
+    },
+    {
+      "task_id": "1acc24af",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 277.0650386810303
+    },
+    {
+      "task_id": "1b2d62fb",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 251.69706344604492
+    },
+    {
+      "task_id": "1b59e163",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 410.0792407989502
+    },
+    {
+      "task_id": "1b60fb0c",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 233.47997665405273
+    },
+    {
+      "task_id": "1b8318e3",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 497.1318244934082
+    },
+    {
+      "task_id": "1be83260",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 324.2778778076172
+    },
+    {
+      "task_id": "1bfc4729",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 216.22800827026367
+    },
+    {
+      "task_id": "1c02dbbe",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 474.0259647369385
+    },
+    {
+      "task_id": "1c0d0a4b",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 456.4201831817627
+    },
+    {
+      "task_id": "1c56ad9f",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 306.11395835876465
+    },
+    {
+      "task_id": "1c786137",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 489.3672466278076
+    },
+    {
+      "task_id": "1caeab9d",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 220.67594528198242
+    },
+    {
+      "task_id": "1cf80156",
+      "solved": true,
+      "correct": true,
+      "confidence": 1.0,
+      "message": "Verified (attempt 1, mood=confident): rotate(red, left)",
+      "from_cache": false,
+      "time_ms": 71.88129425048828
+    },
+    {
+      "task_id": "1d0a4b61",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 1010.0879669189453
+    },
+    {
+      "task_id": "1d398264",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 270.2651023864746
+    },
+    {
+      "task_id": "1d61978c",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 562.2451305389404
+    },
+    {
+      "task_id": "1da012fc",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 286.61394119262695
+    },
+    {
+      "task_id": "1e0a9b12",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 210.4649543762207
+    },
+    {
+      "task_id": "1e32b0e9",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 385.4701519012451
+    },
+    {
+      "task_id": "1e5d6875",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 407.0000648498535
+    },
+    {
+      "task_id": "1e81d6f9",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 345.1809883117676
+    },
+    {
+      "task_id": "1efba499",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 287.7168655395508
+    },
+    {
+      "task_id": "1f0c79e5",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 223.2198715209961
+    },
+    {
+      "task_id": "1f642eb9",
+      "solved": false,
+      "correct": null,
+      "confidence": 0.0,
+      "message": "None of 3 attempts succeeded (best partial: 0%, final mood: confused)",
+      "from_cache": false,
+      "time_ms": 316.2362575531006
+    }
+  ],
+  "errors": []
+}

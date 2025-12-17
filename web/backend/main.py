@@ -236,6 +236,21 @@ next_static_dir = Path("/app/frontend/_next")
 if next_static_dir.exists():
     app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
 
+
+@app.get("/HOLOGRAM_README.md")
+async def serve_readme():
+    """Serve the HOLOGRAM_README.md file."""
+    # Try production path first
+    readme_path = Path("/app/frontend/HOLOGRAM_README.md")
+    if readme_path.exists():
+        return FileResponse(str(readme_path), media_type="text/markdown")
+    # Fallback for local development
+    local_path = Path(__file__).parent.parent / "frontend" / "public" / "HOLOGRAM_README.md"
+    if local_path.exists():
+        return FileResponse(str(local_path), media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="README not found")
+
+
 # Serve the Next.js frontend index page
 @app.get("/")
 async def serve_frontend():

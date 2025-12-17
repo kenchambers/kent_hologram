@@ -1,0 +1,87 @@
+[08:33:05] ============================================================
+[08:33:05] Code Trainer Initialization
+[08:33:05] ============================================================
+[08:33:05] Creating HologramContainer...
+[08:33:05] Creating ConsolidationManager (shared)...
+[08:33:05] Warning: Could not load existing memory: 'neural_memory'
+[08:33:05] Creating code components...
+[08:33:05] Self-improvement enabled: data/crew_training_facts/code_learned_patterns.json
+[08:33:05] Initialization complete. Persist dir: ./data/crew_training_facts
+[08:33:05] 
+============================================================
+[08:33:05] Starting Continuous Training
+[08:33:05] ============================================================
+[08:33:05] Tasks: 10, Max rounds: 2
+[08:33:05] 
+============================================================
+[08:33:05] Round 1/2
+[08:33:05] ============================================================
+[08:33:05]   Training on task: pattern_null_check
+[08:33:05]     Learned pattern from pattern_null_check
+[08:33:05]   Training on task: pattern_division_zero
+[08:33:06]     Learned pattern from pattern_division_zero
+[08:33:06]   Training on task: pattern_bounds_check
+[08:33:06]     Learned pattern from pattern_bounds_check
+[08:33:06]   Training on task: pattern_type_check
+[08:33:06]     Learned pattern from pattern_type_check
+[08:33:06]   Training on task: pattern_add_logging
+[08:33:06]     Learned pattern from pattern_add_logging
+[08:33:06]   Training on task: pattern_add_logging_call
+[08:33:06]     Learned pattern from pattern_add_logging_call
+[08:33:06]   Training on task: pattern_try_except
+[08:33:07]     Learned pattern from pattern_try_except
+[08:33:07]   Training on task: pattern_add_import
+[08:33:07]     Learned pattern from pattern_add_import
+[08:33:07]   Training on task: pattern_fix_return
+[08:33:07]     Learned pattern from pattern_fix_return
+[08:33:07]   Training on task: pattern_string_format
+[08:33:07]     Learned pattern from pattern_string_format
+[08:33:07]   Learned 10/10 tasks
+[08:33:07] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:33:07] 
+Round 1 complete: Rounds: 1, Tasks: 10, Learned: 10 (100.0%), Patterns: 10, Gen success: 0/0 (0.0%)
+[08:33:07] 
+============================================================
+[08:33:07] Round 2/2
+[08:33:07] ============================================================
+[08:33:07]   Training on task: pattern_null_check
+[08:33:07]     Learned pattern from pattern_null_check
+[08:33:07]   Training on task: pattern_division_zero
+[08:33:07]     Learned pattern from pattern_division_zero
+[08:33:07]   Training on task: pattern_bounds_check
+[08:33:08]     Learned pattern from pattern_bounds_check
+[08:33:08]   Training on task: pattern_type_check
+[08:33:08]     Learned pattern from pattern_type_check
+[08:33:08]   Training on task: pattern_add_logging
+[08:33:08]     Learned pattern from pattern_add_logging
+[08:33:08]   Training on task: pattern_add_logging_call
+[08:33:08]     Learned pattern from pattern_add_logging_call
+[08:33:08]   Training on task: pattern_try_except
+[08:33:08]     Learned pattern from pattern_try_except
+[08:33:08]   Training on task: pattern_add_import
+[08:33:09]     Learned pattern from pattern_add_import
+[08:33:09]   Training on task: pattern_fix_return
+[08:33:09]     Learned pattern from pattern_fix_return
+[08:33:09]   Training on task: pattern_string_format
+[08:33:09]     Learned pattern from pattern_string_format
+[08:33:09]   Learned 10/10 tasks
+[08:33:09] 
+--- Validation ---
+[08:33:09]   Generated verified patch: modify_line(example.py:line_1)
+[08:33:09]   pattern_null_check: PASS (conf=1.00)
+[08:33:09]   Generated verified patch: modify_line(example.py:line_1)
+[08:33:09]   pattern_division_zero: PASS (conf=1.00)
+[08:33:09]   Generated verified patch: modify_line(example.py:line_1)
+[08:33:09]   pattern_bounds_check: PASS (conf=1.00)
+[08:33:09] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:33:09] 
+Round 2 complete: Rounds: 2, Tasks: 20, Learned: 20 (100.0%), Patterns: 20, Gen success: 3/3 (100.0%)
+[08:33:09] 
+Final save...
+[08:33:09] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:33:09] Saved self-improvement patterns
+[08:33:09] 
+============================================================
+[08:33:09] Final Training Report
+[08:33:09] ============================================================
+[08:33:09] Rounds: 2, Tasks: 20, Learned: 20 (100.0%), Patterns: 20, Gen success: 3/3 (100.0%)

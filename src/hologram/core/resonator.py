@@ -156,7 +156,8 @@ class Resonator:
                 self._ops.bundle(
                     self._ops.bind(y, self._role_verb),
                     self._ops.bind(z, self._role_object)
-                )
+                ),
+                iteration
             )
 
             # Solve for Verb
@@ -165,7 +166,8 @@ class Resonator:
                 self._ops.bundle(
                     self._ops.bind(x, self._role_subject),
                     self._ops.bind(z, self._role_object)
-                )
+                ),
+                iteration
             )
 
             # Solve for Object
@@ -174,7 +176,8 @@ class Resonator:
                 self._ops.bundle(
                     self._ops.bind(x, self._role_subject),
                     self._ops.bind(y, self._role_verb)
-                )
+                ),
+                iteration
             )
 
             # Check convergence
@@ -221,9 +224,10 @@ class Resonator:
         vocabulary: List[str],
         vocab_vectors: torch.Tensor,
         other_contributions: torch.Tensor,
+        iteration: int = 0,
     ) -> Tuple[torch.Tensor, str, float]:
         """
-        Solve for single slot given others.
+        Solve for single slot given others with optional soft cleanup.
 
         Isolates the slot component by subtracting other contributions,
         then unbinds with role and cleans up to nearest vocabulary item.
@@ -234,6 +238,7 @@ class Resonator:
             vocabulary: List of word strings
             vocab_vectors: Pre-encoded vocabulary vectors
             other_contributions: Sum of other (word ⊗ role) contributions
+            iteration: Current iteration number for annealing schedule
 
         Returns:
             Tuple of (cleaned vector, word string, confidence margin)
@@ -244,8 +249,17 @@ class Resonator:
         # Unbind with role to get raw proposal
         proposal = self._ops.unbind(remains, role)
 
-        # Cleanup to nearest vocabulary item
-        return self._cleanup_with_confidence(proposal, vocabulary, vocab_vectors)
+        # Annealing: soft early, hard late
+        if iteration < self._max_iterations // 2:
+            # Soft cleanup during exploration
+            temperature = 0.5 * (1.0 - iteration / (self._max_iterations // 2)) + 0.1
+            soft_vec = self._cleanup_soft(proposal, vocab_vectors, temperature)
+            # Still need word and confidence for tracking
+            _, word, conf = self._cleanup_with_confidence(proposal, vocabulary, vocab_vectors)
+            return soft_vec, word, conf
+        else:
+            # Hard cleanup during exploitation
+            return self._cleanup_with_confidence(proposal, vocabulary, vocab_vectors)
 
     def _cleanup_with_confidence(
         self,
@@ -282,6 +296,37 @@ class Resonator:
             margin = 1.0  # Only one option
 
         return best_vec, best_word, margin
+
+    def _cleanup_soft(
+        self,
+        proposal: torch.Tensor,
+        vocab_vectors: torch.Tensor,
+        temperature: float = 0.1,
+    ) -> torch.Tensor:
+        """
+        Soft cleanup: weighted combination of vocabulary vectors.
+
+        Preserves uncertainty by using softmax instead of argmax.
+        Temperature controls sharpness (lower = sharper).
+
+        Args:
+            proposal: Noisy proposal vector
+            vocab_vectors: Vocabulary matrix (V, D)
+            temperature: Softmax temperature (default: 0.1)
+
+        Returns:
+            Soft-cleaned vector (weighted combination)
+        """
+        similarities = Similarity.cosine_batch(proposal, vocab_vectors)
+        weights = torch.softmax(similarities / temperature, dim=0)
+        soft_vec = torch.einsum('v,vd->d', weights, vocab_vectors)
+
+        # Normalize to unit length
+        norm = torch.norm(soft_vec)
+        if norm > 1e-6:
+            soft_vec = soft_vec / norm
+
+        return soft_vec
 
     def _superpose(self, vectors: torch.Tensor) -> torch.Tensor:
         """Create superposition of all vectors (maximum uncertainty)."""

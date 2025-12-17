@@ -1,0 +1,37 @@
+[08:01:28] ============================================================
+[08:01:28] Code Trainer Initialization
+[08:01:28] ============================================================
+[08:01:28] Creating HologramContainer...
+[08:01:28] Creating ConsolidationManager (shared)...
+[08:01:28] Loaded existing memory: 185 patterns
+[08:01:28] Creating code components...
+[08:01:28] Self-improvement enabled: data/crew_training_facts/code_learned_patterns.json
+[08:01:28] Initialization complete. Persist dir: ./data/crew_training_facts
+[08:01:28] 
+============================================================
+[08:01:28] Starting Continuous Training
+[08:01:28] ============================================================
+[08:01:28] Tasks: 3, Max rounds: 1
+[08:01:28] 
+============================================================
+[08:01:28] Round 1/1
+[08:01:28] ============================================================
+[08:01:28]   Training on task: sample_001
+[08:01:29]     Learned pattern from sample_001
+[08:01:29]   Training on task: sample_002
+[08:01:29]     Learned pattern from sample_002
+[08:01:29]   Training on task: sample_003
+[08:01:29]     Learned pattern from sample_003
+[08:01:29]   Learned 3/3 tasks
+[08:01:29] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:01:29] 
+Round 1 complete: Rounds: 1, Tasks: 3, Learned: 3 (100.0%), Patterns: 3, Gen success: 0/0 (0.0%)
+[08:01:29] 
+Final save...
+[08:01:29] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:01:29] Saved self-improvement patterns
+[08:01:29] 
+============================================================
+[08:01:29] Final Training Report
+[08:01:29] ============================================================
+[08:01:29] Rounds: 1, Tasks: 3, Learned: 3 (100.0%), Patterns: 3, Gen success: 0/0 (0.0%)

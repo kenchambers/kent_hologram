@@ -998,6 +998,37 @@ class HologramContainer:
                 facts = self._chroma.query_by_metadata(predicate=predicate)
                 return [self._make_fact(f) for f in facts]
 
+            def search_facts_mentioning(self, term: str, limit: int = 5, match_type: str = "any"):
+                """Find facts where subject, predicate, or object mentions the term."""
+                import re
+
+                if not term or not term.strip():
+                    return []
+
+                term_lower = term.strip().lower()
+                if len(term_lower) < 3:
+                    return []
+
+                term_pattern = r'\b' + re.escape(term_lower) + r'\b'
+                scored_matches = []
+
+                for fact in self.get_all_facts():
+                    score = 0.0
+                    if match_type in ("any", "subject"):
+                        if re.search(term_pattern, fact.subject.lower()):
+                            score = 0.9
+                    if score == 0.0 and match_type == "any":
+                        if re.search(term_pattern, fact.predicate.lower()):
+                            score = 0.7
+                    if score == 0.0 and match_type in ("any", "object"):
+                        if re.search(term_pattern, fact.object.lower()):
+                            score = 0.5
+                    if score > 0:
+                        scored_matches.append((fact, score))
+
+                scored_matches.sort(key=lambda x: x[1], reverse=True)
+                return scored_matches[:limit]
+
             def __repr__(self):
                 return f"FactBridge(chroma={self._chroma})"
 

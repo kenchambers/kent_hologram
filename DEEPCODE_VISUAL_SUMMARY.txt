@@ -1,0 +1,388 @@
+================================================================================
+                    DEEPCODE ANALYSIS: VISUAL SUMMARY
+                       Kent Hologram Codebase Review
+================================================================================
+
+1. CURRENT ARCHITECTURE (What Hologram Does)
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │                     CodeGenerator                           │
+    │  (src/hologram/swe/generator.py)                            │
+    │                                                              │
+    │  Input: SWETask(issue_text, code_before, code_after)      │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Step 1: Encode Issue                                       │
+    │  encode_issue("Function X signature changed")               │
+    │  → HDC vector via CodeEncoder.encode_issue()                │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Step 2: Query Neural Memory                                │
+    │  memory.query(issue_vec)                                    │
+    │  → Returns: (pattern_label="swe::task_123::file.py", conf)  │
+    │  → Via ConsolidationManager (HDC + Neural hybrid)           │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Step 3: Retrieve Learned Pattern                           │
+    │  get_learned_pattern(label)                                 │
+    │  → Returns: (operation, target_file, location, content)     │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼ (Single file only!)
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Step 4: Generate Single Patch                              │
+    │  CodePatch(file="encoder.py", operation="modify_function")  │
+    │  patches = [patch]                                          │
+    │                                                              │
+    │  ✗ PROBLEM: Only first file!                                │
+    │  ✗ MISSING: Patches for generator.py (calls encode)         │
+    │  ✗ MISSING: Patches for test_encoder.py (tests encode)      │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Step 5: Verify Patch                                       │
+    │  verification_score = cosine(issue_vec, patch_vec)          │
+    │  ✓ Only checks if patch matches issue, not if complete      │
+    └────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Output: PatchResult                                        │
+    │  - patches: [CodePatch(file="encoder.py", ...)]             │
+    │  - confidence: 0.82                                         │
+    │  - verification_passed: True                                │
+    │                                                              │
+    │  Result: INCOMPLETE (missing dependent files)               │
+    └─────────────────────────────────────────────────────────────┘
+
+
+2. STORAGE LAYER: HDC RESONANCE (FactStore)
+================================================================================
+
+    Facts stored as S-P-O triples via bind() operation:
+
+    ┌──────────────────────────────────────────┐
+    │  Fact 1: encode() calls helper()          │
+    │  Subject: "encode"                        │
+    │  Predicate: "calls"                       │
+    │  Object: "helper"                         │
+    │                                            │
+    │  key = bind(encode_vec, calls_vec)        │
+    │  store(key, helper_vec)                   │
+    └──────────────────────────────────────────┘
+
+    Query via resonance:
+
+    Forward:  fs.query("encode", "calls")
+              → Returns: "helper" (0.92 confidence)
+
+    Reverse:  fs.query_subject("calls", "encode_issue")
+              → Returns: "CodeGenerator.generate" (0.92 confidence)
+
+    Multi-hop problem:
+
+    encode_issue ──0.92──> CodeGenerator.generate
+                                │
+                           ──0.88──> ??
+                                │
+                           ──0.84──> ??
+                                │
+                           ──0.78──> ??
+
+    Total confidence: 0.92 × 0.88 × 0.84 × 0.78 = 0.60 ✗ (unreliable)
+
+
+3. THE 3 GAPS
+================================================================================
+
+    GAP 1: Transitive Dependencies
+    ─────────────────────────────────────────────────────────────
+
+    Question: "What transitively depends on encode_issue()?"
+
+    Current approach:
+      • Uses resonance (fuzzy matching)
+      • Confidence decays with each hop
+      • 4+ hops become unreliable (<0.60 confidence)
+
+    Missing:
+      • BFS traversal of facts
+      • Explicit edge following
+      • Multi-hop queries without decay
+
+
+    GAP 2: Multi-File Context
+    ─────────────────────────────────────────────────────────────
+
+    Stored facts:
+      ("CodeGenerator.generate", "calls", "encode_issue")
+      ("generator.py", "imports", "encoder.py")
+
+    Missing facts:
+      ("CodeGenerator.generate", "defined_in", "generator.py")
+      ("encode_issue", "signature", "(self, text, context)")
+
+    Problem:
+      • Can't answer "encode_issue is in what file?"
+      • Can't answer "Will this change break generator.py:99?"
+      • Can't validate signature compatibility
+
+
+    GAP 3: Single-Patch Generation
+    ─────────────────────────────────────────────────────────────
+
+    Current: patches = [CodePatch(file="encoder.py", ...)]
+
+    Should be:
+      patches = [
+        CodePatch(file="encoder.py", ...),      # The change
+        CodePatch(file="generator.py", ...),    # Update call site
+        CodePatch(file="test_encoder.py", ...)  # Update test
+      ]
+
+    Missing:
+      • Identification of affected files
+      • Multi-file patch generation
+      • Cross-file validation
+
+
+4. PROPOSED SOLUTION: 3 MINIMAL ADDITIONS
+================================================================================
+
+    ADDITION 1: CodeDependencyGraph (~80 lines)
+    ─────────────────────────────────────────────────────────────
+
+    Location: src/hologram/swe/dependency_graph.py (NEW)
+
+    What it does:
+      • Traverses FactStore S-P-O facts as DAG
+      • BFS to find transitive dependents
+      • Maps functions to files
+      • No resonance decay (exact edges)
+
+    Usage:
+      graph = CodeDependencyGraph(fact_store)
+      affected_files = graph.get_files_affected("encode_issue")
+      # Returns: {"generator.py": ["CodeGenerator.generate"], ...}
+
+    Time complexity: O(n) BFS (no resonance O(n²))
+
+
+    ADDITION 2: Enhanced Metadata (~20 lines)
+    ─────────────────────────────────────────────────────────────
+
+    Location: src/hologram/swe/encoder.py (modify)
+
+    What it adds:
+      • Store: ("encode_issue", "defined_in", "encoder.py")
+      • Store: ("CodeGenerator.generate", "defined_in", "generator.py")
+      • Store: ("encode_issue", "signature", "(self, text, context)")
+
+    Why:
+      • Links functions to files
+      • Enables multi-file context
+      • Allows signature validation
+
+
+    ADDITION 3: MultiFilePatchValidator (~60 lines)
+    ─────────────────────────────────────────────────────────────
+
+    Location: src/hologram/swe/validator.py (NEW)
+
+    What it does:
+      • Uses CodeDependencyGraph
+      • Checks if patch set is complete
+      • Validates no broken call sites
+      • Detects missing patches
+
+    Usage:
+      validator = MultiFilePatchValidator(fact_store, encoder)
+      errors = validator.validate_patch_set(patches, code_before)
+      if errors:
+        print(f"Incomplete patches: {errors}")
+
+
+5. BEFORE vs AFTER COMPARISON
+================================================================================
+
+    BEFORE (Current Hologram)
+    ─────────────────────────────────────────────────────────────
+
+    Input:  encode_issue() signature changed
+
+    Process:
+      encode_issue() ──[query memory]──> pattern found
+                    ──[generate]──> 1 patch
+                    ──[verify]──> passes (0.82 conf)
+
+    Output: PatchResult(
+              patches=[CodePatch(file="encoder.py")],
+              verified=True
+            )
+
+    Problem: INCOMPLETE - Missing generator.py, test_encoder.py
+
+
+    AFTER (With 3 Additions)
+    ─────────────────────────────────────────────────────────────
+
+    Input:  encode_issue() signature changed
+
+    Process:
+      encode_issue() ──[query memory]──> pattern found
+                    ──[identify changed function]──> "encode_issue"
+                    ──[build dependency graph]──> {generator.py, test_*.py}
+                    ──[generate patches]──> 3 patches for all affected files
+                    ──[validate cross-file]──> check all call sites
+                    ──[verify]──> passes (0.82 conf + validation)
+
+    Output: PatchResult(
+              patches=[
+                CodePatch(file="encoder.py"),
+                CodePatch(file="generator.py"),
+                CodePatch(file="test_encoder.py")
+              ],
+              verified=True,
+              validation_errors=[]
+            )
+
+    Result: COMPLETE - All affected files covered
+
+
+6. EFFORT & COST ANALYSIS
+================================================================================
+
+    Changes Required:
+
+    ┌──────────────────────┬────────┬────────┬─────────┐
+    │ Component            │ Lines  │ Status │ Effort  │
+    ├──────────────────────┼────────┼────────┼─────────┤
+    │ CodeDependencyGraph  │   80   │ NEW    │ 2 hrs   │
+    │ Encoder metadata     │   20   │ MODIFY │ 1 hr    │
+    │ MultiFilePatchValidator│  60  │ NEW    │ 2 hrs   │
+    │ Generator integration │   20   │ MODIFY │ 1 hr    │
+    │ Tests                │  180   │ NEW    │ 2 hrs   │
+    ├──────────────────────┼────────┼────────┼─────────┤
+    │ TOTAL                │  360   │        │ 8 hrs   │
+    └──────────────────────┴────────┴────────┴─────────┘
+
+    Files Touched:
+
+    ✓ Unchanged (30+ files):
+      • fact_store.py (keep as-is)
+      • consolidation/manager.py (keep as-is)
+      • code_resonator.py (keep as-is)
+      • All core HDC infrastructure
+
+    ~ Modified (2 files):
+      • encoder.py (add metadata extraction)
+      • generator.py (add graph usage)
+
+    + Created (2 files):
+      • dependency_graph.py (new, 80 lines)
+      • validator.py (new, 60 lines)
+
+    Breaking Changes: ZERO
+
+
+7. INTEGRATION POINTS
+================================================================================
+
+    In src/hologram/swe/generator.py:
+
+    Line 122-135 (Multi-file generation):
+
+      graph = CodeDependencyGraph(self._fact_store)
+      changed_func = self._extract_function_name(memory_label)
+      affected_files = graph.get_files_affected(changed_func)
+
+      for file, functions in affected_files.items():
+        for func in functions:
+          patch = self._generate_update_patch(func, changed_func, file)
+          patches.append(patch)
+
+
+    Line 186-189 (Enhanced verification):
+
+      validator = MultiFilePatchValidator(self._fact_store, self._encoder)
+      errors = validator.validate_patch_set(patches, task.code_before)
+
+      if errors:
+        verification_passed = False
+
+
+8. DECISION MATRIX
+================================================================================
+
+    ┌─────────────────────────┬──────────────┬────────────┐
+    │ Capability              │ Current HDC  │ With Graph │
+    ├─────────────────────────┼──────────────┼────────────┤
+    │ 1-hop queries           │ ✓ (0.92)     │ ✓ (1.0)    │
+    │ 2-hop queries           │ ✓ (0.81)     │ ✓ (1.0)    │
+    │ 3-hop queries           │ ⚠ (0.68)     │ ✓ (1.0)    │
+    │ 4+ hop queries          │ ✗ (0.60)     │ ✓ (1.0)    │
+    │ Multi-file patches      │ ✗            │ ✓          │
+    │ Cross-file validation   │ ✗            │ ✓          │
+    │ Pattern learning        │ ✓✓ (best)    │ ✓ (same)   │
+    │ Semantic fuzzy match    │ ✓✓ (best)    │ ✓ (same)   │
+    └─────────────────────────┴──────────────┴────────────┘
+
+
+9. RECOMMENDED IMPLEMENTATION TIMELINE
+================================================================================
+
+    Week 1:
+      Mon: Design CodeDependencyGraph API
+      Tue: Implement CodeDependencyGraph (~80 lines)
+      Wed: Add metadata extraction to encoder.py (~20 lines)
+      Thu: Write tests for dependency_graph.py (~100 lines)
+      Fri: Code review + refine
+
+    Week 2:
+      Mon: Design MultiFilePatchValidator
+      Tue: Implement validator (~60 lines)
+      Wed: Integrate into generator.py (~20 lines)
+      Thu: Write end-to-end tests (~80 lines)
+      Fri: Performance testing + merge
+
+    Total: ~8 hours implementation + 4 hours testing/review = 12 hours
+
+
+10. FINAL RECOMMENDATION
+================================================================================
+
+    ✓ IMPLEMENT the 3 minimal additions
+
+    Rationale:
+      • Solves multi-file impact analysis (addresses real gap)
+      • No refactoring required (additive only)
+      • Reuses existing FactStore infrastructure
+      • Preserves Hologram's HDC semantic advantage
+      • Low effort (8 hours coding)
+      • Zero breaking changes
+
+    ✗ DO NOT adopt full DeepCode architecture
+
+    Why:
+      • Graph infrastructure would duplicate FactStore
+      • Full adoption 10x more effort for marginal gain
+      • Hologram's resonance is semantically superior
+      • Thin traversal layer is sufficient
+
+    Start: DEEPCODE_EXEC_SUMMARY.md
+    Deep dive: DEEPCODE_ANALYSIS.md (Part 5: Recommendations)
+    Implementation: DEEPCODE_TECHNICAL_APPENDIX.md (Part 7)
+
+
+================================================================================
+                              END OF SUMMARY
+                    See DEEPCODE_README.md for detailed guide
+================================================================================

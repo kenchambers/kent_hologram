@@ -1,0 +1,36 @@
+[23:17:58] ============================================================
+[23:17:58] ARC Trainer Initialization
+[23:17:58] ============================================================
+[23:17:58] Creating HologramContainer...
+[23:17:58] Creating ConsolidationManager...
+[23:17:58] Loaded existing memory: 150 patterns
+[23:17:58] Creating ARC components...
+[23:17:59] Creating HolographicARCSolver (shared memory mode)...
+[23:17:59] Initialization complete. Persist dir: ./data/crew_training_facts
+[23:17:59] 
+============================================================
+[23:17:59] Starting Continuous Training
+[23:17:59] ============================================================
+[23:17:59] ARC Curriculum Distribution:
+  EASY: 26 tasks
+  MEDIUM: 0 tasks
+  HARD: 0 tasks
+[23:17:59] 
+============================================================
+[23:17:59] Round 1/1
+[23:17:59] ============================================================
+[23:17:59] 
+Training on easy tier (26 tasks)
+[23:17:59] [1/26] Task 794b24be
+[23:17:59] 
+Final save...
+[23:17:59] Error saving memory: 'ConsolidationManager' object has no attribute '_consolidate_now'
+[23:17:59] 
+============================================================
+[23:17:59] Final Training Report
+[23:17:59] ============================================================
+[23:17:59] Rounds: 1, Tasks: 1, Solved: 0 (0.0%), Patterns stored: 0, Already known: 0, Extraction failures: 0
+[23:17:59] 
+--- Validation (5 tasks) ---
+[23:18:03] Validation accuracy: 0.0%
+[23:18:03] Solve rate: 0.0%

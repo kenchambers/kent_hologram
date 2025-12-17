@@ -1,0 +1,1303 @@
+[08:45:45] ============================================================
+[08:45:45] Code Trainer Initialization
+[08:45:45] ============================================================
+[08:45:45] Creating HologramContainer...
+[08:45:45] Creating ConsolidationManager (shared)...
+[08:45:45] Loaded existing memory: 0 patterns
+[08:45:45] Creating code components...
+[08:45:45] Self-improvement enabled: data/crew_training_facts/code_learned_patterns.json
+[08:45:45] Initialization complete. Persist dir: ./data/crew_training_facts
+[08:45:45] 
+============================================================
+[08:45:45] Starting Continuous Training
+[08:45:45] ============================================================
+[08:45:45] Tasks: 26, Max rounds: 20
+[08:45:45] 
+============================================================
+[08:45:45] Round 1/20
+[08:45:45] ============================================================
+[08:45:45]   Training on task: pattern_none_check
+[08:45:46]     Learned pattern from pattern_none_check
+[08:45:46]   Training on task: pattern_empty_string_check
+[08:45:46]     Learned pattern from pattern_empty_string_check
+[08:45:46]   Training on task: pattern_none_or_empty_check
+[08:45:47]     Learned pattern from pattern_none_or_empty_check
+[08:45:47]   Training on task: pattern_dataframe_empty_check
+[08:45:47]     Learned pattern from pattern_dataframe_empty_check
+[08:45:47]   Training on task: pattern_list_empty_check
+[08:45:47]     Learned pattern from pattern_list_empty_check
+[08:45:47]   Training on task: pattern_none_check_before_access
+[08:45:47]     Learned pattern from pattern_none_check_before_access
+[08:45:47]   Training on task: pattern_none_check_with_default
+[08:45:47]     Learned pattern from pattern_none_check_with_default
+[08:45:47]   Training on task: pattern_none_check_early_return
+[08:45:47]     Learned pattern from pattern_none_check_early_return
+[08:45:47]   Training on task: pattern_none_check_with_exception
+[08:45:48]     Learned pattern from pattern_none_check_with_exception
+[08:45:48]   Training on task: pattern_none_check_is_operator
+[08:45:48]     Learned pattern from pattern_none_check_is_operator
+[08:45:48]   Training on task: pattern_none_check_is_not_operator
+[08:45:48]     Learned pattern from pattern_none_check_is_not_operator
+[08:45:48]   Training on task: pattern_none_default_parameter
+[08:45:48]     Learned pattern from pattern_none_default_parameter
+[08:45:48]   Training on task: pattern_getattr_none_check
+[08:45:48]     Learned pattern from pattern_getattr_none_check
+[08:45:48]   Training on task: pattern_none_sentinel_pattern
+[08:45:49]     Learned pattern from pattern_none_sentinel_pattern
+[08:45:49]   Training on task: pattern_range_validation
+[08:45:49]     Learned pattern from pattern_range_validation
+[08:45:49]   Training on task: pattern_input_retry_loop
+[08:45:49]     Learned pattern from pattern_input_retry_loop
+[08:45:49]   Training on task: pattern_type_conversion_guard
+[08:45:49]     Learned pattern from pattern_type_conversion_guard
+[08:45:49]   Training on task: pattern_regex_input_validation
+[08:45:49]     Learned pattern from pattern_regex_input_validation
+[08:45:49]   Training on task: pattern_allow_regex_validation
+[08:45:49]     Learned pattern from pattern_allow_regex_validation
+[08:45:49]   Training on task: pattern_block_regex_validation
+[08:45:50]     Learned pattern from pattern_block_regex_validation
+[08:45:50]   Training on task: pattern_null_check
+[08:45:50]     Learned pattern from pattern_null_check
+[08:45:50]   Training on task: pattern_type_validation
+[08:45:50]     Learned pattern from pattern_type_validation
+[08:45:50]   Training on task: pattern_range_validation
+[08:45:50]     Learned pattern from pattern_range_validation
+[08:45:50]   Training on task: pattern_input_sanitization
+[08:45:50]     Learned pattern from pattern_input_sanitization
+[08:45:50]   Training on task: pattern_pyinputplus_import
+[08:45:51]     Learned pattern from pattern_pyinputplus_import
+[08:45:51]   Training on task: pattern_try_except_validation
+[08:45:51]     Learned pattern from pattern_try_except_validation
+[08:45:51]   Learned 26/26 tasks
+[08:45:51] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:45:51] 
+Round 1 complete: Rounds: 1, Tasks: 26, Learned: 26 (100.0%), Patterns: 26, Gen success: 0/0 (0.0%)
+[08:45:51] 
+============================================================
+[08:45:51] Round 2/20
+[08:45:51] ============================================================
+[08:45:51]   Training on task: pattern_none_check
+[08:45:51]     Learned pattern from pattern_none_check
+[08:45:51]   Training on task: pattern_empty_string_check
+[08:45:51]     Learned pattern from pattern_empty_string_check
+[08:45:51]   Training on task: pattern_none_or_empty_check
+[08:45:51]     Learned pattern from pattern_none_or_empty_check
+[08:45:51]   Training on task: pattern_dataframe_empty_check
+[08:45:51]     Learned pattern from pattern_dataframe_empty_check
+[08:45:51]   Training on task: pattern_list_empty_check
+[08:45:52]     Learned pattern from pattern_list_empty_check
+[08:45:52]   Training on task: pattern_none_check_before_access
+[08:45:52]     Learned pattern from pattern_none_check_before_access
+[08:45:52]   Training on task: pattern_none_check_with_default
+[08:45:52]     Learned pattern from pattern_none_check_with_default
+[08:45:52]   Training on task: pattern_none_check_early_return
+[08:45:52]     Learned pattern from pattern_none_check_early_return
+[08:45:52]   Training on task: pattern_none_check_with_exception
+[08:45:52]     Learned pattern from pattern_none_check_with_exception
+[08:45:52]   Training on task: pattern_none_check_is_operator
+[08:45:53]     Learned pattern from pattern_none_check_is_operator
+[08:45:53]   Training on task: pattern_none_check_is_not_operator
+[08:45:53]     Learned pattern from pattern_none_check_is_not_operator
+[08:45:53]   Training on task: pattern_none_default_parameter
+[08:45:53]     Learned pattern from pattern_none_default_parameter
+[08:45:53]   Training on task: pattern_getattr_none_check
+[08:45:53]     Learned pattern from pattern_getattr_none_check
+[08:45:53]   Training on task: pattern_none_sentinel_pattern
+[08:45:53]     Learned pattern from pattern_none_sentinel_pattern
+[08:45:53]   Training on task: pattern_range_validation
+[08:45:53]     Learned pattern from pattern_range_validation
+[08:45:53]   Training on task: pattern_input_retry_loop
+[08:45:54]     Learned pattern from pattern_input_retry_loop
+[08:45:54]   Training on task: pattern_type_conversion_guard
+[08:45:54]     Learned pattern from pattern_type_conversion_guard
+[08:45:54]   Training on task: pattern_regex_input_validation
+[08:45:54]     Learned pattern from pattern_regex_input_validation
+[08:45:54]   Training on task: pattern_allow_regex_validation
+[08:45:54]     Learned pattern from pattern_allow_regex_validation
+[08:45:54]   Training on task: pattern_block_regex_validation
+[08:45:54]     Learned pattern from pattern_block_regex_validation
+[08:45:54]   Training on task: pattern_null_check
+[08:45:55]     Learned pattern from pattern_null_check
+[08:45:55]   Training on task: pattern_type_validation
+[08:45:55]     Learned pattern from pattern_type_validation
+[08:45:55]   Training on task: pattern_range_validation
+[08:45:55]     Learned pattern from pattern_range_validation
+[08:45:55]   Training on task: pattern_input_sanitization
+[08:45:55]     Learned pattern from pattern_input_sanitization
+[08:45:55]   Training on task: pattern_pyinputplus_import
+[08:45:55]     Learned pattern from pattern_pyinputplus_import
+[08:45:55]   Training on task: pattern_try_except_validation
+[08:45:55]     Learned pattern from pattern_try_except_validation
+[08:45:55]   Learned 26/26 tasks
+[08:45:55] 
+--- Validation ---
+[08:45:55]   Generated verified patch: modify_line(example.py:line_1)
+[08:45:55]   pattern_none_check: PASS (conf=0.97)
+[08:45:55]   Generated verified patch: modify_line(example.py:line_1)
+[08:45:55]   pattern_empty_string_check: PASS (conf=1.00)
+[08:45:55]   Generated verified patch: modify_line(example.py:line_1)
+[08:45:55]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:45:55] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:45:55] 
+Round 2 complete: Rounds: 2, Tasks: 52, Learned: 52 (100.0%), Patterns: 52, Gen success: 3/3 (100.0%)
+[08:45:55] 
+============================================================
+[08:45:55] Round 3/20
+[08:45:55] ============================================================
+[08:45:55]   Training on task: pattern_none_check
+[08:45:56]     Learned pattern from pattern_none_check
+[08:45:56]   Training on task: pattern_empty_string_check
+[08:45:56]     Learned pattern from pattern_empty_string_check
+[08:45:56]   Training on task: pattern_none_or_empty_check
+[08:45:56]     Learned pattern from pattern_none_or_empty_check
+[08:45:56]   Training on task: pattern_dataframe_empty_check
+[08:45:56]     Learned pattern from pattern_dataframe_empty_check
+[08:45:56]   Training on task: pattern_list_empty_check
+[08:45:56]     Learned pattern from pattern_list_empty_check
+[08:45:56]   Training on task: pattern_none_check_before_access
+[08:45:56]     Learned pattern from pattern_none_check_before_access
+[08:45:56]   Training on task: pattern_none_check_with_default
+[08:45:57]     Learned pattern from pattern_none_check_with_default
+[08:45:57]   Training on task: pattern_none_check_early_return
+[08:45:57]     Learned pattern from pattern_none_check_early_return
+[08:45:57]   Training on task: pattern_none_check_with_exception
+[08:45:57]     Learned pattern from pattern_none_check_with_exception
+[08:45:57]   Training on task: pattern_none_check_is_operator
+[08:45:57]     Learned pattern from pattern_none_check_is_operator
+[08:45:57]   Training on task: pattern_none_check_is_not_operator
+[08:45:57]     Learned pattern from pattern_none_check_is_not_operator
+[08:45:57]   Training on task: pattern_none_default_parameter
+[08:45:57]     Learned pattern from pattern_none_default_parameter
+[08:45:57]   Training on task: pattern_getattr_none_check
+[08:45:58]     Learned pattern from pattern_getattr_none_check
+[08:45:58]   Training on task: pattern_none_sentinel_pattern
+[08:45:58]     Learned pattern from pattern_none_sentinel_pattern
+[08:45:58]   Training on task: pattern_range_validation
+[08:45:58]     Learned pattern from pattern_range_validation
+[08:45:58]   Training on task: pattern_input_retry_loop
+[08:45:58]     Learned pattern from pattern_input_retry_loop
+[08:45:58]   Training on task: pattern_type_conversion_guard
+[08:45:58]     Learned pattern from pattern_type_conversion_guard
+[08:45:58]   Training on task: pattern_regex_input_validation
+[08:45:59]     Learned pattern from pattern_regex_input_validation
+[08:45:59]   Training on task: pattern_allow_regex_validation
+[08:45:59]     Learned pattern from pattern_allow_regex_validation
+[08:45:59]   Training on task: pattern_block_regex_validation
+[08:45:59]     Learned pattern from pattern_block_regex_validation
+[08:45:59]   Training on task: pattern_null_check
+[08:45:59]     Learned pattern from pattern_null_check
+[08:45:59]   Training on task: pattern_type_validation
+[08:45:59]     Learned pattern from pattern_type_validation
+[08:45:59]   Training on task: pattern_range_validation
+[08:45:59]     Learned pattern from pattern_range_validation
+[08:45:59]   Training on task: pattern_input_sanitization
+[08:46:00]     Learned pattern from pattern_input_sanitization
+[08:46:00]   Training on task: pattern_pyinputplus_import
+[08:46:00]     Learned pattern from pattern_pyinputplus_import
+[08:46:00]   Training on task: pattern_try_except_validation
+[08:46:00]     Learned pattern from pattern_try_except_validation
+[08:46:00]   Learned 26/26 tasks
+[08:46:00] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:00] 
+Round 3 complete: Rounds: 3, Tasks: 78, Learned: 78 (100.0%), Patterns: 78, Gen success: 3/3 (100.0%)
+[08:46:00] 
+============================================================
+[08:46:00] Round 4/20
+[08:46:00] ============================================================
+[08:46:00]   Training on task: pattern_none_check
+[08:46:00]     Learned pattern from pattern_none_check
+[08:46:00]   Training on task: pattern_empty_string_check
+[08:46:00]     Learned pattern from pattern_empty_string_check
+[08:46:00]   Training on task: pattern_none_or_empty_check
+[08:46:00]     Learned pattern from pattern_none_or_empty_check
+[08:46:00]   Training on task: pattern_dataframe_empty_check
+[08:46:01]     Learned pattern from pattern_dataframe_empty_check
+[08:46:01]   Training on task: pattern_list_empty_check
+[08:46:01]     Learned pattern from pattern_list_empty_check
+[08:46:01]   Training on task: pattern_none_check_before_access
+[08:46:01]     Learned pattern from pattern_none_check_before_access
+[08:46:01]   Training on task: pattern_none_check_with_default
+[08:46:01]     Learned pattern from pattern_none_check_with_default
+[08:46:01]   Training on task: pattern_none_check_early_return
+[08:46:01]     Learned pattern from pattern_none_check_early_return
+[08:46:01]   Training on task: pattern_none_check_with_exception
+[08:46:01]     Learned pattern from pattern_none_check_with_exception
+[08:46:01]   Training on task: pattern_none_check_is_operator
+[08:46:02]     Learned pattern from pattern_none_check_is_operator
+[08:46:02]   Training on task: pattern_none_check_is_not_operator
+[08:46:02]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:02]   Training on task: pattern_none_default_parameter
+[08:46:02]     Learned pattern from pattern_none_default_parameter
+[08:46:02]   Training on task: pattern_getattr_none_check
+[08:46:02]     Learned pattern from pattern_getattr_none_check
+[08:46:02]   Training on task: pattern_none_sentinel_pattern
+[08:46:02]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:02]   Training on task: pattern_range_validation
+[08:46:03]     Learned pattern from pattern_range_validation
+[08:46:03]   Training on task: pattern_input_retry_loop
+[08:46:03]     Learned pattern from pattern_input_retry_loop
+[08:46:03]   Training on task: pattern_type_conversion_guard
+[08:46:03]     Learned pattern from pattern_type_conversion_guard
+[08:46:03]   Training on task: pattern_regex_input_validation
+[08:46:03]     Learned pattern from pattern_regex_input_validation
+[08:46:03]   Training on task: pattern_allow_regex_validation
+[08:46:03]     Learned pattern from pattern_allow_regex_validation
+[08:46:03]   Training on task: pattern_block_regex_validation
+[08:46:03]     Learned pattern from pattern_block_regex_validation
+[08:46:03]   Training on task: pattern_null_check
+[08:46:04]     Learned pattern from pattern_null_check
+[08:46:04]   Training on task: pattern_type_validation
+[08:46:04]     Learned pattern from pattern_type_validation
+[08:46:04]   Training on task: pattern_range_validation
+[08:46:04]     Learned pattern from pattern_range_validation
+[08:46:04]   Training on task: pattern_input_sanitization
+[08:46:04]     Learned pattern from pattern_input_sanitization
+[08:46:04]   Training on task: pattern_pyinputplus_import
+[08:46:04]     Learned pattern from pattern_pyinputplus_import
+[08:46:04]   Training on task: pattern_try_except_validation
+[08:46:04]     Learned pattern from pattern_try_except_validation
+[08:46:04]   Learned 26/26 tasks
+[08:46:04] 
+--- Validation ---
+[08:46:04]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:04]   pattern_none_check: PASS (conf=0.72)
+[08:46:04]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:04]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:04]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:04]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:04] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:04] 
+Round 4 complete: Rounds: 4, Tasks: 104, Learned: 104 (100.0%), Patterns: 104, Gen success: 6/6 (100.0%)
+[08:46:04] 
+============================================================
+[08:46:04] Round 5/20
+[08:46:04] ============================================================
+[08:46:04]   Training on task: pattern_none_check
+[08:46:05]     Learned pattern from pattern_none_check
+[08:46:05]   Training on task: pattern_empty_string_check
+[08:46:05]     Learned pattern from pattern_empty_string_check
+[08:46:05]   Training on task: pattern_none_or_empty_check
+[08:46:05]     Learned pattern from pattern_none_or_empty_check
+[08:46:05]   Training on task: pattern_dataframe_empty_check
+[08:46:05]     Learned pattern from pattern_dataframe_empty_check
+[08:46:05]   Training on task: pattern_list_empty_check
+[08:46:05]     Learned pattern from pattern_list_empty_check
+[08:46:05]   Training on task: pattern_none_check_before_access
+[08:46:05]     Learned pattern from pattern_none_check_before_access
+[08:46:05]   Training on task: pattern_none_check_with_default
+[08:46:06]     Learned pattern from pattern_none_check_with_default
+[08:46:06]   Training on task: pattern_none_check_early_return
+[08:46:06]     Learned pattern from pattern_none_check_early_return
+[08:46:06]   Training on task: pattern_none_check_with_exception
+[08:46:06]     Learned pattern from pattern_none_check_with_exception
+[08:46:06]   Training on task: pattern_none_check_is_operator
+[08:46:06]     Learned pattern from pattern_none_check_is_operator
+[08:46:06]   Training on task: pattern_none_check_is_not_operator
+[08:46:06]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:06]   Training on task: pattern_none_default_parameter
+[08:46:07]     Learned pattern from pattern_none_default_parameter
+[08:46:07]   Training on task: pattern_getattr_none_check
+[08:46:07]     Learned pattern from pattern_getattr_none_check
+[08:46:07]   Training on task: pattern_none_sentinel_pattern
+[08:46:07]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:07]   Training on task: pattern_range_validation
+[08:46:07]     Learned pattern from pattern_range_validation
+[08:46:07]   Training on task: pattern_input_retry_loop
+[08:46:07]     Learned pattern from pattern_input_retry_loop
+[08:46:07]   Training on task: pattern_type_conversion_guard
+[08:46:07]     Learned pattern from pattern_type_conversion_guard
+[08:46:07]   Training on task: pattern_regex_input_validation
+[08:46:08]     Learned pattern from pattern_regex_input_validation
+[08:46:08]   Training on task: pattern_allow_regex_validation
+[08:46:08]     Learned pattern from pattern_allow_regex_validation
+[08:46:08]   Training on task: pattern_block_regex_validation
+[08:46:08]     Learned pattern from pattern_block_regex_validation
+[08:46:08]   Training on task: pattern_null_check
+[08:46:08]     Learned pattern from pattern_null_check
+[08:46:08]   Training on task: pattern_type_validation
+[08:46:08]     Learned pattern from pattern_type_validation
+[08:46:08]   Training on task: pattern_range_validation
+[08:46:09]     Learned pattern from pattern_range_validation
+[08:46:09]   Training on task: pattern_input_sanitization
+[08:46:09]     Learned pattern from pattern_input_sanitization
+[08:46:09]   Training on task: pattern_pyinputplus_import
+[08:46:09]     Learned pattern from pattern_pyinputplus_import
+[08:46:09]   Training on task: pattern_try_except_validation
+[08:46:09]     Learned pattern from pattern_try_except_validation
+[08:46:09]   Learned 26/26 tasks
+[08:46:09] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:09] 
+Round 5 complete: Rounds: 5, Tasks: 130, Learned: 130 (100.0%), Patterns: 130, Gen success: 6/6 (100.0%)
+[08:46:09] 
+============================================================
+[08:46:09] Round 6/20
+[08:46:09] ============================================================
+[08:46:09]   Training on task: pattern_none_check
+[08:46:09]     Learned pattern from pattern_none_check
+[08:46:09]   Training on task: pattern_empty_string_check
+[08:46:09]     Learned pattern from pattern_empty_string_check
+[08:46:09]   Training on task: pattern_none_or_empty_check
+[08:46:10]     Learned pattern from pattern_none_or_empty_check
+[08:46:10]   Training on task: pattern_dataframe_empty_check
+[08:46:10]     Learned pattern from pattern_dataframe_empty_check
+[08:46:10]   Training on task: pattern_list_empty_check
+[08:46:10]     Learned pattern from pattern_list_empty_check
+[08:46:10]   Training on task: pattern_none_check_before_access
+[08:46:10]     Learned pattern from pattern_none_check_before_access
+[08:46:10]   Training on task: pattern_none_check_with_default
+[08:46:10]     Learned pattern from pattern_none_check_with_default
+[08:46:10]   Training on task: pattern_none_check_early_return
+[08:46:11]     Learned pattern from pattern_none_check_early_return
+[08:46:11]   Training on task: pattern_none_check_with_exception
+[08:46:11]     Learned pattern from pattern_none_check_with_exception
+[08:46:11]   Training on task: pattern_none_check_is_operator
+[08:46:11]     Learned pattern from pattern_none_check_is_operator
+[08:46:11]   Training on task: pattern_none_check_is_not_operator
+[08:46:11]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:11]   Training on task: pattern_none_default_parameter
+[08:46:11]     Learned pattern from pattern_none_default_parameter
+[08:46:11]   Training on task: pattern_getattr_none_check
+[08:46:11]     Learned pattern from pattern_getattr_none_check
+[08:46:11]   Training on task: pattern_none_sentinel_pattern
+[08:46:12]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:12]   Training on task: pattern_range_validation
+[08:46:12]     Learned pattern from pattern_range_validation
+[08:46:12]   Training on task: pattern_input_retry_loop
+[08:46:12]     Learned pattern from pattern_input_retry_loop
+[08:46:12]   Training on task: pattern_type_conversion_guard
+[08:46:12]     Learned pattern from pattern_type_conversion_guard
+[08:46:12]   Training on task: pattern_regex_input_validation
+[08:46:12]     Learned pattern from pattern_regex_input_validation
+[08:46:12]   Training on task: pattern_allow_regex_validation
+[08:46:13]     Learned pattern from pattern_allow_regex_validation
+[08:46:13]   Training on task: pattern_block_regex_validation
+[08:46:13]     Learned pattern from pattern_block_regex_validation
+[08:46:13]   Training on task: pattern_null_check
+[08:46:13]     Learned pattern from pattern_null_check
+[08:46:13]   Training on task: pattern_type_validation
+[08:46:13]     Learned pattern from pattern_type_validation
+[08:46:13]   Training on task: pattern_range_validation
+[08:46:13]     Learned pattern from pattern_range_validation
+[08:46:13]   Training on task: pattern_input_sanitization
+[08:46:14]     Learned pattern from pattern_input_sanitization
+[08:46:14]   Training on task: pattern_pyinputplus_import
+[08:46:14]     Learned pattern from pattern_pyinputplus_import
+[08:46:14]   Training on task: pattern_try_except_validation
+[08:46:14]     Learned pattern from pattern_try_except_validation
+[08:46:14]   Learned 26/26 tasks
+[08:46:14] 
+--- Validation ---
+[08:46:14]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:14]   pattern_none_check: PASS (conf=1.00)
+[08:46:14]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:14]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:14]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:14]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:14] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:14] 
+Round 6 complete: Rounds: 6, Tasks: 156, Learned: 156 (100.0%), Patterns: 156, Gen success: 9/9 (100.0%)
+[08:46:14] 
+============================================================
+[08:46:14] Round 7/20
+[08:46:14] ============================================================
+[08:46:14]   Training on task: pattern_none_check
+[08:46:14]     Learned pattern from pattern_none_check
+[08:46:14]   Training on task: pattern_empty_string_check
+[08:46:14]     Learned pattern from pattern_empty_string_check
+[08:46:14]   Training on task: pattern_none_or_empty_check
+[08:46:14]     Learned pattern from pattern_none_or_empty_check
+[08:46:14]   Training on task: pattern_dataframe_empty_check
+[08:46:15]     Learned pattern from pattern_dataframe_empty_check
+[08:46:15]   Training on task: pattern_list_empty_check
+[08:46:15]     Learned pattern from pattern_list_empty_check
+[08:46:15]   Training on task: pattern_none_check_before_access
+[08:46:15]     Learned pattern from pattern_none_check_before_access
+[08:46:15]   Training on task: pattern_none_check_with_default
+[08:46:15]     Learned pattern from pattern_none_check_with_default
+[08:46:15]   Training on task: pattern_none_check_early_return
+[08:46:15]     Learned pattern from pattern_none_check_early_return
+[08:46:15]   Training on task: pattern_none_check_with_exception
+[08:46:16]     Learned pattern from pattern_none_check_with_exception
+[08:46:16]   Training on task: pattern_none_check_is_operator
+[08:46:16]     Learned pattern from pattern_none_check_is_operator
+[08:46:16]   Training on task: pattern_none_check_is_not_operator
+[08:46:16]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:16]   Training on task: pattern_none_default_parameter
+[08:46:16]     Learned pattern from pattern_none_default_parameter
+[08:46:16]   Training on task: pattern_getattr_none_check
+[08:46:16]     Learned pattern from pattern_getattr_none_check
+[08:46:16]   Training on task: pattern_none_sentinel_pattern
+[08:46:16]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:16]   Training on task: pattern_range_validation
+[08:46:17]     Learned pattern from pattern_range_validation
+[08:46:17]   Training on task: pattern_input_retry_loop
+[08:46:17]     Learned pattern from pattern_input_retry_loop
+[08:46:17]   Training on task: pattern_type_conversion_guard
+[08:46:17]     Learned pattern from pattern_type_conversion_guard
+[08:46:17]   Training on task: pattern_regex_input_validation
+[08:46:17]     Learned pattern from pattern_regex_input_validation
+[08:46:17]   Training on task: pattern_allow_regex_validation
+[08:46:17]     Learned pattern from pattern_allow_regex_validation
+[08:46:17]   Training on task: pattern_block_regex_validation
+[08:46:18]     Learned pattern from pattern_block_regex_validation
+[08:46:18]   Training on task: pattern_null_check
+[08:46:18]     Learned pattern from pattern_null_check
+[08:46:18]   Training on task: pattern_type_validation
+[08:46:18]     Learned pattern from pattern_type_validation
+[08:46:18]   Training on task: pattern_range_validation
+[08:46:18]     Learned pattern from pattern_range_validation
+[08:46:18]   Training on task: pattern_input_sanitization
+[08:46:18]     Learned pattern from pattern_input_sanitization
+[08:46:18]   Training on task: pattern_pyinputplus_import
+[08:46:18]     Learned pattern from pattern_pyinputplus_import
+[08:46:18]   Training on task: pattern_try_except_validation
+[08:46:19]     Learned pattern from pattern_try_except_validation
+[08:46:19]   Learned 26/26 tasks
+[08:46:19] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:19] 
+Round 7 complete: Rounds: 7, Tasks: 182, Learned: 182 (100.0%), Patterns: 182, Gen success: 9/9 (100.0%)
+[08:46:19] 
+============================================================
+[08:46:19] Round 8/20
+[08:46:19] ============================================================
+[08:46:19]   Training on task: pattern_none_check
+[08:46:19]     Learned pattern from pattern_none_check
+[08:46:19]   Training on task: pattern_empty_string_check
+[08:46:19]     Learned pattern from pattern_empty_string_check
+[08:46:19]   Training on task: pattern_none_or_empty_check
+[08:46:19]     Learned pattern from pattern_none_or_empty_check
+[08:46:19]   Training on task: pattern_dataframe_empty_check
+[08:46:19]     Learned pattern from pattern_dataframe_empty_check
+[08:46:19]   Training on task: pattern_list_empty_check
+[08:46:20]     Learned pattern from pattern_list_empty_check
+[08:46:20]   Training on task: pattern_none_check_before_access
+[08:46:20]     Learned pattern from pattern_none_check_before_access
+[08:46:20]   Training on task: pattern_none_check_with_default
+[08:46:20]     Learned pattern from pattern_none_check_with_default
+[08:46:20]   Training on task: pattern_none_check_early_return
+[08:46:20]     Learned pattern from pattern_none_check_early_return
+[08:46:20]   Training on task: pattern_none_check_with_exception
+[08:46:20]     Learned pattern from pattern_none_check_with_exception
+[08:46:20]   Training on task: pattern_none_check_is_operator
+[08:46:21]     Learned pattern from pattern_none_check_is_operator
+[08:46:21]   Training on task: pattern_none_check_is_not_operator
+[08:46:21]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:21]   Training on task: pattern_none_default_parameter
+[08:46:21]     Learned pattern from pattern_none_default_parameter
+[08:46:21]   Training on task: pattern_getattr_none_check
+[08:46:21]     Learned pattern from pattern_getattr_none_check
+[08:46:21]   Training on task: pattern_none_sentinel_pattern
+[08:46:21]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:21]   Training on task: pattern_range_validation
+[08:46:21]     Learned pattern from pattern_range_validation
+[08:46:21]   Training on task: pattern_input_retry_loop
+[08:46:22]     Learned pattern from pattern_input_retry_loop
+[08:46:22]   Training on task: pattern_type_conversion_guard
+[08:46:22]     Learned pattern from pattern_type_conversion_guard
+[08:46:22]   Training on task: pattern_regex_input_validation
+[08:46:22]     Learned pattern from pattern_regex_input_validation
+[08:46:22]   Training on task: pattern_allow_regex_validation
+[08:46:22]     Learned pattern from pattern_allow_regex_validation
+[08:46:22]   Training on task: pattern_block_regex_validation
+[08:46:22]     Learned pattern from pattern_block_regex_validation
+[08:46:22]   Training on task: pattern_null_check
+[08:46:23]     Learned pattern from pattern_null_check
+[08:46:23]   Training on task: pattern_type_validation
+[08:46:23]     Learned pattern from pattern_type_validation
+[08:46:23]   Training on task: pattern_range_validation
+[08:46:23]     Learned pattern from pattern_range_validation
+[08:46:23]   Training on task: pattern_input_sanitization
+[08:46:23]     Learned pattern from pattern_input_sanitization
+[08:46:23]   Training on task: pattern_pyinputplus_import
+[08:46:23]     Learned pattern from pattern_pyinputplus_import
+[08:46:23]   Training on task: pattern_try_except_validation
+[08:46:23]     Learned pattern from pattern_try_except_validation
+[08:46:23]   Learned 26/26 tasks
+[08:46:23] 
+--- Validation ---
+[08:46:23]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:23]   pattern_none_check: PASS (conf=0.84)
+[08:46:23]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:23]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:23]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:23]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:23] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:23] 
+Round 8 complete: Rounds: 8, Tasks: 208, Learned: 208 (100.0%), Patterns: 208, Gen success: 12/12 (100.0%)
+[08:46:23] 
+============================================================
+[08:46:23] Round 9/20
+[08:46:23] ============================================================
+[08:46:23]   Training on task: pattern_none_check
+[08:46:24]     Learned pattern from pattern_none_check
+[08:46:24]   Training on task: pattern_empty_string_check
+[08:46:24]     Learned pattern from pattern_empty_string_check
+[08:46:24]   Training on task: pattern_none_or_empty_check
+[08:46:24]     Learned pattern from pattern_none_or_empty_check
+[08:46:24]   Training on task: pattern_dataframe_empty_check
+[08:46:24]     Learned pattern from pattern_dataframe_empty_check
+[08:46:24]   Training on task: pattern_list_empty_check
+[08:46:24]     Learned pattern from pattern_list_empty_check
+[08:46:24]   Training on task: pattern_none_check_before_access
+[08:46:25]     Learned pattern from pattern_none_check_before_access
+[08:46:25]   Training on task: pattern_none_check_with_default
+[08:46:25]     Learned pattern from pattern_none_check_with_default
+[08:46:25]   Training on task: pattern_none_check_early_return
+[08:46:25]     Learned pattern from pattern_none_check_early_return
+[08:46:25]   Training on task: pattern_none_check_with_exception
+[08:46:25]     Learned pattern from pattern_none_check_with_exception
+[08:46:25]   Training on task: pattern_none_check_is_operator
+[08:46:25]     Learned pattern from pattern_none_check_is_operator
+[08:46:25]   Training on task: pattern_none_check_is_not_operator
+[08:46:25]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:25]   Training on task: pattern_none_default_parameter
+[08:46:26]     Learned pattern from pattern_none_default_parameter
+[08:46:26]   Training on task: pattern_getattr_none_check
+[08:46:26]     Learned pattern from pattern_getattr_none_check
+[08:46:26]   Training on task: pattern_none_sentinel_pattern
+[08:46:26]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:26]   Training on task: pattern_range_validation
+[08:46:26]     Learned pattern from pattern_range_validation
+[08:46:26]   Training on task: pattern_input_retry_loop
+[08:46:26]     Learned pattern from pattern_input_retry_loop
+[08:46:26]   Training on task: pattern_type_conversion_guard
+[08:46:27]     Learned pattern from pattern_type_conversion_guard
+[08:46:27]   Training on task: pattern_regex_input_validation
+[08:46:27]     Learned pattern from pattern_regex_input_validation
+[08:46:27]   Training on task: pattern_allow_regex_validation
+[08:46:27]     Learned pattern from pattern_allow_regex_validation
+[08:46:27]   Training on task: pattern_block_regex_validation
+[08:46:27]     Learned pattern from pattern_block_regex_validation
+[08:46:27]   Training on task: pattern_null_check
+[08:46:27]     Learned pattern from pattern_null_check
+[08:46:27]   Training on task: pattern_type_validation
+[08:46:28]     Learned pattern from pattern_type_validation
+[08:46:28]   Training on task: pattern_range_validation
+[08:46:28]     Learned pattern from pattern_range_validation
+[08:46:28]   Training on task: pattern_input_sanitization
+[08:46:28]     Learned pattern from pattern_input_sanitization
+[08:46:28]   Training on task: pattern_pyinputplus_import
+[08:46:28]     Learned pattern from pattern_pyinputplus_import
+[08:46:28]   Training on task: pattern_try_except_validation
+[08:46:28]     Learned pattern from pattern_try_except_validation
+[08:46:28]   Learned 26/26 tasks
+[08:46:28] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:28] 
+Round 9 complete: Rounds: 9, Tasks: 234, Learned: 234 (100.0%), Patterns: 234, Gen success: 12/12 (100.0%)
+[08:46:28] 
+============================================================
+[08:46:28] Round 10/20
+[08:46:28] ============================================================
+[08:46:28]   Training on task: pattern_none_check
+[08:46:28]     Learned pattern from pattern_none_check
+[08:46:28]   Training on task: pattern_empty_string_check
+[08:46:29]     Learned pattern from pattern_empty_string_check
+[08:46:29]   Training on task: pattern_none_or_empty_check
+[08:46:29]     Learned pattern from pattern_none_or_empty_check
+[08:46:29]   Training on task: pattern_dataframe_empty_check
+[08:46:29]     Learned pattern from pattern_dataframe_empty_check
+[08:46:29]   Training on task: pattern_list_empty_check
+[08:46:29]     Learned pattern from pattern_list_empty_check
+[08:46:29]   Training on task: pattern_none_check_before_access
+[08:46:29]     Learned pattern from pattern_none_check_before_access
+[08:46:29]   Training on task: pattern_none_check_with_default
+[08:46:30]     Learned pattern from pattern_none_check_with_default
+[08:46:30]   Training on task: pattern_none_check_early_return
+[08:46:30]     Learned pattern from pattern_none_check_early_return
+[08:46:30]   Training on task: pattern_none_check_with_exception
+[08:46:30]     Learned pattern from pattern_none_check_with_exception
+[08:46:30]   Training on task: pattern_none_check_is_operator
+[08:46:30]     Learned pattern from pattern_none_check_is_operator
+[08:46:30]   Training on task: pattern_none_check_is_not_operator
+[08:46:30]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:30]   Training on task: pattern_none_default_parameter
+[08:46:31]     Learned pattern from pattern_none_default_parameter
+[08:46:31]   Training on task: pattern_getattr_none_check
+[08:46:31]     Learned pattern from pattern_getattr_none_check
+[08:46:31]   Training on task: pattern_none_sentinel_pattern
+[08:46:31]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:31]   Training on task: pattern_range_validation
+[08:46:31]     Learned pattern from pattern_range_validation
+[08:46:31]   Training on task: pattern_input_retry_loop
+[08:46:31]     Learned pattern from pattern_input_retry_loop
+[08:46:31]   Training on task: pattern_type_conversion_guard
+[08:46:32]     Learned pattern from pattern_type_conversion_guard
+[08:46:32]   Training on task: pattern_regex_input_validation
+[08:46:32]     Learned pattern from pattern_regex_input_validation
+[08:46:32]   Training on task: pattern_allow_regex_validation
+[08:46:32]     Learned pattern from pattern_allow_regex_validation
+[08:46:32]   Training on task: pattern_block_regex_validation
+[08:46:32]     Learned pattern from pattern_block_regex_validation
+[08:46:32]   Training on task: pattern_null_check
+[08:46:32]     Learned pattern from pattern_null_check
+[08:46:32]   Training on task: pattern_type_validation
+[08:46:32]     Learned pattern from pattern_type_validation
+[08:46:32]   Training on task: pattern_range_validation
+[08:46:33]     Learned pattern from pattern_range_validation
+[08:46:33]   Training on task: pattern_input_sanitization
+[08:46:33]     Learned pattern from pattern_input_sanitization
+[08:46:33]   Training on task: pattern_pyinputplus_import
+[08:46:33]     Learned pattern from pattern_pyinputplus_import
+[08:46:33]   Training on task: pattern_try_except_validation
+[08:46:33]     Learned pattern from pattern_try_except_validation
+[08:46:33]   Learned 26/26 tasks
+[08:46:33] 
+--- Validation ---
+[08:46:33]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:33]   pattern_none_check: PASS (conf=0.53)
+[08:46:33]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:33]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:33]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:33]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:33] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:33] 
+Round 10 complete: Rounds: 10, Tasks: 260, Learned: 260 (100.0%), Patterns: 260, Gen success: 15/15 (100.0%)
+[08:46:33] 
+============================================================
+[08:46:33] Round 11/20
+[08:46:33] ============================================================
+[08:46:33]   Training on task: pattern_none_check
+[08:46:33]     Learned pattern from pattern_none_check
+[08:46:33]   Training on task: pattern_empty_string_check
+[08:46:34]     Learned pattern from pattern_empty_string_check
+[08:46:34]   Training on task: pattern_none_or_empty_check
+[08:46:34]     Learned pattern from pattern_none_or_empty_check
+[08:46:34]   Training on task: pattern_dataframe_empty_check
+[08:46:34]     Learned pattern from pattern_dataframe_empty_check
+[08:46:34]   Training on task: pattern_list_empty_check
+[08:46:34]     Learned pattern from pattern_list_empty_check
+[08:46:34]   Training on task: pattern_none_check_before_access
+[08:46:34]     Learned pattern from pattern_none_check_before_access
+[08:46:34]   Training on task: pattern_none_check_with_default
+[08:46:35]     Learned pattern from pattern_none_check_with_default
+[08:46:35]   Training on task: pattern_none_check_early_return
+[08:46:35]     Learned pattern from pattern_none_check_early_return
+[08:46:35]   Training on task: pattern_none_check_with_exception
+[08:46:35]     Learned pattern from pattern_none_check_with_exception
+[08:46:35]   Training on task: pattern_none_check_is_operator
+[08:46:35]     Learned pattern from pattern_none_check_is_operator
+[08:46:35]   Training on task: pattern_none_check_is_not_operator
+[08:46:36]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:36]   Training on task: pattern_none_default_parameter
+[08:46:36]     Learned pattern from pattern_none_default_parameter
+[08:46:36]   Training on task: pattern_getattr_none_check
+[08:46:36]     Learned pattern from pattern_getattr_none_check
+[08:46:36]   Training on task: pattern_none_sentinel_pattern
+[08:46:36]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:36]   Training on task: pattern_range_validation
+[08:46:36]     Learned pattern from pattern_range_validation
+[08:46:36]   Training on task: pattern_input_retry_loop
+[08:46:36]     Learned pattern from pattern_input_retry_loop
+[08:46:36]   Training on task: pattern_type_conversion_guard
+[08:46:37]     Learned pattern from pattern_type_conversion_guard
+[08:46:37]   Training on task: pattern_regex_input_validation
+[08:46:37]     Learned pattern from pattern_regex_input_validation
+[08:46:37]   Training on task: pattern_allow_regex_validation
+[08:46:37]     Learned pattern from pattern_allow_regex_validation
+[08:46:37]   Training on task: pattern_block_regex_validation
+[08:46:37]     Learned pattern from pattern_block_regex_validation
+[08:46:37]   Training on task: pattern_null_check
+[08:46:37]     Learned pattern from pattern_null_check
+[08:46:37]   Training on task: pattern_type_validation
+[08:46:38]     Learned pattern from pattern_type_validation
+[08:46:38]   Training on task: pattern_range_validation
+[08:46:38]     Learned pattern from pattern_range_validation
+[08:46:38]   Training on task: pattern_input_sanitization
+[08:46:38]     Learned pattern from pattern_input_sanitization
+[08:46:38]   Training on task: pattern_pyinputplus_import
+[08:46:38]     Learned pattern from pattern_pyinputplus_import
+[08:46:38]   Training on task: pattern_try_except_validation
+[08:46:38]     Learned pattern from pattern_try_except_validation
+[08:46:38]   Learned 26/26 tasks
+[08:46:38] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:38] 
+Round 11 complete: Rounds: 11, Tasks: 286, Learned: 286 (100.0%), Patterns: 286, Gen success: 15/15 (100.0%)
+[08:46:38] 
+============================================================
+[08:46:38] Round 12/20
+[08:46:38] ============================================================
+[08:46:38]   Training on task: pattern_none_check
+[08:46:39]     Learned pattern from pattern_none_check
+[08:46:39]   Training on task: pattern_empty_string_check
+[08:46:39]     Learned pattern from pattern_empty_string_check
+[08:46:39]   Training on task: pattern_none_or_empty_check
+[08:46:39]     Learned pattern from pattern_none_or_empty_check
+[08:46:39]   Training on task: pattern_dataframe_empty_check
+[08:46:39]     Learned pattern from pattern_dataframe_empty_check
+[08:46:39]   Training on task: pattern_list_empty_check
+[08:46:39]     Learned pattern from pattern_list_empty_check
+[08:46:39]   Training on task: pattern_none_check_before_access
+[08:46:40]     Learned pattern from pattern_none_check_before_access
+[08:46:40]   Training on task: pattern_none_check_with_default
+[08:46:40]     Learned pattern from pattern_none_check_with_default
+[08:46:40]   Training on task: pattern_none_check_early_return
+[08:46:40]     Learned pattern from pattern_none_check_early_return
+[08:46:40]   Training on task: pattern_none_check_with_exception
+[08:46:40]     Learned pattern from pattern_none_check_with_exception
+[08:46:40]   Training on task: pattern_none_check_is_operator
+[08:46:40]     Learned pattern from pattern_none_check_is_operator
+[08:46:40]   Training on task: pattern_none_check_is_not_operator
+[08:46:41]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:41]   Training on task: pattern_none_default_parameter
+[08:46:41]     Learned pattern from pattern_none_default_parameter
+[08:46:41]   Training on task: pattern_getattr_none_check
+[08:46:41]     Learned pattern from pattern_getattr_none_check
+[08:46:41]   Training on task: pattern_none_sentinel_pattern
+[08:46:41]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:41]   Training on task: pattern_range_validation
+[08:46:41]     Learned pattern from pattern_range_validation
+[08:46:41]   Training on task: pattern_input_retry_loop
+[08:46:42]     Learned pattern from pattern_input_retry_loop
+[08:46:42]   Training on task: pattern_type_conversion_guard
+[08:46:42]     Learned pattern from pattern_type_conversion_guard
+[08:46:42]   Training on task: pattern_regex_input_validation
+[08:46:42]     Learned pattern from pattern_regex_input_validation
+[08:46:42]   Training on task: pattern_allow_regex_validation
+[08:46:42]     Learned pattern from pattern_allow_regex_validation
+[08:46:42]   Training on task: pattern_block_regex_validation
+[08:46:42]     Learned pattern from pattern_block_regex_validation
+[08:46:42]   Training on task: pattern_null_check
+[08:46:42]     Learned pattern from pattern_null_check
+[08:46:42]   Training on task: pattern_type_validation
+[08:46:43]     Learned pattern from pattern_type_validation
+[08:46:43]   Training on task: pattern_range_validation
+[08:46:43]     Learned pattern from pattern_range_validation
+[08:46:43]   Training on task: pattern_input_sanitization
+[08:46:43]     Learned pattern from pattern_input_sanitization
+[08:46:43]   Training on task: pattern_pyinputplus_import
+[08:46:43]     Learned pattern from pattern_pyinputplus_import
+[08:46:43]   Training on task: pattern_try_except_validation
+[08:46:43]     Learned pattern from pattern_try_except_validation
+[08:46:43]   Learned 26/26 tasks
+[08:46:43] 
+--- Validation ---
+[08:46:43]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:43]   pattern_none_check: PASS (conf=0.72)
+[08:46:43]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:43]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:43]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:43]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:43] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:43] 
+Round 12 complete: Rounds: 12, Tasks: 312, Learned: 312 (100.0%), Patterns: 312, Gen success: 18/18 (100.0%)
+[08:46:43] 
+============================================================
+[08:46:43] Round 13/20
+[08:46:43] ============================================================
+[08:46:43]   Training on task: pattern_none_check
+[08:46:43]     Learned pattern from pattern_none_check
+[08:46:43]   Training on task: pattern_empty_string_check
+[08:46:44]     Learned pattern from pattern_empty_string_check
+[08:46:44]   Training on task: pattern_none_or_empty_check
+[08:46:44]     Learned pattern from pattern_none_or_empty_check
+[08:46:44]   Training on task: pattern_dataframe_empty_check
+[08:46:44]     Learned pattern from pattern_dataframe_empty_check
+[08:46:44]   Training on task: pattern_list_empty_check
+[08:46:44]     Learned pattern from pattern_list_empty_check
+[08:46:44]   Training on task: pattern_none_check_before_access
+[08:46:44]     Learned pattern from pattern_none_check_before_access
+[08:46:44]   Training on task: pattern_none_check_with_default
+[08:46:44]     Learned pattern from pattern_none_check_with_default
+[08:46:44]   Training on task: pattern_none_check_early_return
+[08:46:45]     Learned pattern from pattern_none_check_early_return
+[08:46:45]   Training on task: pattern_none_check_with_exception
+[08:46:45]     Learned pattern from pattern_none_check_with_exception
+[08:46:45]   Training on task: pattern_none_check_is_operator
+[08:46:45]     Learned pattern from pattern_none_check_is_operator
+[08:46:45]   Training on task: pattern_none_check_is_not_operator
+[08:46:45]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:45]   Training on task: pattern_none_default_parameter
+[08:46:45]     Learned pattern from pattern_none_default_parameter
+[08:46:45]   Training on task: pattern_getattr_none_check
+[08:46:45]     Learned pattern from pattern_getattr_none_check
+[08:46:45]   Training on task: pattern_none_sentinel_pattern
+[08:46:46]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:46]   Training on task: pattern_range_validation
+[08:46:46]     Learned pattern from pattern_range_validation
+[08:46:46]   Training on task: pattern_input_retry_loop
+[08:46:46]     Learned pattern from pattern_input_retry_loop
+[08:46:46]   Training on task: pattern_type_conversion_guard
+[08:46:46]     Learned pattern from pattern_type_conversion_guard
+[08:46:46]   Training on task: pattern_regex_input_validation
+[08:46:46]     Learned pattern from pattern_regex_input_validation
+[08:46:46]   Training on task: pattern_allow_regex_validation
+[08:46:47]     Learned pattern from pattern_allow_regex_validation
+[08:46:47]   Training on task: pattern_block_regex_validation
+[08:46:47]     Learned pattern from pattern_block_regex_validation
+[08:46:47]   Training on task: pattern_null_check
+[08:46:47]     Learned pattern from pattern_null_check
+[08:46:47]   Training on task: pattern_type_validation
+[08:46:47]     Learned pattern from pattern_type_validation
+[08:46:47]   Training on task: pattern_range_validation
+[08:46:47]     Learned pattern from pattern_range_validation
+[08:46:47]   Training on task: pattern_input_sanitization
+[08:46:47]     Learned pattern from pattern_input_sanitization
+[08:46:47]   Training on task: pattern_pyinputplus_import
+[08:46:48]     Learned pattern from pattern_pyinputplus_import
+[08:46:48]   Training on task: pattern_try_except_validation
+[08:46:48]     Learned pattern from pattern_try_except_validation
+[08:46:48]   Learned 26/26 tasks
+[08:46:48] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:48] 
+Round 13 complete: Rounds: 13, Tasks: 338, Learned: 338 (100.0%), Patterns: 338, Gen success: 18/18 (100.0%)
+[08:46:48] 
+============================================================
+[08:46:48] Round 14/20
+[08:46:48] ============================================================
+[08:46:48]   Training on task: pattern_none_check
+[08:46:48]     Learned pattern from pattern_none_check
+[08:46:48]   Training on task: pattern_empty_string_check
+[08:46:48]     Learned pattern from pattern_empty_string_check
+[08:46:48]   Training on task: pattern_none_or_empty_check
+[08:46:48]     Learned pattern from pattern_none_or_empty_check
+[08:46:48]   Training on task: pattern_dataframe_empty_check
+[08:46:48]     Learned pattern from pattern_dataframe_empty_check
+[08:46:48]   Training on task: pattern_list_empty_check
+[08:46:49]     Learned pattern from pattern_list_empty_check
+[08:46:49]   Training on task: pattern_none_check_before_access
+[08:46:49]     Learned pattern from pattern_none_check_before_access
+[08:46:49]   Training on task: pattern_none_check_with_default
+[08:46:49]     Learned pattern from pattern_none_check_with_default
+[08:46:49]   Training on task: pattern_none_check_early_return
+[08:46:49]     Learned pattern from pattern_none_check_early_return
+[08:46:49]   Training on task: pattern_none_check_with_exception
+[08:46:49]     Learned pattern from pattern_none_check_with_exception
+[08:46:49]   Training on task: pattern_none_check_is_operator
+[08:46:49]     Learned pattern from pattern_none_check_is_operator
+[08:46:49]   Training on task: pattern_none_check_is_not_operator
+[08:46:50]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:50]   Training on task: pattern_none_default_parameter
+[08:46:50]     Learned pattern from pattern_none_default_parameter
+[08:46:50]   Training on task: pattern_getattr_none_check
+[08:46:50]     Learned pattern from pattern_getattr_none_check
+[08:46:50]   Training on task: pattern_none_sentinel_pattern
+[08:46:50]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:50]   Training on task: pattern_range_validation
+[08:46:50]     Learned pattern from pattern_range_validation
+[08:46:50]   Training on task: pattern_input_retry_loop
+[08:46:50]     Learned pattern from pattern_input_retry_loop
+[08:46:50]   Training on task: pattern_type_conversion_guard
+[08:46:51]     Learned pattern from pattern_type_conversion_guard
+[08:46:51]   Training on task: pattern_regex_input_validation
+[08:46:51]     Learned pattern from pattern_regex_input_validation
+[08:46:51]   Training on task: pattern_allow_regex_validation
+[08:46:51]     Learned pattern from pattern_allow_regex_validation
+[08:46:51]   Training on task: pattern_block_regex_validation
+[08:46:51]     Learned pattern from pattern_block_regex_validation
+[08:46:51]   Training on task: pattern_null_check
+[08:46:51]     Learned pattern from pattern_null_check
+[08:46:51]   Training on task: pattern_type_validation
+[08:46:51]     Learned pattern from pattern_type_validation
+[08:46:51]   Training on task: pattern_range_validation
+[08:46:52]     Learned pattern from pattern_range_validation
+[08:46:52]   Training on task: pattern_input_sanitization
+[08:46:52]     Learned pattern from pattern_input_sanitization
+[08:46:52]   Training on task: pattern_pyinputplus_import
+[08:46:52]     Learned pattern from pattern_pyinputplus_import
+[08:46:52]   Training on task: pattern_try_except_validation
+[08:46:52]     Learned pattern from pattern_try_except_validation
+[08:46:52]   Learned 26/26 tasks
+[08:46:52] 
+--- Validation ---
+[08:46:52]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:52]   pattern_none_check: PASS (conf=0.59)
+[08:46:52]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:52]   pattern_empty_string_check: PASS (conf=1.00)
+[08:46:52]   Generated verified patch: modify_line(example.py:line_1)
+[08:46:52]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:46:52] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:52] 
+Round 14 complete: Rounds: 14, Tasks: 364, Learned: 364 (100.0%), Patterns: 364, Gen success: 21/21 (100.0%)
+[08:46:52] 
+============================================================
+[08:46:52] Round 15/20
+[08:46:52] ============================================================
+[08:46:52]   Training on task: pattern_none_check
+[08:46:52]     Learned pattern from pattern_none_check
+[08:46:52]   Training on task: pattern_empty_string_check
+[08:46:53]     Learned pattern from pattern_empty_string_check
+[08:46:53]   Training on task: pattern_none_or_empty_check
+[08:46:53]     Learned pattern from pattern_none_or_empty_check
+[08:46:53]   Training on task: pattern_dataframe_empty_check
+[08:46:53]     Learned pattern from pattern_dataframe_empty_check
+[08:46:53]   Training on task: pattern_list_empty_check
+[08:46:53]     Learned pattern from pattern_list_empty_check
+[08:46:53]   Training on task: pattern_none_check_before_access
+[08:46:53]     Learned pattern from pattern_none_check_before_access
+[08:46:53]   Training on task: pattern_none_check_with_default
+[08:46:54]     Learned pattern from pattern_none_check_with_default
+[08:46:54]   Training on task: pattern_none_check_early_return
+[08:46:54]     Learned pattern from pattern_none_check_early_return
+[08:46:54]   Training on task: pattern_none_check_with_exception
+[08:46:54]     Learned pattern from pattern_none_check_with_exception
+[08:46:54]   Training on task: pattern_none_check_is_operator
+[08:46:54]     Learned pattern from pattern_none_check_is_operator
+[08:46:54]   Training on task: pattern_none_check_is_not_operator
+[08:46:54]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:54]   Training on task: pattern_none_default_parameter
+[08:46:54]     Learned pattern from pattern_none_default_parameter
+[08:46:54]   Training on task: pattern_getattr_none_check
+[08:46:55]     Learned pattern from pattern_getattr_none_check
+[08:46:55]   Training on task: pattern_none_sentinel_pattern
+[08:46:55]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:55]   Training on task: pattern_range_validation
+[08:46:55]     Learned pattern from pattern_range_validation
+[08:46:55]   Training on task: pattern_input_retry_loop
+[08:46:55]     Learned pattern from pattern_input_retry_loop
+[08:46:55]   Training on task: pattern_type_conversion_guard
+[08:46:55]     Learned pattern from pattern_type_conversion_guard
+[08:46:55]   Training on task: pattern_regex_input_validation
+[08:46:55]     Learned pattern from pattern_regex_input_validation
+[08:46:55]   Training on task: pattern_allow_regex_validation
+[08:46:56]     Learned pattern from pattern_allow_regex_validation
+[08:46:56]   Training on task: pattern_block_regex_validation
+[08:46:56]     Learned pattern from pattern_block_regex_validation
+[08:46:56]   Training on task: pattern_null_check
+[08:46:56]     Learned pattern from pattern_null_check
+[08:46:56]   Training on task: pattern_type_validation
+[08:46:56]     Learned pattern from pattern_type_validation
+[08:46:56]   Training on task: pattern_range_validation
+[08:46:56]     Learned pattern from pattern_range_validation
+[08:46:56]   Training on task: pattern_input_sanitization
+[08:46:56]     Learned pattern from pattern_input_sanitization
+[08:46:56]   Training on task: pattern_pyinputplus_import
+[08:46:57]     Learned pattern from pattern_pyinputplus_import
+[08:46:57]   Training on task: pattern_try_except_validation
+[08:46:57]     Learned pattern from pattern_try_except_validation
+[08:46:57]   Learned 26/26 tasks
+[08:46:57] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:46:57] 
+Round 15 complete: Rounds: 15, Tasks: 390, Learned: 390 (100.0%), Patterns: 390, Gen success: 21/21 (100.0%)
+[08:46:57] 
+============================================================
+[08:46:57] Round 16/20
+[08:46:57] ============================================================
+[08:46:57]   Training on task: pattern_none_check
+[08:46:57]     Learned pattern from pattern_none_check
+[08:46:57]   Training on task: pattern_empty_string_check
+[08:46:57]     Learned pattern from pattern_empty_string_check
+[08:46:57]   Training on task: pattern_none_or_empty_check
+[08:46:57]     Learned pattern from pattern_none_or_empty_check
+[08:46:57]   Training on task: pattern_dataframe_empty_check
+[08:46:58]     Learned pattern from pattern_dataframe_empty_check
+[08:46:58]   Training on task: pattern_list_empty_check
+[08:46:58]     Learned pattern from pattern_list_empty_check
+[08:46:58]   Training on task: pattern_none_check_before_access
+[08:46:58]     Learned pattern from pattern_none_check_before_access
+[08:46:58]   Training on task: pattern_none_check_with_default
+[08:46:58]     Learned pattern from pattern_none_check_with_default
+[08:46:58]   Training on task: pattern_none_check_early_return
+[08:46:58]     Learned pattern from pattern_none_check_early_return
+[08:46:58]   Training on task: pattern_none_check_with_exception
+[08:46:58]     Learned pattern from pattern_none_check_with_exception
+[08:46:58]   Training on task: pattern_none_check_is_operator
+[08:46:59]     Learned pattern from pattern_none_check_is_operator
+[08:46:59]   Training on task: pattern_none_check_is_not_operator
+[08:46:59]     Learned pattern from pattern_none_check_is_not_operator
+[08:46:59]   Training on task: pattern_none_default_parameter
+[08:46:59]     Learned pattern from pattern_none_default_parameter
+[08:46:59]   Training on task: pattern_getattr_none_check
+[08:46:59]     Learned pattern from pattern_getattr_none_check
+[08:46:59]   Training on task: pattern_none_sentinel_pattern
+[08:46:59]     Learned pattern from pattern_none_sentinel_pattern
+[08:46:59]   Training on task: pattern_range_validation
+[08:46:59]     Learned pattern from pattern_range_validation
+[08:46:59]   Training on task: pattern_input_retry_loop
+[08:47:00]     Learned pattern from pattern_input_retry_loop
+[08:47:00]   Training on task: pattern_type_conversion_guard
+[08:47:00]     Learned pattern from pattern_type_conversion_guard
+[08:47:00]   Training on task: pattern_regex_input_validation
+[08:47:00]     Learned pattern from pattern_regex_input_validation
+[08:47:00]   Training on task: pattern_allow_regex_validation
+[08:47:00]     Learned pattern from pattern_allow_regex_validation
+[08:47:00]   Training on task: pattern_block_regex_validation
+[08:47:00]     Learned pattern from pattern_block_regex_validation
+[08:47:00]   Training on task: pattern_null_check
+[08:47:00]     Learned pattern from pattern_null_check
+[08:47:00]   Training on task: pattern_type_validation
+[08:47:01]     Learned pattern from pattern_type_validation
+[08:47:01]   Training on task: pattern_range_validation
+[08:47:01]     Learned pattern from pattern_range_validation
+[08:47:01]   Training on task: pattern_input_sanitization
+[08:47:01]     Learned pattern from pattern_input_sanitization
+[08:47:01]   Training on task: pattern_pyinputplus_import
+[08:47:01]     Learned pattern from pattern_pyinputplus_import
+[08:47:01]   Training on task: pattern_try_except_validation
+[08:47:01]     Learned pattern from pattern_try_except_validation
+[08:47:01]   Learned 26/26 tasks
+[08:47:01] 
+--- Validation ---
+[08:47:01]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:01]   pattern_none_check: PASS (conf=0.55)
+[08:47:01]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:01]   pattern_empty_string_check: PASS (conf=1.00)
+[08:47:01]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:01]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:47:01] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:01] 
+Round 16 complete: Rounds: 16, Tasks: 416, Learned: 416 (100.0%), Patterns: 416, Gen success: 24/24 (100.0%)
+[08:47:01] 
+============================================================
+[08:47:01] Round 17/20
+[08:47:01] ============================================================
+[08:47:01]   Training on task: pattern_none_check
+[08:47:01]     Learned pattern from pattern_none_check
+[08:47:01]   Training on task: pattern_empty_string_check
+[08:47:02]     Learned pattern from pattern_empty_string_check
+[08:47:02]   Training on task: pattern_none_or_empty_check
+[08:47:02]     Learned pattern from pattern_none_or_empty_check
+[08:47:02]   Training on task: pattern_dataframe_empty_check
+[08:47:02]     Learned pattern from pattern_dataframe_empty_check
+[08:47:02]   Training on task: pattern_list_empty_check
+[08:47:02]     Learned pattern from pattern_list_empty_check
+[08:47:02]   Training on task: pattern_none_check_before_access
+[08:47:02]     Learned pattern from pattern_none_check_before_access
+[08:47:02]   Training on task: pattern_none_check_with_default
+[08:47:02]     Learned pattern from pattern_none_check_with_default
+[08:47:02]   Training on task: pattern_none_check_early_return
+[08:47:03]     Learned pattern from pattern_none_check_early_return
+[08:47:03]   Training on task: pattern_none_check_with_exception
+[08:47:03]     Learned pattern from pattern_none_check_with_exception
+[08:47:03]   Training on task: pattern_none_check_is_operator
+[08:47:03]     Learned pattern from pattern_none_check_is_operator
+[08:47:03]   Training on task: pattern_none_check_is_not_operator
+[08:47:03]     Learned pattern from pattern_none_check_is_not_operator
+[08:47:03]   Training on task: pattern_none_default_parameter
+[08:47:03]     Learned pattern from pattern_none_default_parameter
+[08:47:03]   Training on task: pattern_getattr_none_check
+[08:47:03]     Learned pattern from pattern_getattr_none_check
+[08:47:03]   Training on task: pattern_none_sentinel_pattern
+[08:47:04]     Learned pattern from pattern_none_sentinel_pattern
+[08:47:04]   Training on task: pattern_range_validation
+[08:47:04]     Learned pattern from pattern_range_validation
+[08:47:04]   Training on task: pattern_input_retry_loop
+[08:47:04]     Learned pattern from pattern_input_retry_loop
+[08:47:04]   Training on task: pattern_type_conversion_guard
+[08:47:04]     Learned pattern from pattern_type_conversion_guard
+[08:47:04]   Training on task: pattern_regex_input_validation
+[08:47:04]     Learned pattern from pattern_regex_input_validation
+[08:47:04]   Training on task: pattern_allow_regex_validation
+[08:47:04]     Learned pattern from pattern_allow_regex_validation
+[08:47:04]   Training on task: pattern_block_regex_validation
+[08:47:05]     Learned pattern from pattern_block_regex_validation
+[08:47:05]   Training on task: pattern_null_check
+[08:47:05]     Learned pattern from pattern_null_check
+[08:47:05]   Training on task: pattern_type_validation
+[08:47:05]     Learned pattern from pattern_type_validation
+[08:47:05]   Training on task: pattern_range_validation
+[08:47:05]     Learned pattern from pattern_range_validation
+[08:47:05]   Training on task: pattern_input_sanitization
+[08:47:05]     Learned pattern from pattern_input_sanitization
+[08:47:05]   Training on task: pattern_pyinputplus_import
+[08:47:06]     Learned pattern from pattern_pyinputplus_import
+[08:47:06]   Training on task: pattern_try_except_validation
+[08:47:06]     Learned pattern from pattern_try_except_validation
+[08:47:06]   Learned 26/26 tasks
+[08:47:06] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:06] 
+Round 17 complete: Rounds: 17, Tasks: 442, Learned: 442 (100.0%), Patterns: 442, Gen success: 24/24 (100.0%)
+[08:47:06] 
+============================================================
+[08:47:06] Round 18/20
+[08:47:06] ============================================================
+[08:47:06]   Training on task: pattern_none_check
+[08:47:06]     Learned pattern from pattern_none_check
+[08:47:06]   Training on task: pattern_empty_string_check
+[08:47:06]     Learned pattern from pattern_empty_string_check
+[08:47:06]   Training on task: pattern_none_or_empty_check
+[08:47:06]     Learned pattern from pattern_none_or_empty_check
+[08:47:06]   Training on task: pattern_dataframe_empty_check
+[08:47:06]     Learned pattern from pattern_dataframe_empty_check
+[08:47:06]   Training on task: pattern_list_empty_check
+[08:47:07]     Learned pattern from pattern_list_empty_check
+[08:47:07]   Training on task: pattern_none_check_before_access
+[08:47:07]     Learned pattern from pattern_none_check_before_access
+[08:47:07]   Training on task: pattern_none_check_with_default
+[08:47:07]     Learned pattern from pattern_none_check_with_default
+[08:47:07]   Training on task: pattern_none_check_early_return
+[08:47:07]     Learned pattern from pattern_none_check_early_return
+[08:47:07]   Training on task: pattern_none_check_with_exception
+[08:47:07]     Learned pattern from pattern_none_check_with_exception
+[08:47:07]   Training on task: pattern_none_check_is_operator
+[08:47:07]     Learned pattern from pattern_none_check_is_operator
+[08:47:07]   Training on task: pattern_none_check_is_not_operator
+[08:47:08]     Learned pattern from pattern_none_check_is_not_operator
+[08:47:08]   Training on task: pattern_none_default_parameter
+[08:47:08]     Learned pattern from pattern_none_default_parameter
+[08:47:08]   Training on task: pattern_getattr_none_check
+[08:47:08]     Learned pattern from pattern_getattr_none_check
+[08:47:08]   Training on task: pattern_none_sentinel_pattern
+[08:47:08]     Learned pattern from pattern_none_sentinel_pattern
+[08:47:08]   Training on task: pattern_range_validation
+[08:47:08]     Learned pattern from pattern_range_validation
+[08:47:08]   Training on task: pattern_input_retry_loop
+[08:47:08]     Learned pattern from pattern_input_retry_loop
+[08:47:08]   Training on task: pattern_type_conversion_guard
+[08:47:09]     Learned pattern from pattern_type_conversion_guard
+[08:47:09]   Training on task: pattern_regex_input_validation
+[08:47:09]     Learned pattern from pattern_regex_input_validation
+[08:47:09]   Training on task: pattern_allow_regex_validation
+[08:47:09]     Learned pattern from pattern_allow_regex_validation
+[08:47:09]   Training on task: pattern_block_regex_validation
+[08:47:09]     Learned pattern from pattern_block_regex_validation
+[08:47:09]   Training on task: pattern_null_check
+[08:47:09]     Learned pattern from pattern_null_check
+[08:47:09]   Training on task: pattern_type_validation
+[08:47:09]     Learned pattern from pattern_type_validation
+[08:47:09]   Training on task: pattern_range_validation
+[08:47:10]     Learned pattern from pattern_range_validation
+[08:47:10]   Training on task: pattern_input_sanitization
+[08:47:10]     Learned pattern from pattern_input_sanitization
+[08:47:10]   Training on task: pattern_pyinputplus_import
+[08:47:10]     Learned pattern from pattern_pyinputplus_import
+[08:47:10]   Training on task: pattern_try_except_validation
+[08:47:10]     Learned pattern from pattern_try_except_validation
+[08:47:10]   Learned 26/26 tasks
+[08:47:10] 
+--- Validation ---
+[08:47:10]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:10]   pattern_none_check: PASS (conf=0.58)
+[08:47:10]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:10]   pattern_empty_string_check: PASS (conf=1.00)
+[08:47:10]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:10]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:47:10] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:10] 
+Round 18 complete: Rounds: 18, Tasks: 468, Learned: 468 (100.0%), Patterns: 468, Gen success: 27/27 (100.0%)
+[08:47:10] 
+============================================================
+[08:47:10] Round 19/20
+[08:47:10] ============================================================
+[08:47:10]   Training on task: pattern_none_check
+[08:47:10]     Learned pattern from pattern_none_check
+[08:47:10]   Training on task: pattern_empty_string_check
+[08:47:10]     Learned pattern from pattern_empty_string_check
+[08:47:10]   Training on task: pattern_none_or_empty_check
+[08:47:11]     Learned pattern from pattern_none_or_empty_check
+[08:47:11]   Training on task: pattern_dataframe_empty_check
+[08:47:11]     Learned pattern from pattern_dataframe_empty_check
+[08:47:11]   Training on task: pattern_list_empty_check
+[08:47:11]     Learned pattern from pattern_list_empty_check
+[08:47:11]   Training on task: pattern_none_check_before_access
+[08:47:11]     Learned pattern from pattern_none_check_before_access
+[08:47:11]   Training on task: pattern_none_check_with_default
+[08:47:11]     Learned pattern from pattern_none_check_with_default
+[08:47:11]   Training on task: pattern_none_check_early_return
+[08:47:11]     Learned pattern from pattern_none_check_early_return
+[08:47:11]   Training on task: pattern_none_check_with_exception
+[08:47:12]     Learned pattern from pattern_none_check_with_exception
+[08:47:12]   Training on task: pattern_none_check_is_operator
+[08:47:12]     Learned pattern from pattern_none_check_is_operator
+[08:47:12]   Training on task: pattern_none_check_is_not_operator
+[08:47:12]     Learned pattern from pattern_none_check_is_not_operator
+[08:47:12]   Training on task: pattern_none_default_parameter
+[08:47:12]     Learned pattern from pattern_none_default_parameter
+[08:47:12]   Training on task: pattern_getattr_none_check
+[08:47:12]     Learned pattern from pattern_getattr_none_check
+[08:47:12]   Training on task: pattern_none_sentinel_pattern
+[08:47:12]     Learned pattern from pattern_none_sentinel_pattern
+[08:47:12]   Training on task: pattern_range_validation
+[08:47:13]     Learned pattern from pattern_range_validation
+[08:47:13]   Training on task: pattern_input_retry_loop
+[08:47:13]     Learned pattern from pattern_input_retry_loop
+[08:47:13]   Training on task: pattern_type_conversion_guard
+[08:47:13]     Learned pattern from pattern_type_conversion_guard
+[08:47:13]   Training on task: pattern_regex_input_validation
+[08:47:13]     Learned pattern from pattern_regex_input_validation
+[08:47:13]   Training on task: pattern_allow_regex_validation
+[08:47:13]     Learned pattern from pattern_allow_regex_validation
+[08:47:13]   Training on task: pattern_block_regex_validation
+[08:47:13]     Learned pattern from pattern_block_regex_validation
+[08:47:13]   Training on task: pattern_null_check
+[08:47:14]     Learned pattern from pattern_null_check
+[08:47:14]   Training on task: pattern_type_validation
+[08:47:14]     Learned pattern from pattern_type_validation
+[08:47:14]   Training on task: pattern_range_validation
+[08:47:14]     Learned pattern from pattern_range_validation
+[08:47:14]   Training on task: pattern_input_sanitization
+[08:47:14]     Learned pattern from pattern_input_sanitization
+[08:47:14]   Training on task: pattern_pyinputplus_import
+[08:47:14]     Learned pattern from pattern_pyinputplus_import
+[08:47:14]   Training on task: pattern_try_except_validation
+[08:47:14]     Learned pattern from pattern_try_except_validation
+[08:47:14]   Learned 26/26 tasks
+[08:47:14] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:14] 
+Round 19 complete: Rounds: 19, Tasks: 494, Learned: 494 (100.0%), Patterns: 494, Gen success: 27/27 (100.0%)
+[08:47:14] 
+============================================================
+[08:47:14] Round 20/20
+[08:47:14] ============================================================
+[08:47:14]   Training on task: pattern_none_check
+[08:47:15]     Learned pattern from pattern_none_check
+[08:47:15]   Training on task: pattern_empty_string_check
+[08:47:15]     Learned pattern from pattern_empty_string_check
+[08:47:15]   Training on task: pattern_none_or_empty_check
+[08:47:15]     Learned pattern from pattern_none_or_empty_check
+[08:47:15]   Training on task: pattern_dataframe_empty_check
+[08:47:15]     Learned pattern from pattern_dataframe_empty_check
+[08:47:15]   Training on task: pattern_list_empty_check
+[08:47:15]     Learned pattern from pattern_list_empty_check
+[08:47:15]   Training on task: pattern_none_check_before_access
+[08:47:15]     Learned pattern from pattern_none_check_before_access
+[08:47:15]   Training on task: pattern_none_check_with_default
+[08:47:16]     Learned pattern from pattern_none_check_with_default
+[08:47:16]   Training on task: pattern_none_check_early_return
+[08:47:16]     Learned pattern from pattern_none_check_early_return
+[08:47:16]   Training on task: pattern_none_check_with_exception
+[08:47:16]     Learned pattern from pattern_none_check_with_exception
+[08:47:16]   Training on task: pattern_none_check_is_operator
+[08:47:16]     Learned pattern from pattern_none_check_is_operator
+[08:47:16]   Training on task: pattern_none_check_is_not_operator
+[08:47:16]     Learned pattern from pattern_none_check_is_not_operator
+[08:47:16]   Training on task: pattern_none_default_parameter
+[08:47:16]     Learned pattern from pattern_none_default_parameter
+[08:47:16]   Training on task: pattern_getattr_none_check
+[08:47:17]     Learned pattern from pattern_getattr_none_check
+[08:47:17]   Training on task: pattern_none_sentinel_pattern
+[08:47:17]     Learned pattern from pattern_none_sentinel_pattern
+[08:47:17]   Training on task: pattern_range_validation
+[08:47:17]     Learned pattern from pattern_range_validation
+[08:47:17]   Training on task: pattern_input_retry_loop
+[08:47:17]     Learned pattern from pattern_input_retry_loop
+[08:47:17]   Training on task: pattern_type_conversion_guard
+[08:47:17]     Learned pattern from pattern_type_conversion_guard
+[08:47:17]   Training on task: pattern_regex_input_validation
+[08:47:17]     Learned pattern from pattern_regex_input_validation
+[08:47:17]   Training on task: pattern_allow_regex_validation
+[08:47:18]     Learned pattern from pattern_allow_regex_validation
+[08:47:18]   Training on task: pattern_block_regex_validation
+[08:47:18]     Learned pattern from pattern_block_regex_validation
+[08:47:18]   Training on task: pattern_null_check
+[08:47:18]     Learned pattern from pattern_null_check
+[08:47:18]   Training on task: pattern_type_validation
+[08:47:18]     Learned pattern from pattern_type_validation
+[08:47:18]   Training on task: pattern_range_validation
+[08:47:18]     Learned pattern from pattern_range_validation
+[08:47:18]   Training on task: pattern_input_sanitization
+[08:47:18]     Learned pattern from pattern_input_sanitization
+[08:47:18]   Training on task: pattern_pyinputplus_import
+[08:47:19]     Learned pattern from pattern_pyinputplus_import
+[08:47:19]   Training on task: pattern_try_except_validation
+[08:47:19]     Learned pattern from pattern_try_except_validation
+[08:47:19]   Learned 26/26 tasks
+[08:47:19] 
+--- Validation ---
+[08:47:19]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:19]   pattern_none_check: PASS (conf=0.74)
+[08:47:19]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:19]   pattern_empty_string_check: PASS (conf=1.00)
+[08:47:19]   Generated verified patch: modify_line(example.py:line_1)
+[08:47:19]   pattern_none_or_empty_check: PASS (conf=1.00)
+[08:47:19] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:19] 
+Round 20 complete: Rounds: 20, Tasks: 520, Learned: 520 (100.0%), Patterns: 520, Gen success: 30/30 (100.0%)
+[08:47:19] 
+Final save...
+[08:47:19] Saved memory to data/crew_training_facts/neural_memory.pt
+[08:47:19] Saved self-improvement patterns
+[08:47:19] 
+============================================================
+[08:47:19] Final Training Report
+[08:47:19] ============================================================
+[08:47:19] Rounds: 20, Tasks: 520, Learned: 520 (100.0%), Patterns: 520, Gen success: 30/30 (100.0%)

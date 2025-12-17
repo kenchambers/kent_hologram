@@ -32,6 +32,14 @@ except ImportError:
     print("Error: langchain dependencies not installed. Run: uv sync")
     sys.exit(1)
 
+# Optional: OpenAI for fallback (cheap GPT-4o-mini)
+try:
+    from langchain_openai import ChatOpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("Note: langchain-openai not installed. OpenAI fallback unavailable.")
+
 # Optional: Import web search (gracefully handle if not installed)
 # Try the new 'ddgs' package first, fall back to legacy 'duckduckgo_search'
 try:
@@ -58,6 +66,7 @@ from hologram.config.constants import (
     CONVERSATIONAL_MARKERS,
     TEACHING_PATTERNS
 )
+from hologram.introspection import SelfImprovementManager
 
 
 # System prompts - Quiz Master Training Mode
@@ -551,6 +560,11 @@ class CrewTrainer:
         self.last_taught_fact: Optional[str] = None  # Track what fact was just taught
         self.awaiting_feedback: bool = False  # Track if we are waiting for feedback on a quiz question
 
+        # Self-improvement: track what teaching patterns work
+        self_improvement_path = str(Path(persist_dir) / "crew_learned_patterns.json")
+        self._self_improvement = SelfImprovementManager(persist_path=self_improvement_path)
+        print(f"Self-improvement enabled: {self_improvement_path}")
+
     def _build_vocabulary_from_persist_dir(self, persist_dir: str) -> dict:
         """
         Build vocabulary dictionary from persisted facts for Resonator.
@@ -854,31 +868,63 @@ class CrewTrainer:
         }
     
     def _setup_agents(self):
-        """Set up CrewAI agents with LLMs."""
-        # Use LangChain LLMs directly for more control
-        # Gemini LLM (cheap model for topic generation)
-        # Model name can be configured via GEMINI_MODEL env var
-        # Common options: "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"
+        """Set up CrewAI agents with LLMs and fallbacks.
+
+        Uses cheap models with automatic fallback on failure:
+        - Primary: Gemini 2.0 Flash ($0.15/1M input) or Claude Haiku ($0.25/1M)
+        - Fallback: GPT-4o-mini ($0.15/1M) or cross-provider fallback
+
+        Fallback triggers on: rate limits, API errors, timeouts
+        """
+        # Build list of available LLMs for fallback chain
+        # All models are cheap tier: ~$0.15-0.25 per 1M input tokens
+
+        # Gemini LLM (cheapest: $0.15/1M input, $0.60/1M output)
         gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
-        gemini_llm = ChatGoogleGenerativeAI(
+        gemini_primary = ChatGoogleGenerativeAI(
             model=gemini_model,
             google_api_key=self.gemini_key,
             temperature=0.7,
+            max_retries=0,  # Disable retries - let fallback handle it
         )
 
-        # Claude LLM (cheap model for discussion)
-        # Model name can be configured via ANTHROPIC_MODEL env var
+        # Claude Haiku LLM ($0.25/1M input, $1.25/1M output)
         claude_model = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        claude_llm = ChatAnthropic(
+        claude_primary = ChatAnthropic(
             model=claude_model,
             anthropic_api_key=self.anthropic_key,
             temperature=0.7,
+            max_retries=0,  # Disable retries - let fallback handle it
         )
 
-        # Store LLMs for direct invocation
-        # We use LangChain LLMs directly for the conversation loop
-        self.gemini_llm = gemini_llm
-        self.claude_llm = claude_llm
+        # Optional: GPT-4o-mini fallback ($0.15/1M input, $0.60/1M output)
+        openai_fallback = None
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if OPENAI_AVAILABLE and openai_key:
+            openai_fallback = ChatOpenAI(
+                model="gpt-4o-mini",
+                api_key=openai_key,
+                temperature=0.7,
+                max_retries=0,
+            )
+            print(f"  OpenAI fallback enabled: gpt-4o-mini")
+
+        # Build fallback chains:
+        # Gemini -> Claude -> OpenAI (if available)
+        # Claude -> Gemini -> OpenAI (if available)
+        gemini_fallbacks = [claude_primary]
+        claude_fallbacks = [gemini_primary]
+
+        if openai_fallback:
+            gemini_fallbacks.append(openai_fallback)
+            claude_fallbacks.append(openai_fallback)
+
+        # Create LLMs with fallback chains
+        self.gemini_llm = gemini_primary.with_fallbacks(gemini_fallbacks)
+        self.claude_llm = claude_primary.with_fallbacks(claude_fallbacks)
+
+        print(f"  Gemini: {gemini_model} (fallbacks: {len(gemini_fallbacks)})")
+        print(f"  Claude: {claude_model} (fallbacks: {len(claude_fallbacks)})")
     
     def web_teach_topics(
         self,
@@ -1344,6 +1390,17 @@ class CrewTrainer:
                 self.facts_learned_count += 1
                 self.facts_learned.append(fact_learned)
                 self.logger.log("SYSTEM", f"✓ Fact learned ({self.facts_learned_count} total): {fact_learned}")
+                # Track successful learning in self-improvement
+                try:
+                    self._self_improvement.observer.observe(
+                        items=["teaching", "gemini_conversation"],
+                        success=True,
+                        confidence=0.9,
+                        context="crew_fact_learning"
+                    )
+                    self._self_improvement.increment_observation_count()
+                except Exception:
+                    pass  # Non-critical - don't crash training
 
             # Clear learning flag for next turn (explicit protocol)
             self.chatbot.clear_learning_flag()
@@ -1431,6 +1488,17 @@ class CrewTrainer:
                     self.last_taught_fact = fact_str
                     self.logger.log("SYSTEM", f"✓ Fact learned while listening: {fact_str}")
                     self._update_vocabulary_from_fact(fact_str)
+                    # Track successful learning in self-improvement
+                    try:
+                        self._self_improvement.observer.observe(
+                            items=["teaching", "llm_conversation"],
+                            success=True,
+                            confidence=0.9,
+                            context="crew_fact_learning"
+                        )
+                        self._self_improvement.increment_observation_count()
+                    except Exception:
+                        pass  # Non-critical - don't crash training
                 # If we learned a fact, we might want to acknowledge it even if not addressed
                 if random.random() < 0.5:
                     should_speak = True
@@ -1570,6 +1638,14 @@ class CrewTrainer:
 
                 # Ensure worker is stopped
                 self.chatbot.end_session()
+
+            # Save self-improvement patterns (outside chatbot check - always try)
+            if hasattr(self, '_self_improvement') and self._self_improvement:
+                try:
+                    self._self_improvement.save()
+                    self.logger.log("SYSTEM", "💾 Saved self-improvement patterns")
+                except Exception as e:
+                    self.logger.log("ERROR", f"Failed to save self-improvement patterns: {e}")
             
             # Show final statistics
             self._print_status_report(round_num, final=True)
@@ -1600,6 +1676,10 @@ class CrewTrainer:
             print(f"  Recent facts:")
             for fact in self.facts_learned[-3:]:
                 print(f"    • {fact}")
+        # Self-improvement stats (only on final report)
+        if final and hasattr(self, '_self_improvement'):
+            stats = self._self_improvement.get_statistics()
+            print(f"  Self-improvement patterns: {stats.get('total_observations', 0)} observations")
         print(f"{'='*60}")
 
 

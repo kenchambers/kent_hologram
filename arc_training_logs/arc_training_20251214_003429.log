@@ -1,0 +1,86 @@
+[00:34:29] ============================================================
+[00:34:29] ARC Trainer Initialization
+[00:34:29] ============================================================
+[00:34:29] Creating HologramContainer...
+[00:34:29] Creating ConsolidationManager...
+[00:34:29] Loaded existing memory: 150 patterns
+[00:34:29] Creating ARC components...
+[00:34:30] Creating HolographicARCSolver (shared memory mode)...
+[00:34:30] Initialization complete. Persist dir: ./data/crew_training_facts
+[00:34:30] 
+============================================================
+[00:34:30] Starting Continuous Training
+[00:34:30] ============================================================
+[00:34:30] ARC Curriculum Distribution:
+  EASY: 26 tasks
+  MEDIUM: 273 tasks
+  HARD: 701 tasks
+[00:34:30] 
+============================================================
+[00:34:30] Round 1/100
+[00:34:30] ============================================================
+[00:34:30] 
+Training on easy tier (26 tasks)
+[00:34:30] [1/26] Task 794b24be
+[00:34:36]   Could not extract verified pattern
+[00:34:36] [2/26] Task 25ff71a9
+[00:34:39]   Already known (from cache: False)
+[00:34:39] [3/26] Task 6e02f1e3
+[00:34:43]   Could not extract verified pattern
+[00:34:43] [4/26] Task 74dd1130
+[00:34:46]   Could not extract verified pattern
+[00:34:46] [5/26] Task 9565186b
+[00:34:48]   Could not extract verified pattern
+[00:34:48] [6/26] Task 3c9b0459
+[00:34:51]   Could not extract verified pattern
+[00:34:51] [7/26] Task ed36ccf7
+[00:34:54]   Could not extract verified pattern
+[00:34:54] [8/26] Task 0d3d703e
+[00:34:56]   Could not extract verified pattern
+[00:34:56] [9/26] Task 3618c87e
+[00:34:59]   Could not extract verified pattern
+[00:34:59] [10/26] Task a79310a0
+[00:35:01]   Could not extract verified pattern
+[00:35:01] [11/26] Task 5582e5ca
+[00:35:03]   Could not extract verified pattern
+[00:35:03] [12/26] Task 25d8a9c8
+[00:35:06]   Could not extract verified pattern
+[00:35:06] [13/26] Task a9f96cdd
+[00:35:07]   Could not extract verified pattern
+[00:35:07] [14/26] Task f76d97a5
+[00:35:10]   Could not extract verified pattern
+[00:35:10] [15/26] Task 6150a2bd
+[00:35:12]   Could not extract verified pattern
+[00:35:12] [16/26] Task 6ea4a07e
+[00:35:15]   Could not extract verified pattern
+[00:35:15] [17/26] Task 87ab05b8
+[00:35:18]   Could not extract verified pattern
+[00:35:18] [18/26] Task 66e6c45b
+[00:35:19]   Could not extract verified pattern
+[00:35:19] [19/26] Task d511f180
+[00:35:22]   Could not extract verified pattern
+[00:35:22] [20/26] Task e3fe1151
+[00:35:26]   Could not extract verified pattern
+[00:35:26] [21/26] Task 4cd1b7b2
+[00:35:30]   Could not extract verified pattern
+[00:35:30] [22/26] Task a85d4709
+[00:35:32]   Could not extract verified pattern
+[00:35:32] [23/26] Task 833966f4
+[00:35:35]   Could not extract verified pattern
+[00:35:35] [24/26] Task aedd82e4
+[00:35:39]   Could not extract verified pattern
+[00:35:39] [25/26] Task d037b0a7
+[00:35:41] 
+Training interrupted by user
+[00:35:41] 
+Final save...
+[00:35:41] Saved memory to data/crew_training_facts/neural_memory.pt
+[00:35:41] 
+============================================================
+[00:35:41] Final Training Report
+[00:35:41] ============================================================
+[00:35:41] Rounds: 1, Tasks: 25, Solved: 1 (4.0%), Patterns stored: 0, Already known: 1, Extraction failures: 23
+[00:35:41] 
+--- Validation (50 tasks) ---
+[00:36:19] Validation accuracy: 0.0%
+[00:36:19] Solve rate: 0.0%

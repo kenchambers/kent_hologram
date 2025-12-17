@@ -36,6 +36,7 @@ dependencies = [
     "openai>=2.9.0",
     "arckit>=1.0.1",
     "ddgs>=9.9.3",
+    "langchain-openai>=1.1.4",
 ]
 
 [project.optional-dependencies]
