@@ -54,13 +54,23 @@ class FaissAdapter:
         >>> results = db2.query(vec, k=5)  # [k x 3] tuples: (id, sim, meta)
     """
 
-    def __init__(self, dimensions: int, persist_path: str):
+    def __init__(
+        self,
+        dimensions: int,
+        persist_path: str,
+        use_hnsw: bool = False,  # Backward compatible default
+        hnsw_m: int = 32,        # Connections per node
+        hnsw_ef_construction: int = 200,
+    ):
         """
         Initialize empty Faiss adapter.
 
         Args:
             dimensions: Vector dimensionality (10000 for hologram system)
             persist_path: Directory to persist index and metadata
+            use_hnsw: If True, use HNSW index for O(log n) queries (default: False)
+            hnsw_m: HNSW connections per node (default: 32)
+            hnsw_ef_construction: HNSW construction accuracy (default: 200)
 
         Raises:
             ValueError: If dimensions < 1
@@ -71,8 +81,19 @@ class FaissAdapter:
         self.dimensions = dimensions
         self.persist_path = Path(persist_path)
 
-        # IndexFlatIP: computes inner product (cosine sim for normalized)
-        self.index = faiss.IndexFlatIP(dimensions)
+        # Choose index type based on use_hnsw parameter
+        if use_hnsw:
+            # HNSW: O(log n) queries, better for large-scale (book-scale)
+            # Use METRIC_INNER_PRODUCT for cosine similarity with normalized vectors
+            self.index = faiss.IndexHNSWFlat(dimensions, hnsw_m, faiss.METRIC_INNER_PRODUCT)
+            self.index.hnsw.efConstruction = hnsw_ef_construction
+            self.index.hnsw.efSearch = 64  # Query accuracy
+        else:
+            # IndexFlatIP: O(n) exact search, computes inner product (cosine sim for normalized)
+            self.index = faiss.IndexFlatIP(dimensions)
+
+        # Store config for repr
+        self._use_hnsw = use_hnsw
 
         # Metadata storage
         self.metadata: Dict[int, dict] = {}
@@ -481,8 +502,10 @@ class FaissAdapter:
         return self.index.ntotal
 
     def __repr__(self) -> str:
+        index_type = "HNSW" if self._use_hnsw else "FlatIP"
         return (
             f"FaissAdapter(dims={self.dimensions}, "
             f"vectors={self.vector_count}, "
+            f"index={index_type}, "
             f"path={self.persist_path})"
         )

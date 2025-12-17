@@ -364,6 +364,63 @@ JSON Output:"""
         print(f"[WebTeacher - {mode_label}] Successfully added {total_facts_added} facts to FactStore")
         return total_facts_added
     
+    def teach_document(
+        self,
+        text: str,
+        fact_store,
+        codebook,
+        topic: str = "document",
+        chunk_size: int = 500,
+        overlap: int = 100,
+    ) -> int:
+        """
+        Teach from a long document using chunking for book-scale ingestion.
+
+        Uses Codebook.encode_chunks() to split document into overlapping chunks,
+        then extracts facts from each chunk. This enables book-scale learning.
+
+        Args:
+            text: Full document text (can be arbitrarily long)
+            fact_store: FactStore instance to populate
+            codebook: Codebook instance for chunking
+            topic: Topic/source label for facts
+            chunk_size: Characters per chunk (default: 500)
+            overlap: Characters overlapping between chunks (default: 100)
+
+        Returns:
+            Number of facts successfully added
+        """
+        print(f"\n[WebTeacher] Processing document ({len(text)} chars) with chunking...")
+
+        # Use codebook chunking for overlapping chunks
+        chunks = codebook.chunk_text(text, chunk_size=chunk_size, overlap=overlap)
+        print(f"[WebTeacher] Split into {len(chunks)} chunks")
+
+        total_facts = 0
+        for i, chunk in enumerate(chunks):
+            # Extract facts from each chunk
+            facts = self.extract_facts(chunk, topic, mode="general")
+
+            for subject, predicate, obj in facts:
+                try:
+                    fact_obj = fact_store.add_fact(
+                        subject=subject,
+                        predicate=predicate,
+                        obj=obj,
+                        source=f"Document chunk {i+1}/{len(chunks)}: {topic}",
+                    )
+                    if fact_obj:
+                        total_facts += 1
+                except Exception:
+                    pass  # Skip duplicates/errors silently
+
+            # Progress indicator every 10 chunks
+            if (i + 1) % 10 == 0:
+                print(f"  [{i+1}/{len(chunks)}] {total_facts} facts extracted...")
+
+        print(f"[WebTeacher] Document processing complete: {total_facts} facts")
+        return total_facts
+
     def teach_code_topics(
         self,
         topics: List[str],
@@ -564,6 +621,16 @@ class CrewTrainer:
         self_improvement_path = str(Path(persist_dir) / "crew_learned_patterns.json")
         self._self_improvement = SelfImprovementManager(persist_path=self_improvement_path)
         print(f"Self-improvement enabled: {self_improvement_path}")
+
+        # Category rotation for topic diversity
+        self._topic_categories = [
+            "world capitals", "famous inventors", "science facts", "animals",
+            "geography", "history", "art", "music", "sports", "food",
+            "technology", "space", "oceans", "plants", "chemistry",
+            "mathematics", "literature", "architecture", "medicine", "philosophy",
+            "biology", "physics", "geology", "astronomy", "weather"
+        ]
+        self._category_index = 0  # Track current category for rotation
 
     def _build_vocabulary_from_persist_dir(self, persist_dir: str) -> dict:
         """
@@ -884,7 +951,7 @@ class CrewTrainer:
         gemini_primary = ChatGoogleGenerativeAI(
             model=gemini_model,
             google_api_key=self.gemini_key,
-            temperature=0.7,
+            temperature=1.2,  # Higher temperature for more creative/random topic selection
             max_retries=0,  # Disable retries - let fallback handle it
         )
 
@@ -1337,17 +1404,22 @@ class CrewTrainer:
             topics_str = ", ".join(recent_topics)
             diversity_instruction = f"\n\nIMPORTANT: We recently discussed: {topics_str}. Please teach a DIFFERENT topic now (different country, person, or concept). Introduce variety!"
 
+        # Category rotation: pick next category in round-robin fashion
+        chosen_category = self._topic_categories[self._category_index]
+        self._category_index = (self._category_index + 1) % len(self._topic_categories)
+
         topic_prompt = (
             f"{GEMINI_SYSTEM_PROMPT}\n\n"
-            "Pick a RANDOM topic and teach ONE fact about it. Be creative and unpredictable!\n"
-            "Choose from categories like: world capitals, famous inventors, science facts, "
-            "animals, geography, history, art, music, sports, food, technology, or anything interesting.\n\n"
+            f"🎯 YOUR ASSIGNED CATEGORY: {chosen_category.upper()}\n\n"
+            f"You MUST teach ONE fact specifically about '{chosen_category}'.\n"
+            "Be creative and unpredictable! Pick an unusual or surprising example.\n\n"
             "Use ONE of these exact formats:\n"
             "- 'The capital of [country] is [city]'\n"
             "- '[Person] invented/discovered [thing]'\n"
             "- '[Thing] is [property]'\n"
             "- 'The [property] of [thing] is [value]'\n\n"
-            "IMPORTANT: State the fact directly without preamble like 'apparently' or 'I think'."
+            "IMPORTANT: State the fact directly without preamble like 'apparently' or 'I think'.\n"
+            f"CRITICAL: Your fact MUST relate to the category '{chosen_category}'."
             f"{simplify_instruction}"
             f"{diversity_instruction}"
         )
@@ -1785,7 +1857,21 @@ Examples:
         default=5,
         help="Maximum facts to extract per web result (default: 5)"
     )
-    
+
+    parser.add_argument(
+        "--teach-document",
+        type=str,
+        metavar="FILE",
+        help="Ingest a document file using chunking for book-scale learning"
+    )
+
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=500,
+        help="Characters per chunk for document ingestion (default: 500)"
+    )
+
     args = parser.parse_args()
     
     # Setup signal handler
@@ -1853,7 +1939,49 @@ Examples:
             if response.lower() != 'y':
                 print("Exiting...")
                 return
-    
+
+    # Check for document teaching mode
+    if args.teach_document:
+        print("\n" + "="*70)
+        print("DOCUMENT TEACHING MODE - Book-Scale Ingestion")
+        print("="*70)
+        print(f"Document: {args.teach_document}")
+        print(f"Chunk size: {args.chunk_size} chars")
+        print("="*70 + "\n")
+
+        # Read document
+        doc_path = Path(args.teach_document)
+        if not doc_path.exists():
+            print(f"ERROR: Document not found: {doc_path}")
+            return
+
+        text = doc_path.read_text()
+        print(f"Loaded document: {len(text)} characters")
+
+        # Initialize WebTeacher and process document
+        try:
+            web_teacher = WebTeacher(llm_provider="anthropic")
+            total_facts = web_teacher.teach_document(
+                text=text,
+                fact_store=trainer.chatbot._fact_store,
+                codebook=trainer.container._codebook,
+                topic=doc_path.stem,
+                chunk_size=args.chunk_size,
+            )
+
+            print("\n" + "="*70)
+            print(f"DOCUMENT TEACHING COMPLETE: {total_facts} facts added")
+            print("="*70)
+        except Exception as e:
+            print(f"ERROR: Document teaching failed: {e}")
+
+        # Ask if user wants to continue
+        if not args.web_teach and not args.web_teach_code:
+            response = input("\nContinue with conversational training? (y/n): ")
+            if response.lower() != 'y':
+                print("Exiting...")
+                return
+
     # Run conversational training
     trainer.run_continuous()
 

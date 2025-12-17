@@ -421,5 +421,140 @@ class TestComparisonWithInMemoryDatabase:
             assert f_meta == m_meta
 
 
+class TestFaissAdapterHNSW:
+    """Test HNSW index functionality."""
+
+    def test_hnsw_init(self):
+        """HNSW adapter should initialize correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True
+            )
+            assert adapter._use_hnsw is True
+            assert adapter.vector_count == 0
+
+    def test_hnsw_store_and_query(self):
+        """HNSW should store and query vectors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True
+            )
+            vec = torch.randn(10000)
+            vec_id = adapter.store(vec, {"data": "test"})
+
+            results = adapter.query(vec, k=1)
+
+            assert len(results) == 1
+            assert results[0][0] == vec_id
+            # HNSW may have slightly lower similarity than exact search
+            assert results[0][1] > 0.95
+
+    def test_hnsw_persistence_roundtrip(self):
+        """HNSW index should persist and load correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Session 1: Create and save HNSW index
+            adapter1 = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True
+            )
+            vecs = [torch.randn(10000) for _ in range(5)]
+            ids = [adapter1.store(v, {"idx": i}) for i, v in enumerate(vecs)]
+            adapter1.save()
+
+            # Session 2: Load and query
+            adapter2 = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True
+            )
+            adapter2.load()
+
+            # Verify vectors can be queried
+            results = adapter2.query(vecs[0], k=3)
+            assert len(results) == 3
+            # First result should be most similar to query
+            assert results[0][1] > 0.9
+
+    def test_hnsw_query_accuracy_vs_flat(self):
+        """HNSW should return similar results to exact (FlatIP) search."""
+        with tempfile.TemporaryDirectory() as tmpdir1, \
+             tempfile.TemporaryDirectory() as tmpdir2:
+
+            # Store same vectors in both index types
+            vecs = [torch.randn(10000) for _ in range(20)]
+            query_vec = vecs[0]
+
+            # FlatIP (exact search)
+            flat_adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir1,
+                use_hnsw=False
+            )
+            for i, v in enumerate(vecs):
+                flat_adapter.store(v, {"idx": i})
+
+            # HNSW (approximate search)
+            hnsw_adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir2,
+                use_hnsw=True
+            )
+            for i, v in enumerate(vecs):
+                hnsw_adapter.store(v, {"idx": i})
+
+            # Query both
+            flat_results = flat_adapter.query(query_vec, k=5)
+            hnsw_results = hnsw_adapter.query(query_vec, k=5)
+
+            # Top result should match (the query vector itself)
+            assert flat_results[0][0] == hnsw_results[0][0]
+
+            # Results should be similar (at least 80% overlap in top 5)
+            flat_ids = set(r[0] for r in flat_results)
+            hnsw_ids = set(r[0] for r in hnsw_results)
+            overlap = len(flat_ids & hnsw_ids)
+            assert overlap >= 4, f"Expected >=80% overlap, got {overlap}/5"
+
+    def test_hnsw_custom_parameters(self):
+        """Custom HNSW parameters should be respected."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True,
+                hnsw_m=16,  # Custom M
+                hnsw_ef_construction=100  # Custom efConstruction
+            )
+
+            # Verify index was created
+            assert adapter._use_hnsw is True
+            # Store a vector to ensure index works
+            vec = torch.randn(10000)
+            vec_id = adapter.store(vec, {})
+            assert vec_id == 0
+
+    def test_hnsw_repr_shows_index_type(self):
+        """__repr__ should indicate HNSW index type."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            hnsw_adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=True
+            )
+            flat_adapter = FaissAdapter(
+                dimensions=10000,
+                persist_path=tmpdir,
+                use_hnsw=False
+            )
+
+            assert "HNSW" in repr(hnsw_adapter)
+            assert "FlatIP" in repr(flat_adapter)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

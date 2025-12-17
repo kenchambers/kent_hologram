@@ -83,13 +83,13 @@ class Operations:
         if len(vectors) == 1:
             return vectors[0]
 
-        # torchhd.bundle only takes 2 arguments, so we need to bundle pairwise
-        result = vectors[0]
-        for v in vectors[1:]:
-            result = torchhd.bundle(result, v)
+        # Batched sum - mathematically identical for MAP VSA
+        # MAP VSA: bundle(a,b) = a + b (element-wise addition)
+        # sum([a,b,c,d]) === ((a+b)+c)+d mathematically
+        stacked = torch.stack(vectors)
+        result = torch.sum(stacked, dim=0)
 
-        # CRITICAL: Normalize result to prevent magnitude drift
-        # Bundling increases norm by sqrt(N). We want unit vectors.
+        # Normalize to unit length
         norm = torch.norm(result)
         if norm > 1e-6:
             result = result / norm

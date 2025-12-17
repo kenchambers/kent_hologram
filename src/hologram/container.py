@@ -215,12 +215,17 @@ class HologramContainer:
         """
         return SequenceEncoder(self._codebook, max_length=max_length)
 
-    def create_faiss_adapter(self, path: str | Path):
+    def create_faiss_adapter(
+        self,
+        path: str | Path,
+        use_hnsw: bool = False,
+    ):
         """
         Create a Faiss adapter for persistence.
 
         Args:
             path: Directory path for Faiss index storage
+            use_hnsw: If True, use HNSW index for O(log n) queries (book-scale)
 
         Returns:
             FaissAdapter instance
@@ -228,7 +233,11 @@ class HologramContainer:
         from hologram.persistence.faiss_adapter import FaissAdapter
         path_obj = Path(path)
         path_obj.mkdir(parents=True, exist_ok=True)
-        return FaissAdapter(self._space.dimensions, str(path_obj))
+        return FaissAdapter(
+            self._space.dimensions,
+            str(path_obj),
+            use_hnsw=use_hnsw,
+        )
 
     # =========================================================================
     # Resonant Cavity Architecture Components

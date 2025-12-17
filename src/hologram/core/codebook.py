@@ -10,7 +10,7 @@ pattern that can be dropped into the water (memory).
 """
 
 import hashlib
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import torch
 
@@ -96,6 +96,51 @@ class Codebook:
         """
         vectors = [self.encode(concept) for concept in concepts]
         return torch.stack(vectors)
+
+    def chunk_text(
+        self,
+        text: str,
+        chunk_size: int = 500,  # characters
+        overlap: int = 100
+    ) -> List[str]:
+        """Split text into overlapping chunks for encoding.
+
+        Args:
+            text: Document text
+            chunk_size: Characters per chunk
+            overlap: Characters overlapping between chunks
+
+        Returns:
+            List of chunk strings
+        """
+        if not text:
+            return []
+
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = min(start + chunk_size, len(text))
+            chunks.append(text[start:end])
+            start += chunk_size - overlap
+            if start >= len(text):
+                break
+
+        return chunks
+
+    def encode_chunks(
+        self,
+        text: str,
+        chunk_size: int = 500,
+        overlap: int = 100
+    ) -> Tuple[List[torch.Tensor], List[str]]:
+        """Encode document as list of chunk vectors with original text.
+
+        Returns:
+            (chunk_vectors, chunk_texts) - parallel lists for FAISS storage
+        """
+        chunks = self.chunk_text(text, chunk_size, overlap)
+        vectors = [self.encode(chunk) for chunk in chunks]
+        return vectors, chunks
 
     def get_positional(self, position: int) -> torch.Tensor:
         """
