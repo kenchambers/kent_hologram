@@ -182,9 +182,11 @@ class SelfImprovementManager:
             pruning = self._observer.suggest_pruning()
             reinforcement = self._observer.suggest_reinforcement()
 
+            # Get actual observation count from observer's history, not our counter
+            observer_stats = self._observer.get_stats_summary()
             return {
-                "total_observations": self._observation_count,
-                "unique_items": len(self._observer),
+                "total_observations": observer_stats["total_observations"],
+                "unique_items": observer_stats["unique_items"],
                 "items_to_prune": len(pruning),
                 "items_to_reinforce": len(reinforcement),
                 "top_performers": reinforcement[:5] if reinforcement else [],

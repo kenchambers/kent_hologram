@@ -81,17 +81,8 @@ def demo_swe():
     print("\n🏗️  Initializing code generator...")
     container = HologramContainer(dimensions=10000)
 
-    # Create self-improvement manager for code generator
-    from hologram.introspection import SelfImprovementManager
-    swe_manager = SelfImprovementManager(
-        persist_path="./data/demo_swe_patterns.json"
-    )
-
-    # Create code generator with circuit observer
-    generator = container.create_code_generator(
-        fact_store=None,
-        circuit_observer=swe_manager.observer
-    )
+    # Create code generator (simple usage - no self-improvement for demo)
+    generator = container.create_code_generator()
 
     print("✓ Code generator ready")
 

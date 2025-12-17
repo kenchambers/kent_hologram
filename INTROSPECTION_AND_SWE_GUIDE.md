@@ -227,10 +227,14 @@ from hologram.swe import SWETask, CodeGenerator
 # Initialize container
 container = HologramContainer(dimensions=10000)
 
-# Create code generator
+# Optional: Create self-improvement manager for learning
+from hologram.introspection import SelfImprovementManager
+manager = SelfImprovementManager(persist_path="./data/swe_patterns.json")
+
+# Create code generator (pass circuit_observer for learning)
 generator = container.create_code_generator(
     fact_store=None,  # Optional: share with ARC
-    enable_self_improvement=True
+    circuit_observer=manager.observer  # For self-improvement tracking
 )
 
 # Define a coding task
@@ -282,6 +286,13 @@ for patch in result.patches:
 - `function_name`: Function identifier (e.g., "process")
 - `class_name`: Class identifier (e.g., "MyClass")
 - `before_line`, `after_line`: Relative positioning
+
+**Understanding Confidence Scores**:
+- Confidence is based on HDC cosine similarity
+- **Positive values (0.3-1.0)**: Strong alignment with learned patterns
+- **Near-zero values**: Weak/uncertain alignment
+- **Negative values**: Can occur when vectors are orthogonal (no learned pattern matches)
+- Use `confidence_threshold` to filter low-confidence results
 
 ### Training the Code Generator
 
@@ -624,13 +635,13 @@ for i, task in enumerate(tasks):
 - **Patch generation**: 10-50ms depending on complexity
 - **Total**: ~20-70ms per task
 
-### Accuracy Benchmarks
+### Accuracy Note
 
-| System | Baseline | With Self-Improvement | Gain |
-|--------|----------|----------------------|------|
-| ARC Solver | 34% | 42% | +23% |
-| Code Generator | 12% | 28% | +133% |
-| Combined | N/A | 45% | - |
+Self-improvement learning improves accuracy over time as patterns accumulate.
+Run your own benchmarks with:
+```bash
+uv run python scripts/arc_trainer.py --max-rounds 50 --validate-every 10
+```
 
 ---
 
@@ -641,7 +652,7 @@ for i, task in enumerate(tasks):
 ✅ **Automatic learning** across tasks
 ✅ **Pattern discovery** (what works, what doesn't)
 ✅ **Persistent knowledge** (saves to JSON)
-✅ **Zero configuration** (works out of the box)
+✅ **Minimal configuration** (just set `enable_self_improvement=True`)
 ✅ **Integrated** with ARC solver and metacognition
 
 ### SWE System

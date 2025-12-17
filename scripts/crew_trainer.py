@@ -416,7 +416,7 @@ JSON Output:"""
 
             # Progress indicator every 10 chunks
             if (i + 1) % 10 == 0:
-                print(f"  [{i+1}/{len(chunks)}] {total_facts} facts extracted...")
+                print(f"  [{i+1}/{len(chunks)}] {total_facts} facts extracted...", flush=True)
 
         print(f"[WebTeacher] Document processing complete: {total_facts} facts")
         return total_facts
