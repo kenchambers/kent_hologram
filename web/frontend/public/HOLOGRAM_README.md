@@ -14,36 +14,36 @@ Unlike traditional LLMs that predict tokens probabilistically, Kent Hologram use
 
 ## Architecture
 
-### The Holographic Memory Paradigm
+### The Holographic Memory Idea
 
-Based on Itzhak Bentov's holographic consciousness theory:
+Imagine throwing pebbles into a pond:
 
-1. **Concepts as Disturbances**: Each word/concept is a random 10,000-dimensional vector
-2. **Memory as Interference**: Facts create interference patterns when superimposed
-3. **Query as Resonance**: Retrieval vibrates the memory surface to extract patterns
+1. **Each Word = A Pebble**: Every concept creates a unique ripple pattern (a 10,000-dimensional vector)
+2. **Memory = The Water Surface**: Facts overlap and interfere, creating a complex pattern
+3. **Questions = Vibrations**: Asking a question "resonates" the surface to find matching patterns
 
-### Five-Layer "Conscious Hologram" Stack
+### The Five Layers
 
-| Layer | Component | Role |
-|-------|-----------|------|
-| **1. Substrate** | FractalSpace | Every vector is holographically robust to corruption |
-| **2. Memory** | FactStore + MemoryTrace | HDC binding/bundling for fact storage (S-P-O structure) |
-| **3. Controller** | MetacognitiveLoop | Self-monitoring, confidence tracking, retry when confused |
-| **4. Retrieval** | ResponseSelector | Multi-strategy lookup (exact match + HDC resonance) |
-| **5. Voice** | Ventriloquist (SLM) | Natural language generation with fact grounding |
+| Layer | What It Does |
+|-------|--------------|
+| **1. Foundation** | Robust vectors that survive noise and corruption |
+| **2. Memory** | Stores facts as "Subject → Predicate → Object" (France → capital → Paris) |
+| **3. Controller** | Monitors confidence, retries when confused |
+| **4. Retrieval** | Fast lookup + HDC verification |
+| **5. Voice** | Turns facts into natural language responses |
 
-### HDC vs Traditional Embeddings
+### Why This Is Different
 
-**Traditional Embeddings (Dense Vectors)**:
-- Learned through gradient descent
-- Probabilistic similarity (cosine/dot product)
-- Prone to hallucination when interpolating
+**Regular AI (GPT, Claude)**:
+- Predicts the most likely next word
+- Can make up plausible-sounding things
+- Forgets after the conversation ends
 
-**Hyperdimensional Computing**:
-- Algebraic operations (bind/bundle/unbind)
-- Deterministic retrieval (same query → same answer)
-- Bounded hallucination (can't invent facts)
-- Graceful degradation (noise lowers confidence, not accuracy)
+**Kent Hologram**:
+- Retrieves what it actually knows
+- Can't invent facts (bounded by vocabulary)
+- Remembers forever (persistent storage)
+- Same question = same answer (deterministic)
 
 ---
 
@@ -77,14 +77,14 @@ Intent detection uses **learned prototypes**, not hardcoded keywords:
 
 ### 3. Fact Storage and Retrieval
 
-**Two-Strategy Hybrid**:
-1. **Exact Match** (O(1) fast path): Direct lookup for known facts
-2. **Resonance Search** (O(N) fallback): HDC similarity for partial matches
+**Two Ways to Find Facts**:
+1. **Direct Lookup**: Instant retrieval for exact matches
+2. **Resonance Search**: Finds related facts even with partial information
 
-**Storage Format**: Subject-Predicate-Object (S-P-O) triples
-- "France" --capital--> "Paris"
-- "Earth" --shape--> "round"
-- "Sky" --color--> "blue"
+**How Facts Are Structured**:
+- "France" → capital → "Paris"
+- "Earth" → shape → "round"
+- "Sky" → color → "blue"
 
 ### 4. Neural Consolidation (Sleep-Inspired Learning)
 
@@ -108,39 +108,24 @@ The frontend dashboard shows:
 
 ---
 
-## Innovation Highlights
+## Why Hyperdimensional Computing?
 
-### What Makes This Different from Traditional Chatbots
+HDC gives us properties that neural networks alone can't:
 
-**Traditional Chatbots (GPT, Claude, etc.)**:
-- Predict next token based on statistical patterns
-- Can hallucinate plausible-sounding nonsense
-- No explicit memory (context window only)
-- Probabilistic, non-deterministic
+1. **Everything in One Place**: Each fact spreads across all 10,000 dimensions (like a hologram)
+2. **Stack Facts Together**: Multiple facts share the same memory without overwriting
+3. **Find with Partial Info**: Ask about "France" and it finds "capital → Paris"
+4. **Survives Damage**: Even 30% corruption still retrieves the right answer
+5. **No Training Required**: Add facts instantly, no gradient descent needed
 
-**Kent Hologram**:
-- Retrieves facts algebraically from stored patterns
-- Cannot invent information (bounded vocabulary)
-- Persistent memory across sessions
-- Deterministic, reproducible responses
-- Citations for every fact (source tracking)
+### Sleep-Like Memory Consolidation
 
-### Why HDC for Memory?
+Inspired by how the human brain works:
+- **While Chatting**: New facts go to fast "working memory"
+- **In Background**: A "sleep" process moves facts to long-term storage
+- **Over Time**: Important facts get strengthened, duplicates removed
 
-1. **Distributed Representation**: Each fact is spread across all 10,000 dimensions
-2. **Superposition**: Multiple facts stored in same vector space (holographic bundling)
-3. **Associative Recall**: Partial cues retrieve complete patterns
-4. **Noise Tolerance**: 30% corruption still retrieves correct answer
-5. **Constant-Time Operations**: No gradient descent or backprop needed
-
-### Memory Consolidation Approach
-
-Inspired by **neuroscience research** on sleep and memory:
-- **Awake**: Store facts in fast working memory (ChromaDB)
-- **Asleep**: Background consolidation to holographic long-term memory
-- **Replay**: Strengthens important facts, prunes duplicates
-
-This mimics how humans consolidate learning during sleep!
+Just like how you remember things better after sleeping on them!
 
 ---
 
@@ -202,40 +187,108 @@ Watch facts move from pending → consolidated over time.
 
 ## Technical Details
 
-### System Requirements
-- 10,000-dimensional vector space
-- ~100 fact capacity per holographic layer (scales with hierarchy)
-- Background consolidation worker (non-blocking)
-- Persistent storage (ChromaDB + PyTorch checkpoints)
+### How Facts Are Stored
 
-### Safety Mechanisms
-- **RefusalPolicy**: Refuses when confidence < threshold (0.10)
-- **CitationEnforcer**: Every answer traces to a stored fact
-- **ConfidenceScorer**: Quantifies certainty (calibrated for holographic interference)
-- **Circuit Breaker**: Falls back on repeated API failures
+1. **Vector Encoding**: Each fact becomes a 10,000-dimensional vector
+2. **FAISS Index**: Vectors stored in a neural network index for fast search
+3. **HDC Bundle**: Same vectors bundled holographically for verification
+4. **Persistence**: Everything saved to disk (survives restarts)
 
-### Generation Modes
-1. **Ventriloquist (SLM)**: Uses Kimi K2 Thinking for fluent, natural responses
-2. **Resonant Generator (HDC)**: Pure hyperdimensional token-by-token generation
-3. **Template Fallback**: Pre-defined patterns when generation fails
+### Safety Features
+
+- **Refuses When Uncertain**: Won't guess if confidence is too low
+- **Cites Sources**: Every answer traces back to a stored fact
+- **No Hallucination**: Can only return what it actually learned
+
+### Response Generation
+
+The system can respond in three ways:
+1. **Natural Language**: Uses an AI model for fluent responses (grounded in facts)
+2. **Pure HDC**: Direct algebraic generation from memory
+3. **Templates**: Simple patterns when other methods fail
 
 ---
 
-## Limitations
+## How It Works: Store Vectors, Query with HDC
 
-**Current Constraints**:
-- ~100 facts per layer before saturation (use HierarchicalFactStore for more)
-- Context window: 8K tokens (Kimi K2 limit)
-- Consolidation is async (facts may take seconds to transfer)
-- English-only (vocabulary is language-specific)
+### The Two-Stage Memory System
 
-**Why Confidence Scores Are "Low"**:
-Holographic memory creates interference patterns. When you store 50 facts, they all interfere with each other (this is expected!). A confidence of 25% for a stored fact is **normal** because:
-- Multiple facts bundled together lower individual similarity
-- Thresholds are calibrated for holographic behavior (0.20 response, 0.10 refusal)
-- Unknown queries produce <10% confidence and are correctly refused
+Kent Hologram uses a **hybrid architecture** that combines fast neural network storage with algebraic HDC retrieval:
 
-Think of it like listening to a conversation at a party—you can hear it clearly despite background noise.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    LEARNING (Store)                          │
+│                                                              │
+│   "France capital Paris"                                     │
+│         ↓                                                    │
+│   Encode as 10,000-dim vector                               │
+│         ↓                                                    │
+│   Store in FAISS neural index (fast nearest-neighbor)       │
+│         ↓                                                    │
+│   Also bundle into HDC holographic memory                   │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    RECALL (Query)                            │
+│                                                              │
+│   "What is the capital of France?"                          │
+│         ↓                                                    │
+│   Encode query as vector                                    │
+│         ↓                                                    │
+│   Search FAISS index for similar vectors (fast lookup)      │
+│         ↓                                                    │
+│   Verify with HDC resonance (algebraic confirmation)        │
+│         ↓                                                    │
+│   Return "Paris" with confidence score                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Why This Matters
+
+- **FAISS Neural Index**: Stores millions of vectors, finds similar ones instantly
+- **HDC Resonance**: Confirms the answer algebraically (no guessing)
+- **Best of Both Worlds**: Neural speed + algebraic certainty
+
+This is like having a fast search engine (FAISS) with a fact-checker (HDC) built in.
+
+---
+
+## Recent Improvements (v0.4.1)
+
+**Now Handles Millions of Facts**:
+- Previously limited to ~100 facts before memory got "full"
+- Now stores millions using smart indexing (HNSW graph structure)
+- Queries stay fast even with huge knowledge bases
+
+**Learn from Documents**:
+- Can now ingest entire books or documents
+- Automatically chunks text and learns facts from each section
+- Use `--teach-document` to feed it any text file
+
+**More Reliable Confidence**:
+- Fixed bugs that caused inconsistent confidence scores
+- Smoother learning process (no sudden jumps in behavior)
+- Better handling of edge cases
+
+---
+
+## Current Limitations
+
+**What We're Still Working On**:
+- English only (for now)
+- New facts take a few seconds to fully process
+- Very long conversations may need to be summarized
+
+**About Confidence Scores**:
+You might notice confidence scores around 25-40% for facts you just taught. This is actually normal! Here's why:
+
+When you store multiple facts, they all share the same memory space (like multiple ripples in a pond). This "interference" lowers the raw similarity score, but the system still finds the right answer.
+
+Think of it like hearing a friend at a noisy party - you can understand them even though the signal isn't "100% clear."
+
+The system is calibrated for this:
+- **Above 20%**: Confident enough to answer
+- **Below 10%**: Will say "I don't know"
 
 ---
 
@@ -254,8 +307,8 @@ Think of it like listening to a conversation at a party—you can hear it clearl
 
 ---
 
-**Version**: 0.4.0
-**Technology**: Python 3.11+, PyTorch, torchhd, ChromaDB, React (frontend)
+**Version**: 0.4.1
+**Technology**: Python 3.11+, PyTorch, torchhd, ChromaDB, FAISS (HNSW), React (frontend)
 **License**: MIT
 
 Built with **algebraic memory**, not statistical prediction.
