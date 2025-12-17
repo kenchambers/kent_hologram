@@ -11,6 +11,7 @@ the item memory such that:
 This replaces LLM "decoding" with algebraic constraint solving.
 """
 
+import math
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Type
 
@@ -227,10 +228,11 @@ class Resonator:
         iteration: int = 0,
     ) -> Tuple[torch.Tensor, str, float]:
         """
-        Solve for single slot given others with optional soft cleanup.
+        Solve for single slot given others with temperature-annealed soft cleanup.
 
         Isolates the slot component by subtracting other contributions,
-        then unbinds with role and cleans up to nearest vocabulary item.
+        then unbinds with role and cleans up using soft cleanup with
+        cosine-annealed temperature (smooth transition, no discontinuity).
 
         Args:
             target: Full target/thought vector
@@ -249,17 +251,28 @@ class Resonator:
         # Unbind with role to get raw proposal
         proposal = self._ops.unbind(remains, role)
 
-        # Annealing: soft early, hard late
-        if iteration < self._max_iterations // 2:
-            # Soft cleanup during exploration
-            temperature = 0.5 * (1.0 - iteration / (self._max_iterations // 2)) + 0.1
-            soft_vec = self._cleanup_soft(proposal, vocab_vectors, temperature)
-            # Still need word and confidence for tracking
-            _, word, conf = self._cleanup_with_confidence(proposal, vocabulary, vocab_vectors)
-            return soft_vec, word, conf
+        # Cosine annealing: smooth decay from 0.5 to 0.01 (no discontinuity)
+        # At iteration 0: temp ≈ 0.5 (soft, exploratory)
+        # At max_iterations: temp ≈ 0.01 (nearly hard, exploitative)
+        progress = iteration / max(1, self._max_iterations - 1)
+        temperature = 0.01 + 0.49 * (1 + math.cos(math.pi * progress)) / 2
+
+        # Soft cleanup with annealed temperature
+        soft_vec = self._cleanup_soft(proposal, vocab_vectors, temperature)
+
+        # Compute confidence from the SOFT OUTPUT (not raw proposal)
+        # This ensures confidence reflects actual output certainty
+        soft_sims = Similarity.cosine_batch(soft_vec, vocab_vectors)
+        best_idx = int(torch.argmax(soft_sims).item())
+        word = vocabulary[best_idx]
+
+        if len(vocabulary) >= 2:
+            top2 = torch.topk(soft_sims, 2)
+            conf = float((top2.values[0] - top2.values[1]).item())
         else:
-            # Hard cleanup during exploitation
-            return self._cleanup_with_confidence(proposal, vocabulary, vocab_vectors)
+            conf = 1.0
+
+        return soft_vec, word, conf
 
     def _cleanup_with_confidence(
         self,
@@ -315,16 +328,21 @@ class Resonator:
             temperature: Softmax temperature (default: 0.1)
 
         Returns:
-            Soft-cleaned vector (weighted combination)
+            Soft-cleaned vector (unit-length weighted combination)
         """
         similarities = Similarity.cosine_batch(proposal, vocab_vectors)
         weights = torch.softmax(similarities / temperature, dim=0)
         soft_vec = torch.einsum('v,vd->d', weights, vocab_vectors)
 
-        # Normalize to unit length
+        # Normalize to unit length with fallback for edge case
         norm = torch.norm(soft_vec)
         if norm > 1e-6:
             soft_vec = soft_vec / norm
+        else:
+            # Edge case: weighted sum cancelled out (extremely rare)
+            # Fallback to best-matching vocabulary vector
+            best_idx = int(torch.argmax(similarities).item())
+            soft_vec = vocab_vectors[best_idx].clone()
 
         return soft_vec
 
