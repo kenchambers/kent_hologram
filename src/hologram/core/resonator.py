@@ -51,6 +51,7 @@ class ResonatorResult:
     iterations: int
     converged: bool
     confidence: Dict[str, float] = field(default_factory=dict)
+    grounding_confidence: float = 0.5
 
     def __str__(self) -> str:
         status = "converged" if self.converged else "max_iter"
@@ -95,6 +96,7 @@ class Resonator:
         operations: Type[Operations] = Operations,
         max_iterations: int = MAX_RESONATOR_ITERATIONS,
         convergence_threshold: float = CONVERGENCE_THRESHOLD,
+        fact_store=None,
     ):
         """
         Initialize resonator.
@@ -104,11 +106,13 @@ class Resonator:
             operations: Operations class (default: Operations)
             max_iterations: Max ALS iterations (default: 100)
             convergence_threshold: Similarity for convergence (default: 0.95)
+            fact_store: Optional ChromaFactStore instance for verification
         """
         self._codebook = codebook
         self._ops = operations
         self._max_iterations = max_iterations
         self._convergence_threshold = convergence_threshold
+        self._fact_store = fact_store
 
         # Pre-encode role vectors
         self._role_subject = self._codebook.get_role("SUBJECT")
@@ -183,13 +187,23 @@ class Resonator:
 
             # Check convergence
             if self._check_convergence(x, y, z, x_prev, y_prev, z_prev):
-                return ResonatorResult(
+                result = ResonatorResult(
                     subject=x, verb=y, object=z,
                     subject_word=x_word, verb_word=y_word, object_word=z_word,
                     iterations=iteration + 1,
                     converged=True,
                     confidence={"subject": x_conf, "verb": y_conf, "object": z_conf}
                 )
+                # Add fact verification if available
+                if self._fact_store is not None:
+                    grounding = self.verify_grounding(
+                        x_word,
+                        y_word,
+                        z_word,
+                        self._fact_store
+                    )
+                    result.grounding_confidence = grounding
+                return result
 
             # Track history and check for oscillation
             state = (x_word, y_word, z_word)
@@ -197,26 +211,46 @@ class Resonator:
 
             if self._detect_oscillation(history):
                 # Break oscillation by keeping current best
-                return ResonatorResult(
+                result = ResonatorResult(
                     subject=x, verb=y, object=z,
                     subject_word=x_word, verb_word=y_word, object_word=z_word,
                     iterations=iteration + 1,
                     converged=False,
                     confidence={"subject": x_conf, "verb": y_conf, "object": z_conf}
                 )
+                # Add fact verification if available
+                if self._fact_store is not None:
+                    grounding = self.verify_grounding(
+                        x_word,
+                        y_word,
+                        z_word,
+                        self._fact_store
+                    )
+                    result.grounding_confidence = grounding
+                return result
 
         # Get final words if not converged
         _, x_word, x_conf = self._cleanup_with_confidence(x, noun_vocabulary, noun_vectors)
         _, y_word, y_conf = self._cleanup_with_confidence(y, verb_vocabulary, verb_vectors)
         _, z_word, z_conf = self._cleanup_with_confidence(z, noun_vocabulary, noun_vectors)
 
-        return ResonatorResult(
+        result = ResonatorResult(
             subject=x, verb=y, object=z,
             subject_word=x_word, verb_word=y_word, object_word=z_word,
             iterations=self._max_iterations,
             converged=False,
             confidence={"subject": x_conf, "verb": y_conf, "object": z_conf}
         )
+        # Add fact verification if available
+        if self._fact_store is not None:
+            grounding = self.verify_grounding(
+                x_word,
+                y_word,
+                z_word,
+                self._fact_store
+            )
+            result.grounding_confidence = grounding
+        return result
 
     def _solve_for_slot(
         self,
@@ -388,6 +422,117 @@ class Resonator:
 
         recent = history[-window:]
         return len(recent) != len(set(recent))
+
+    def verify_grounding(self, subject: str, verb: str, obj: str,
+                         fact_store=None) -> float:
+        """
+        Simple verification that decomposed fact exists somewhere.
+
+        Args:
+            subject, verb, obj: Decomposed fact components
+            fact_store: ChromaFactStore instance (optional, uses self._fact_store if None)
+
+        Returns:
+            Confidence 0-1 that fact is grounded
+        """
+        # Use instance fact_store if parameter not provided
+        if fact_store is None:
+            fact_store = self._fact_store
+
+        if fact_store is None:
+            return 0.5  # No store available
+
+        # Check if fact_store has the required method
+        if not hasattr(fact_store, 'query_similar'):
+            return 0.5  # Method not available
+
+        # Query ChromaDB for similar facts
+        matches = fact_store.query_similar(subject, k=3)
+
+        if matches:
+            # Check if verb matches any result (exact match, not substring)
+            for match in matches:
+                if (hasattr(match, 'predicate') and
+                    match.predicate.lower().strip() == verb.lower().strip()):
+                    return 0.9  # High confidence - exact predicate match
+            # Subject found but verb didn't match
+            return 0.6  # Medium confidence
+
+        # No match found
+        return 0.1  # Low grounding confidence
+
+    def complete_slot(
+        self,
+        known_bindings: Dict[str, Tuple[str, torch.Tensor]],
+        missing_role: str,
+        candidates: List[str],
+    ) -> Tuple[str, float]:
+        """
+        Complete missing slot given known bindings.
+
+        Given a partial thought with some slots filled, finds the best
+        candidate to fill the missing slot based on coherence maximization.
+
+        The algorithm:
+        1. Build partial thought by bundling known slot bindings
+        2. For each candidate:
+           a. Bind candidate with missing role vector
+           b. Bundle with partial thought
+           c. Score by coherence (norm of result)
+        3. Return candidate with highest coherence
+
+        Args:
+            known_bindings: Dict mapping role → (word, vector) for known slots.
+                Example: {"SUBJECT": ("cat", cat_vec), "VERB": ("eats", eats_vec)}
+            missing_role: Role to fill (e.g., "SUBJECT", "VERB", "OBJECT")
+            candidates: Vocabulary words to try for missing slot
+
+        Returns:
+            Tuple of (best_word, confidence) where confidence is
+            normalized coherence score [0, 1]
+
+        Example:
+            >>> known = {
+            ...     "SUBJECT": ("cat", cat_vec),
+            ...     "VERB": ("eats", eats_vec)
+            ... }
+            >>> word, conf = resonator.complete_slot(
+            ...     known, "OBJECT", ["fish", "car", "tree"]
+            ... )
+            >>> print(f"cat eats {word}")  # "cat eats fish"
+        """
+        # Build partial thought from known bindings
+        partial_bindings = []
+        for role, (word, vec) in known_bindings.items():
+            role_vec = self._codebook.get_role(role)
+            partial_bindings.append(self._ops.bind(vec, role_vec))
+
+        partial_thought = self._ops.bundle(*partial_bindings)
+
+        # Encode candidates
+        candidate_vecs = self._codebook.encode_batch(candidates)
+        missing_role_vec = self._codebook.get_role(missing_role)
+
+        best_score = -1.0
+        best_word = candidates[0]
+
+        # Evaluate each candidate
+        for word, vec in zip(candidates, candidate_vecs):
+            # Create complete thought by adding this candidate
+            binding = self._ops.bind(vec, missing_role_vec)
+            full_thought = self._ops.bundle(partial_thought, binding)
+
+            # Score: coherence (norm) of complete thought
+            # Higher norm = more coherent/concentrated thought
+            coherence = float(torch.norm(full_thought).item())
+            if coherence > best_score:
+                best_score = coherence
+                best_word = word
+
+        # Normalize score to [0, 1] with reasonable scaling
+        confidence = min(1.0, best_score)
+
+        return best_word, confidence
 
     def __repr__(self) -> str:
         return (
