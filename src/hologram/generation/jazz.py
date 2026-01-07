@@ -272,3 +272,23 @@ class CadenceJazz(JazzTemplate):
         confidence = (match_ratio * 0.7) + (structure_quality * 0.3)
 
         return float(confidence)
+
+    def compose_multi_sentence(
+        self,
+        content_facts: List[List[Tuple[str, torch.Tensor]]],  # Facts per sentence
+        cadence_patterns: List[CadencePattern],  # One pattern per sentence
+    ) -> ComposedResponse:
+        """Compose multiple sentences using cadence patterns."""
+        sentences = []
+        combined_confidence = 0.0
+
+        for facts, pattern in zip(content_facts, cadence_patterns):
+            result = self.compose_with_cadence(facts, pattern)
+            sentences.append(result.text)
+            combined_confidence += result.confidence
+
+        return ComposedResponse(
+            text=". ".join(sentences) + "." if sentences else "",
+            vector=cadence_patterns[0].structure_vector if cadence_patterns else self._codebook._space.empty_vector(),
+            confidence=combined_confidence / len(cadence_patterns) if cadence_patterns else 0.0,
+        )

@@ -6,7 +6,7 @@ HDC-based intent detection, entity extraction, and response generation.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 
@@ -75,6 +75,8 @@ class ConversationalChatbot:
         response_corpus: Optional[ResponseCorpus] = None,
         resonant_generator: Optional[ResonantGenerator] = None,
         metacognitive_loop: Optional[MetacognitiveLoop] = None,
+        cadence_memory = None,
+        cadence_jazz = None,
     ):
         """
         Initialize conversational chatbot.
@@ -92,6 +94,8 @@ class ConversationalChatbot:
             response_corpus: Optional response corpus for learned responses
             resonant_generator: Optional generator for token-level generation
             metacognitive_loop: Optional metacognitive loop for self-monitoring and retry
+            cadence_memory: Optional cadence memory for multi-sentence generation
+            cadence_jazz: Optional cadence jazz for multi-sentence composition
         """
         self._intent_classifier = intent_classifier
         self._entity_extractor = entity_extractor
@@ -105,6 +109,8 @@ class ConversationalChatbot:
         self._corpus = response_corpus
         self._generator = resonant_generator
         self._metacognitive = metacognitive_loop
+        self._cadence_memory = cadence_memory
+        self._cadence_jazz = cadence_jazz
 
         self._last_candidate: Optional[ResponseCandidate] = None
 
@@ -231,6 +237,46 @@ class ConversationalChatbot:
 
         return response
 
+    def respond_multi_sentence(
+        self,
+        query: str,
+        max_sentences: int = 3,
+    ) -> Tuple[str, float]:
+        """Generate multi-sentence response using CADENCE (pure HDC, no LLM)."""
+        # Graceful fallback if cadence components not wired
+        if self._cadence_memory is None or self._cadence_jazz is None:
+            return self.respond(query), 0.0
+
+        # Get context vector
+        context_vec = self._codebook.encode(query)
+
+        # Query cadence memory for patterns
+        patterns = []
+        for _ in range(max_sentences):
+            pattern = self._cadence_memory.query_cadence(context_vec)
+            if pattern is None:
+                break
+            patterns.append(pattern)
+
+        if not patterns:
+            # Fallback to single-sentence
+            return self.respond(query), 0.0
+
+        # Get facts for each sentence
+        facts_per_sentence = []
+        for pattern in patterns:
+            # Query fact store for relevant facts
+            fact_text, confidence = self._fact_store.query_by_context(context_vec)
+            if fact_text:
+                fact_vec = self._codebook.encode(fact_text)
+                facts_per_sentence.append([(fact_text, fact_vec)])
+            else:
+                facts_per_sentence.append([])
+
+        # Compose with CadenceJazz
+        result = self._cadence_jazz.compose_multi_sentence(facts_per_sentence, patterns)
+        return result.text, result.confidence
+
     def listen(self, user_input: str) -> None:
         """
         Listen to a message without responding (observational learning).
@@ -342,35 +388,36 @@ class ConversationalChatbot:
         3. "Ada Lovelace was the first programmer" → (Ada Lovelace, is, first programmer)
         4. "the sky is blue" → (sky, is, blue)
         5. "dogs are mammals" → (dogs, is, mammals)
+        6. "my name is Ken" → (User, name, Ken) - personal statements
 
         Now processes sentences individually and rejects overly long facts.
 
         Returns (subject, predicate, object) tuple or None.
         """
         import re
-        
+
         # Split into sentences first (process only the first clean sentence)
         sentences = re.split(r'[.!?]+', text)
-        
+
         # Try each sentence until we find a valid fact
         for sentence in sentences:
             sentence = sentence.strip()
             if not sentence:
                 continue
-            
+
             # Skip sentences with roleplay markers
             if "*" in sentence:
                 continue
-            
+
             # Skip question sentences - they don't contain facts to learn
             if sentence.endswith("?") or sentence.lower().startswith(tuple(QUESTION_START_WORDS)):
                 continue
-            
+
             # Skip sentences that are too long (likely conversational, not factual)
             tokens = self._tokenize(sentence)
             if len(tokens) > 20:  # Reject facts longer than 20 words
                 continue
-            
+
             if len(tokens) < 3:
                 continue
 
@@ -395,6 +442,24 @@ class ConversationalChatbot:
             subject = None
             predicate = "is"  # Default predicate
             obj = None
+
+            # Pattern 0: Personal statements "my X is Y" → (User, X, Y)
+            # Handle possessive pronouns specially - they indicate personal facts
+            if before_relation and before_relation[0] in {"my", "i'm", "im"}:
+                # "my name is Ken" → (User, name, Ken)
+                # "my favorite color is blue" → (User, favorite color, blue)
+                subject = "User"
+                # Predicate is everything after "my" (excluding stop words except meaningful ones)
+                pred_tokens = before_relation[1:]  # Skip "my"
+                if pred_tokens:
+                    predicate = " ".join(pred_tokens)
+                # Object is everything after relation word
+                obj_tokens = [t for t in after_relation[:10] if t not in SENTENCE_STARTERS]
+                if obj_tokens:
+                    obj = " ".join(obj_tokens)
+
+                if subject and predicate and obj:
+                    return (subject, predicate, obj.strip())
 
             # Pattern 1: "the X of Y is Z" → (Y, X, Z)
             if "of" in before_relation:
@@ -432,7 +497,7 @@ class ConversationalChatbot:
                 # Filter out sentence starters and stop words to find real content words
                 meaningful_before = [t for t in before_relation if t not in STOP_WORDS and t not in SENTENCE_STARTERS]
                 meaningful_after = [t for t in after_relation[:10] if t not in STOP_WORDS and t not in SENTENCE_STARTERS]
-                
+
                 # Use meaningful tokens directly instead of regex proper noun detection
                 if meaningful_before:
                     subject = " ".join(meaningful_before)
@@ -459,7 +524,7 @@ class ConversationalChatbot:
             # Validate we got meaningful extractions
             if not subject or not obj:
                 continue
-            
+
             # Skip if subject or object is too generic or is a sentence starter
             generic_words = {"thing", "something", "it", "this", "that", "stuff", "one"}
             if subject.lower() in generic_words or obj.lower() in generic_words:
@@ -477,7 +542,7 @@ class ConversationalChatbot:
             obj = obj.strip()
 
             return (subject, predicate, obj)
-        
+
         # No valid fact found in any sentence
         return None
 

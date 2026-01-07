@@ -3,10 +3,27 @@ Conversational Vocabulary: Extract and categorize words from training.
 
 Builds vocabulary dictionaries for ResonantGenerator by extracting
 and categorizing words from conversational training data.
+
+Uses spaCy for accurate POS tagging when available, falling back to
+heuristic-based categorization otherwise.
 """
 
 import re
 from typing import Dict, List, Set
+
+# Optional spaCy import for proper POS tagging
+try:
+    import spacy
+    try:
+        _NLP = spacy.load("en_core_web_sm")
+        _HAS_SPACY = True
+    except OSError:
+        # Model not installed
+        _NLP = None
+        _HAS_SPACY = False
+except ImportError:
+    _NLP = None
+    _HAS_SPACY = False
 
 
 class ConversationalVocabulary:
@@ -67,18 +84,57 @@ class ConversationalVocabulary:
         """
         Extract and categorize words from text.
 
-        Uses simple heuristics to categorize words:
-        - Nouns: capitalized words, common nouns
-        - Verbs: common action words
-        - Adjectives: descriptive words ending in -ing, -ed, -ly, etc.
-        - Connectors: common phrases and filler words
+        Uses spaCy POS tagging when available for accurate categorization.
+        Falls back to heuristics if spaCy is not installed.
 
         Args:
             text: Text to learn from
         """
+        if _HAS_SPACY:
+            self._learn_with_spacy(text)
+        else:
+            self._learn_with_heuristics(text)
+
+    def _learn_with_spacy(self, text: str) -> None:
+        """
+        Extract vocabulary using spaCy POS tagging.
+
+        Properly categorizes words by grammatical role:
+        - NOUN, PROPN → nouns
+        - VERB → verbs
+        - ADJ → adjectives
+        """
+        doc = _NLP(text)
+        for token in doc:
+            # Skip stop words, punctuation, and very short tokens
+            if token.is_stop or token.is_punct or len(token.text) < 2:
+                continue
+
+            lemma = token.lemma_.lower()
+
+            # Categorize by POS tag
+            if token.pos_ in ("NOUN", "PROPN"):
+                self.nouns.add(lemma)
+            elif token.pos_ == "VERB":
+                self.verbs.add(lemma)
+            elif token.pos_ == "ADJ":
+                self.adjectives.add(lemma)
+
+        # Also extract connector phrases
+        text_lower = text.lower()
+        for phrase in self.CONNECTOR_PHRASES:
+            if phrase in text_lower:
+                self.connectors.add(phrase)
+
+    def _learn_with_heuristics(self, text: str) -> None:
+        """
+        Fallback: Extract vocabulary using suffix heuristics.
+
+        Used when spaCy is not available. Less accurate but no dependencies.
+        """
         # Normalize text
         text = text.lower()
-        
+
         # Extract connector phrases first (before tokenization)
         for phrase in self.CONNECTOR_PHRASES:
             if phrase in text:
@@ -86,7 +142,7 @@ class ConversationalVocabulary:
 
         # Tokenize: split on whitespace and punctuation
         tokens = re.findall(r"\b\w+\b", text)
-        
+
         # Filter stop words
         tokens = [t for t in tokens if t not in self.STOP_WORDS]
 

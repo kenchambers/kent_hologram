@@ -261,3 +261,25 @@ These are common words that should not be treated as proper noun subjects."""
 
 DEFAULT_UNKNOWN_ANSWER = "I don't know that yet."
 """Default response when an answer slot needs to be filled but no fact is found."""
+
+# ==============================================================================
+# CRAG + Emergent Category Networks
+# ==============================================================================
+
+CRAG_TOP_K = 20
+"""Number of facts to retrieve from each layer."""
+
+CRAG_WORKING_MEMORY_CAPACITY = 50
+"""Maximum facts to load into transient working memory."""
+
+CRAG_LAYER_CREATE_THRESHOLD = 0.7
+"""Surprise threshold for creating new layer (high surprise)."""
+
+CRAG_LAYER_ROUTE_THRESHOLD = 0.3
+"""Surprise threshold for routing to existing layer (low surprise)."""
+
+CRAG_LAYER_MERGE_THRESHOLD = 0.9
+"""Similarity threshold for merging similar layers."""
+
+CRAG_USE_HNSW = True
+"""Use HNSW indices for layer storage (faster for large scale)."""

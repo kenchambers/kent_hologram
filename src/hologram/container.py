@@ -194,6 +194,90 @@ class HologramContainer:
             hot_confidence_threshold=hot_confidence_threshold,
         )
 
+    def create_emergent_layer_fact_store(
+        self,
+        persist_path: str = "/tmp/hologram_emergent",
+        use_hnsw: bool = True,
+    ):
+        """
+        Create an EmergentLayerFactStore with CRAG architecture.
+
+        Scalable fact storage with dynamically emerging semantic layers.
+        Layers emerge automatically based on content similarity.
+
+        Args:
+            persist_path: Base directory for layer persistence
+            use_hnsw: Use HNSW indices for fast search (recommended for scale)
+
+        Returns:
+            EmergentLayerFactStore instance
+        """
+        from hologram.memory.emergent_fact_store import EmergentLayerFactStore
+        from hologram.retrieval.layer_description import LayerDescriptionGenerator
+
+        # Create fact store
+        fact_store = EmergentLayerFactStore(
+            space=self._space,
+            codebook=self._codebook,
+            persist_path=persist_path,
+            use_hnsw=use_hnsw,
+        )
+
+        # Create and set description generator
+        resonator = self.create_resonator()
+        description_generator = LayerDescriptionGenerator(
+            codebook=self._codebook,
+            resonator=resonator,
+        )
+        fact_store.set_description_generator(description_generator)
+
+        return fact_store
+
+    def create_transient_working_memory(
+        self,
+        capacity: int = 50,
+    ):
+        """
+        Create a TransientWorkingMemory for ephemeral fact storage.
+
+        Used by CRAG architecture to hold retrieved facts temporarily.
+        Automatically cleared after each query.
+
+        Args:
+            capacity: Maximum number of facts to hold
+
+        Returns:
+            TransientWorkingMemory instance
+        """
+        from hologram.memory.transient_working_memory import TransientWorkingMemory
+
+        return TransientWorkingMemory(
+            space=self._space,
+            codebook=self._codebook,
+            capacity=capacity,
+        )
+
+    def create_crag_resonator(
+        self,
+        max_iterations: int = MAX_RESONATOR_ITERATIONS,
+    ):
+        """
+        Create a CRAGResonator for grounded resonance.
+
+        Resonator constrained to working memory vocabulary,
+        guaranteeing zero hallucination.
+
+        Args:
+            max_iterations: Maximum ALS iterations
+
+        Returns:
+            CRAGResonator instance
+        """
+        from hologram.core.crag_resonator import CRAGResonator
+
+        base_resonator = self.create_resonator(max_iterations=max_iterations)
+        return CRAGResonator(base_resonator)
+
     def create_memory_trace(self) -> MemoryTrace:
         """
         Create a new MemoryTrace instance.
@@ -246,6 +330,7 @@ class HologramContainer:
     def create_resonator(
         self,
         max_iterations: int = MAX_RESONATOR_ITERATIONS,
+        fact_store=None,
     ):
         """
         Create a Resonator for thought factorization.
@@ -255,6 +340,7 @@ class HologramContainer:
 
         Args:
             max_iterations: Maximum ALS iterations
+            fact_store: Optional ChromaFactStore for fact verification
 
         Returns:
             Resonator using shared Codebook
@@ -263,6 +349,7 @@ class HologramContainer:
         return Resonator(
             codebook=self._codebook,
             max_iterations=max_iterations,
+            fact_store=fact_store,
         )
 
     def create_target_encoder(
@@ -697,6 +784,8 @@ class HologramContainer:
             response_corpus=response_corpus,
             resonant_generator=resonant_generator,
             metacognitive_loop=metacognitive_loop,
+            cadence_memory=cadence_memory,
+            cadence_jazz=cadence_jazz,
         )
 
         # Attach self-improvement manager to chatbot for access
@@ -748,6 +837,7 @@ class HologramContainer:
         self_improvement_path: Optional[str] = None,
         enable_cadence: bool = True,
         cadence_persist_path: Optional[str] = None,
+        enable_emergent_layers: bool = False,
     ):
         """
         Create a ConversationalChatbot with persistent fact storage.
@@ -769,6 +859,7 @@ class HologramContainer:
             self_improvement_path: Path to persist learned patterns (default: {persist_dir}/learned_patterns.json)
             enable_cadence: If True, enable cadence-based generation (default: True)
             cadence_persist_path: Path to persist cadence patterns (default: {persist_dir})
+            enable_emergent_layers: If True, use EmergentLayerFactStore instead of ChromaDB (default: False)
 
         Returns:
             ConversationalChatbot with persistent storage
@@ -792,17 +883,25 @@ class HologramContainer:
         from hologram.persistence.chroma_adapter import ChromaFactStore, ChromaResponseCorpus
 
         # Create persistent fact store
-        if enable_neural_consolidation:
+        if enable_emergent_layers:
+            # Use EmergentLayerFactStore with CRAG architecture
+            Path(persist_dir).mkdir(parents=True, exist_ok=True)
+            fact_store = self.create_emergent_layer_fact_store(
+                persist_path=persist_dir,
+                use_hnsw=True,
+            )
+
+        elif enable_neural_consolidation:
             # Use Neural Consolidation (FactStore with Manager)
             # Persistence is handled by loading state dict if it exists
             import torch
             import os
-            
+
             fact_store = self.create_fact_store(
                 enable_neural_consolidation=True,
                 consolidation_threshold=consolidation_threshold
             )
-            
+
             # Try to load existing neural state
             neural_path = Path(persist_dir) / "neural_memory.pt"
             if neural_path.exists():
@@ -818,10 +917,10 @@ class HologramContainer:
                         print(f"Loaded neural memory (manager only) from {neural_path}")
                 except Exception as e:
                     print(f"Failed to load neural memory: {e}")
-            
+
             # We also ensure the directory exists for saving later
             Path(persist_dir).mkdir(parents=True, exist_ok=True)
-            
+
         else:
             # Use ChromaDB (Standard Persistence)
             chroma_store = ChromaFactStore(
@@ -927,6 +1026,8 @@ class HologramContainer:
             response_corpus=response_corpus,
             resonant_generator=resonant_generator,
             metacognitive_loop=metacognitive_loop,
+            cadence_memory=cadence_memory,
+            cadence_jazz=cadence_jazz,
         )
 
         # Attach self-improvement manager to chatbot for access

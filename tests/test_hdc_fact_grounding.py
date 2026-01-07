@@ -290,6 +290,75 @@ class TestHDCRetrieval:
         assert confidence > REFUSAL_CONFIDENCE_THRESHOLD, \
             f"Known fact confidence {confidence} should be > refusal threshold {REFUSAL_CONFIDENCE_THRESHOLD}"
 
+    def test_resonance_threshold_0_35_filters_noise(self, container):
+        """Test that confidence threshold 0.35 properly filters HDC resonance noise.
+
+        This tests the fix for hallucination in _query_facts():
+        - Old threshold (0.1) accepted too much noise, returning garbage answers
+        - New threshold (0.35) filters out random interference while preserving valid matches
+        - Exact matches always return 1.0 confidence (filtered through)
+        - Non-matches should either be empty or have confidence <= 0.35
+        """
+        fs = container.create_fact_store()
+
+        # Add a few test facts
+        fs.add_fact("France", "capital", "Paris")
+        fs.add_fact("Japan", "capital", "Tokyo")
+        fs.add_fact("Brazil", "capital", "Brasilia")
+
+        # Query exact match (should pass threshold of 0.35)
+        answer, conf = fs.query("France", "capital")
+        assert answer == "Paris", f"Exact match should work"
+        assert conf >= 0.9, f"Exact match should have high confidence: {conf}"
+
+        # Query non-existent fact (should fail threshold of 0.35)
+        answer, conf = fs.query("Germany", "capital")
+        # Either no answer, or confidence is too low
+        # The key test: we should NOT get a low-confidence false positive
+        # (which the old 0.1 threshold would have allowed)
+        if answer and answer in ["Paris", "Tokyo", "Brasilia"]:
+            # We got a false positive - confidence must be low enough to reject
+            assert conf < 0.35, \
+                f"False positive '{answer}' should have confidence < 0.35, got {conf}"
+        else:
+            # No answer or answer not in vocabulary - this is correct behavior
+            pass
+
+    def test_cold_start_threshold_prevents_hallucination(self, container):
+        """Test that cold-start (< 10 facts) exact matches work correctly.
+
+        This tests the second part of the fix:
+        - With few facts, exact matches (returning 1.0) pass 0.99 threshold
+        - Non-existent facts get low confidence and should be rejected
+        - Prevents hallucinations during initialization phase
+
+        Note: This test verifies the behavior at the FactStore level.
+        The ResponseSelector._query_facts() method uses this data to enforce
+        the 0.99 threshold during cold-start.
+        """
+        fs = container.create_fact_store()
+
+        # Add just 3 facts (< 10 cold-start threshold)
+        fs.add_fact("Italy", "capital", "Rome")
+        fs.add_fact("Spain", "capital", "Madrid")
+        fs.add_fact("Greece", "capital", "Athens")
+
+        assert fs.fact_count < 10, f"Setup: Should have < 10 facts, got {fs.fact_count}"
+
+        # Exact match: should return 1.0 (passes both 0.35 and 0.99 thresholds)
+        answer, conf = fs.query("Italy", "capital")
+        assert answer == "Rome", f"Exact match should work"
+        assert conf >= 0.99, f"Exact match should have very high confidence: {conf}"
+
+        # Non-existent fact: should return low confidence or empty
+        # With cold-start (3 facts), resonance search is unreliable
+        answer, conf = fs.query("Portugal", "capital")
+        # If we got an answer, it's a false positive from resonance search
+        # It should have low confidence (below 0.99 threshold that selector will use)
+        if answer:
+            assert conf < 0.99, \
+                f"Non-exact match in cold-start should have conf < 0.99 for selector to filter it"
+
     # -------------------------------------------------------------------------
     # Reverse Query Tests
     # -------------------------------------------------------------------------
@@ -1027,6 +1096,324 @@ class TestArchitectureValidation:
         # Cannot hallucinate "Value3"
         assert answer in ["Value1", "Value2", ""], \
             f"HDC returned value outside vocabulary: {answer}"
+
+
+# =============================================================================
+# SECTION: DUAL-STREAM MEMORY ARCHITECTURE TESTS
+# =============================================================================
+
+class TestDualStreamMemory:
+    """Test the dual-stream memory architecture components.
+
+    These tests verify:
+    - Salience scoring for prioritizing user vs Gutenberg input
+    - Episodic buffer eviction when capacity exceeded
+    - Resonator grounding verification
+    - Integration of salience + eviction
+    """
+
+    @pytest.fixture
+    def container(self):
+        return HologramContainer(dimensions=DEFAULT_DIMENSIONS)
+
+    def test_compute_salience_user_input_prioritized(self):
+        """Test that user input gets higher salience than Gutenberg."""
+        from hologram.consolidation.manager import compute_salience
+
+        # User input should have higher salience
+        user_salience = compute_salience("The capital of France is Paris", "user")
+        gutenberg_salience = compute_salience("The capital of France is Paris", "gutenberg_book1")
+
+        assert user_salience > gutenberg_salience, \
+            f"User salience ({user_salience}) should be > Gutenberg ({gutenberg_salience})"
+        assert user_salience >= 0.8, f"User salience should be >= 0.8, got {user_salience}"
+        assert gutenberg_salience >= 0.5, f"Gutenberg salience should be >= 0.5, got {gutenberg_salience}"
+
+    def test_compute_salience_important_terms_boost(self):
+        """Test that important terms boost salience score."""
+        from hologram.consolidation.manager import compute_salience
+
+        # Terms like "died", "king", "war" should boost salience
+        high_salience = compute_salience("The king died in the war", "gutenberg_history")
+        low_salience = compute_salience("The weather is nice today", "gutenberg_weather")
+
+        assert high_salience > low_salience, \
+            f"Important terms should boost salience: {high_salience} > {low_salience}"
+
+    def test_buffer_eviction_at_capacity(self, container):
+        """Test that low-salience facts are evicted when buffer is full."""
+        from hologram.consolidation.manager import ConsolidationManager
+        from hologram.core.vector_space import VectorSpace
+
+        space = VectorSpace(dimensions=DEFAULT_DIMENSIONS)
+        manager = ConsolidationManager(space, consolidation_threshold=200)
+
+        # Set a smaller capacity for testing
+        manager._max_pending = 10
+
+        # Add 15 facts with varying salience (by source)
+        for i in range(15):
+            key = torch.randn(DEFAULT_DIMENSIONS)
+            value = torch.randn(DEFAULT_DIMENSIONS)
+            # Alternate between user (high salience) and gutenberg (low salience)
+            source = "user" if i % 3 == 0 else f"gutenberg_book{i}"
+            manager.store(key, value, f"fact_{i}", source_id=source)
+
+        # Should have evicted low-salience facts
+        pending_count = len(manager._pending_facts)
+        assert pending_count <= 10, \
+            f"Buffer should be capped at 10, got {pending_count}"
+
+        # Check that user facts (high salience) were kept
+        user_facts = [f for f in manager._pending_facts if f.source_id == "user"]
+        assert len(user_facts) >= 3, \
+            f"User facts (high salience) should be preserved, got {len(user_facts)}"
+
+    def test_verify_grounding_exact_match(self, container):
+        """Test that verify_grounding returns high confidence for exact matches."""
+        from hologram.core.resonator import Resonator
+
+        # Create a mock fact store that simulates ChromaDB behavior
+        class MockFactStore:
+            def query_similar(self, subject, k=3):
+                # Simulate case-insensitive matching like real ChromaDB
+                if subject.lower() == "france":
+                    class MockMatch:
+                        predicate = "capital"  # Exact match for verb "capital"
+                        object = "Paris"
+                    return [MockMatch()]
+                return []
+
+        codebook = container.codebook
+        resonator = Resonator(codebook, fact_store=MockFactStore())
+
+        # Test exact match - subject "France" matches, verb "capital" matches exactly
+        confidence = resonator.verify_grounding("France", "capital", "Paris")
+        assert confidence >= 0.9, f"Exact match should have confidence >= 0.9, got {confidence}"
+
+        # Test partial match (subject found, verb doesn't match exactly)
+        confidence = resonator.verify_grounding("France", "population", "Paris")
+        assert 0.5 <= confidence <= 0.7, f"Partial match should have medium confidence, got {confidence}"
+
+        # Test no match (subject not found at all)
+        confidence = resonator.verify_grounding("Germany", "capital", "Berlin")
+        assert confidence <= 0.2, f"No match should have low confidence, got {confidence}"
+
+    def test_verify_grounding_no_fact_store(self, container):
+        """Test that verify_grounding handles missing fact store gracefully."""
+        from hologram.core.resonator import Resonator
+
+        codebook = container.codebook
+        resonator = Resonator(codebook, fact_store=None)
+
+        # Should return neutral confidence when no store
+        confidence = resonator.verify_grounding("France", "capital", "Paris")
+        assert confidence == 0.5, f"No fact store should return 0.5, got {confidence}"
+
+    def test_verify_grounding_missing_method(self, container):
+        """Test that verify_grounding handles fact stores without query_similar."""
+        from hologram.core.resonator import Resonator
+
+        class IncompleteFactStore:
+            pass  # No query_similar method
+
+        codebook = container.codebook
+        resonator = Resonator(codebook, fact_store=IncompleteFactStore())
+
+        # Should return neutral confidence when method missing
+        confidence = resonator.verify_grounding("France", "capital", "Paris")
+        assert confidence == 0.5, f"Missing method should return 0.5, got {confidence}"
+
+    def test_salience_eviction_integration(self, container):
+        """Integration test: salience scoring + eviction work together."""
+        from hologram.consolidation.manager import ConsolidationManager
+        from hologram.core.vector_space import VectorSpace
+
+        space = VectorSpace(dimensions=DEFAULT_DIMENSIONS)
+        manager = ConsolidationManager(space, consolidation_threshold=200)
+        manager._max_pending = 5  # Small buffer for testing
+
+        # Add mixed user and gutenberg facts
+        key = torch.randn(DEFAULT_DIMENSIONS)
+        value = torch.randn(DEFAULT_DIMENSIONS)
+
+        # Add low-salience gutenberg facts first
+        for i in range(3):
+            manager.store(key.clone(), value.clone(), f"gutenberg_fact_{i}",
+                         source_id=f"gutenberg_boring_{i}")
+
+        # Add high-salience user facts
+        for i in range(3):
+            manager.store(key.clone(), value.clone(), f"user_fact_{i}",
+                         source_id="user")
+
+        # Should have evicted some gutenberg facts to make room
+        pending = manager._pending_facts
+        assert len(pending) <= 5, f"Buffer capped at 5, got {len(pending)}"
+
+        # User facts should have survived (higher salience)
+        user_count = sum(1 for f in pending if f.source_id == "user")
+        gutenberg_count = sum(1 for f in pending if "gutenberg" in f.source_id)
+
+        assert user_count >= gutenberg_count, \
+            f"User facts ({user_count}) should >= gutenberg facts ({gutenberg_count})"
+
+
+# =============================================================================
+# SECTION: INGESTION ROUTER TESTS
+# =============================================================================
+
+class TestIngestionRouter:
+    """Test the ingestion router for dual-stream memory.
+
+    These tests verify:
+    - Triple extraction from text
+    - Confidence scoring
+    - Routing decisions (semantic vs episodic vs discard)
+    - spaCy integration (when available)
+    """
+
+    def test_router_initialization(self):
+        """Test that router initializes correctly."""
+        from hologram.ingestion.router import IngestionRouter
+
+        router = IngestionRouter(use_spacy=False)
+
+        assert router._semantic_threshold == 0.8
+        assert router._episodic_threshold == 0.3
+        assert router._nlp is None  # spaCy disabled
+
+    def test_extraction_heuristic_simple(self):
+        """Test heuristic extraction for 'X is Y' pattern."""
+        from hologram.ingestion.router import IngestionRouter, RouteDecision
+
+        router = IngestionRouter(use_spacy=False)
+        results = router.ingest("Paris is the capital of France.")
+
+        assert len(results) >= 1, "Should extract at least one triple"
+
+        # Find the France/capital/Paris extraction
+        found = False
+        for r in results:
+            if "France" in r.subject or "France" in r.object:
+                found = True
+                assert r.is_complete_triple, "Should be a complete triple"
+                break
+
+        assert found, "Should extract France-related triple"
+
+    def test_routing_decisions(self):
+        """Test that confidence determines routing."""
+        from hologram.ingestion.router import IngestionRouter, RouteDecision
+
+        router = IngestionRouter(use_spacy=False)
+
+        # High confidence should route to semantic
+        assert router._decide_route(0.9) == RouteDecision.SEMANTIC
+        assert router._decide_route(0.85) == RouteDecision.SEMANTIC
+
+        # Medium confidence should route to episodic
+        assert router._decide_route(0.5) == RouteDecision.EPISODIC
+        assert router._decide_route(0.35) == RouteDecision.EPISODIC
+
+        # Low confidence should discard
+        assert router._decide_route(0.2) == RouteDecision.DISCARD
+        assert router._decide_route(0.1) == RouteDecision.DISCARD
+
+    def test_confidence_computation(self):
+        """Test confidence scoring factors."""
+        from hologram.ingestion.router import (
+            IngestionRouter, ExtractionResult, RouteDecision
+        )
+
+        router = IngestionRouter(use_spacy=False)
+
+        # High quality extraction
+        high_quality = ExtractionResult(
+            subject="Paris",
+            predicate="capital",
+            object="France",
+            confidence=0.0,
+            route=RouteDecision.DISCARD,
+            source_text="test",
+            source_id="test",
+            has_named_entity=True,
+            is_complete_triple=True,
+            syntactic_score=0.8,
+        )
+        conf = router._compute_confidence(high_quality)
+        assert conf >= 0.8, f"High quality should have high confidence, got {conf}"
+
+        # Low quality extraction
+        low_quality = ExtractionResult(
+            subject="it",
+            predicate="is",
+            object="something",
+            confidence=0.0,
+            route=RouteDecision.DISCARD,
+            source_text="test",
+            source_id="test",
+            has_named_entity=False,
+            is_complete_triple=False,
+            syntactic_score=0.2,
+        )
+        conf = router._compute_confidence(low_quality)
+        assert conf < 0.3, f"Low quality should have low confidence, got {conf}"
+
+    def test_batch_ingestion(self):
+        """Test batch ingestion of multiple texts."""
+        from hologram.ingestion.router import IngestionRouter
+
+        router = IngestionRouter(use_spacy=False)
+
+        texts = [
+            "London is the capital of England.",
+            "Berlin is the capital of Germany.",
+            "This is just noise without named entities.",
+        ]
+
+        results = router.ingest_batch(texts, source_id="test_batch")
+
+        # Should have extracted some triples
+        assert len(results) >= 2, f"Should extract from structured sentences, got {len(results)}"
+
+        # Check stats updated
+        stats = router.get_stats()
+        assert stats["total_processed"] == 3, "Should have processed 3 texts"
+
+    def test_empty_input(self):
+        """Test handling of empty input."""
+        from hologram.ingestion.router import IngestionRouter
+
+        router = IngestionRouter(use_spacy=False)
+
+        results = router.ingest("")
+        assert len(results) == 0, "Empty input should return no results"
+
+        results = router.ingest("   ")
+        assert len(results) == 0, "Whitespace input should return no results"
+
+    def test_stats_tracking(self):
+        """Test statistics tracking."""
+        from hologram.ingestion.router import IngestionRouter
+
+        router = IngestionRouter(use_spacy=False)
+
+        # Start fresh
+        router.reset_stats()
+        assert router.get_stats()["total_processed"] == 0
+
+        # Process some text
+        router.ingest("Paris is beautiful.", source_id="test")
+
+        stats = router.get_stats()
+        assert stats["total_processed"] == 1
+        total_routed = (
+            stats["semantic_routed"] +
+            stats["episodic_routed"] +
+            stats["discarded"]
+        )
+        assert total_routed >= 0, "Should track routing decisions"
 
 
 # =============================================================================

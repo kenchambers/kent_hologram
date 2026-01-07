@@ -190,7 +190,9 @@ class FactStore:
             # Use confidence as learning rate? Manager handles its own logic, 
             # but we pass key/value/label.
             # Note: Manager stores immediately to HDC (buffer) and queues for neural.
-            self._consolidation_manager.store(key, o_vec, obj)
+            # Format source_id: use source if available, default to "user"
+            source_id = source if source else "user"
+            self._consolidation_manager.store(key, o_vec, obj, source_id=source_id)
             surprise = 1.0  # Assume novel if using consolidation manager (simplification)
         else:
             # Standard HDC-only storage

@@ -49,6 +49,36 @@ def single_slot_pattern(codebook):
     )
 
 
+@pytest.fixture
+def sample_patterns(codebook):
+    """Create multiple sample patterns for testing."""
+    return [
+        CadencePattern(
+            template="__SLOT_ENTITY__ is the capital of __SLOT_ENTITY__",
+            structure_vector=codebook.encode("pattern1"),
+            slot_positions=[(0, "ENTITY", "Paris"), (27, "ENTITY", "France")],
+            original_text="Paris is the capital of France",
+        ),
+        CadencePattern(
+            template="__SLOT_ENTITY__ is in __SLOT_ENTITY__",
+            structure_vector=codebook.encode("pattern2"),
+            slot_positions=[(0, "ENTITY", "Paris"), (10, "ENTITY", "Europe")],
+            original_text="Paris is in Europe",
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_pattern(codebook):
+    """Create a single sample pattern."""
+    return CadencePattern(
+        template="The city is __SLOT_ENTITY__",
+        structure_vector=codebook.encode("city_pattern"),
+        slot_positions=[(12, "ENTITY", "Paris")],
+        original_text="The city is Paris",
+    )
+
+
 class TestCadenceComposition:
     """Tests for cadence-based composition."""
 
@@ -208,3 +238,29 @@ class TestVectorComposition:
         assert not torch.allclose(
             result.vector, single_slot_pattern.structure_vector
         )
+
+
+class TestMultiSentenceComposition:
+    """Tests for multi-sentence cadence composition."""
+
+    def test_compose_two_sentences(self, cadence_jazz, sample_patterns):
+        """Test composing two sentences."""
+        facts = [
+            [("Paris", torch.randn(1000))],
+            [("France", torch.randn(1000))],
+        ]
+        result = cadence_jazz.compose_multi_sentence(facts, sample_patterns[:2])
+        assert "." in result.text
+        assert result.confidence > 0
+
+    def test_empty_patterns_returns_empty(self, cadence_jazz):
+        """Test empty patterns returns empty response."""
+        result = cadence_jazz.compose_multi_sentence([], [])
+        assert result.text == ""
+        assert result.confidence == 0.0
+
+    def test_single_pattern_works(self, cadence_jazz, sample_pattern):
+        """Test single pattern still works."""
+        facts = [[("test", torch.randn(1000))]]
+        result = cadence_jazz.compose_multi_sentence(facts, [sample_pattern])
+        assert result.text != ""

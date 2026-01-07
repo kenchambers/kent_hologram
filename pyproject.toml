@@ -37,6 +37,8 @@ dependencies = [
     "arckit>=1.0.1",
     "ddgs>=9.9.3",
     "langchain-openai>=1.1.4",
+    "spacy>=3.8.11",
+    "datasets>=4.4.1",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +53,9 @@ web = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-multipart>=0.0.17",
+]
+nlp = [
+    "spacy>=3.7",
 ]
 
 [project.scripts]

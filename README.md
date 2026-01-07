@@ -320,7 +320,7 @@ uv run python scripts/crew_trainer.py --max-rounds 100
 - ⚠️ **Option 3 Partially Implemented** (32% complete): Role-based thought vectors (60%), output validation (50%)
 - 🎯 **Option 3 Target**: Circuit breaker, semantic coherence, hallucination detection
 
-See [TRAINING_GUIDE.md](./TRAINING_GUIDE.md) for complete documentation and [docs/CONSCIOUS_HOLOGRAM_ARCH.md](./docs/CONSCIOUS_HOLOGRAM_ARCH.md) for architecture details.
+See [TRAINING_GUIDE.md](./TRAINING_GUIDE.md) for complete documentation including [Project Gutenberg ingestion](./TRAINING_GUIDE.md#training-on-project-gutenberg) (train on 75,570+ public domain books with `--max-books` option), and [docs/CONSCIOUS_HOLOGRAM_ARCH.md](./docs/CONSCIOUS_HOLOGRAM_ARCH.md) for architecture details.
 
 ## Examples
 

@@ -248,6 +248,179 @@ uv run python scripts/crew_trainer.py \
     --max-rounds 50 &
 ```
 
+## Training on Project Gutenberg
+
+Scale up your Hologram's knowledge with the entire Project Gutenberg library - 75,570 books, automatically cleaned and chunked for optimal learning.
+
+### Why Project Gutenberg?
+
+- **Massive Scale**: 61,300+ English books (French, German, Dutch, Spanish, Portuguese, Italian, Chinese, Swedish, Polish, Russian also available)
+- **Public Domain**: No copyright restrictions, perfect for training
+- **Streaming**: Downloads only what you need - no multi-gigabyte dataset required
+- **Automatic Cleaning**: Headers, footers, and metadata removed automatically
+
+### Quick Start
+
+```bash
+# Start fresh ingestion (English books only)
+uv run python scripts/ingest_gutenberg.py
+
+# Resume from checkpoint if interrupted
+uv run python scripts/ingest_gutenberg.py --resume
+```
+
+The script will:
+1. Stream books from Hugging Face (`manu/project_gutenberg` dataset)
+2. Clean Project Gutenberg metadata (headers/footers)
+3. Split into chunks (default: 1000 characters)
+4. Teach each chunk to your Hologram
+5. Save progress to `./data/gutenberg_checkpoint.json`
+6. Resume automatically if interrupted (Ctrl+C then re-run with `--resume`)
+
+### Common Commands
+
+**Limit books for testing** (recommended for first run):
+
+```bash
+# Try with just 10 books first
+uv run python scripts/ingest_gutenberg.py --max-books 10
+
+# Then ramp up when confident
+uv run python scripts/ingest_gutenberg.py --max-books 100
+
+# Process all 61,300 English books
+uv run python scripts/ingest_gutenberg.py
+```
+
+**Choose a different language**:
+
+```bash
+# French (5,500 books)
+uv run python scripts/ingest_gutenberg.py --language fr
+
+# German (3,100 books)
+uv run python scripts/ingest_gutenberg.py --language de
+
+# Spanish (1,200 books)
+uv run python scripts/ingest_gutenberg.py --language es
+```
+
+**Adjust chunk size** (for performance tuning):
+
+```bash
+# Larger chunks = fewer facts, but each captures more context
+uv run python scripts/ingest_gutenberg.py --chunk-size 2000
+
+# Smaller chunks = more facts, but less context per fact
+uv run python scripts/ingest_gutenberg.py --chunk-size 500
+```
+
+### Command-Line Options
+
+| Option              | Short | Description                              | Default                          |
+| ------------------- | ----- | ---------------------------------------- | -------------------------------- |
+| `--max-books`       | `-n`  | Maximum number of books to process       | All books                        |
+| `--language`        | `-l`  | Language split to use                    | `en`                             |
+| `--chunk-size`      | `-c`  | Characters per chunk                     | `1000`                           |
+| `--checkpoint-file` |       | Path to checkpoint JSON                  | `./data/gutenberg_checkpoint.json` |
+| `--persist-dir`     |       | Directory for fact persistence           | `./data/crew_training_facts`     |
+| `--resume`          | `-r`  | Resume from existing checkpoint          | (default behavior)               |
+| `--fresh`           | `-f`  | Start fresh, ignoring existing checkpoint | Off                              |
+
+### Available Languages
+
+| Language   | Code | Books |
+| ---------- | ---- | ----- |
+| English    | en   | 61.3k |
+| French     | fr   | 5.5k  |
+| German     | de   | 3.1k  |
+| Dutch      | nl   | 1.4k  |
+| Spanish    | es   | 1.2k  |
+| Portuguese | pt   | 1.1k  |
+| Italian    | it   | 1k    |
+| Chinese    | zh   | 437   |
+| Swedish    | sv   | 388   |
+| Polish     | pl   | 34    |
+| Russian    | ru   | 6     |
+
+### Checkpoint System
+
+The script is **resumable** - it saves progress automatically every 10 books:
+
+```bash
+# Start processing
+uv run python scripts/ingest_gutenberg.py --max-books 1000
+
+# Press Ctrl+C to pause gracefully (saves checkpoint)
+
+# Resume later from where you left off
+uv run python scripts/ingest_gutenberg.py --resume
+
+# Or start completely fresh (ignoring checkpoint)
+uv run python scripts/ingest_gutenberg.py --fresh
+```
+
+The checkpoint tracks:
+- Which books have been processed
+- Total facts learned
+- Errors encountered
+- Last update timestamp
+
+### Performance Expectations
+
+- **10 books**: ~5-10 minutes
+- **100 books**: ~30-60 minutes
+- **1000 books**: 4-8 hours (overnight)
+- **Full dataset (61,300 books)**: Several days
+
+Each book contributes **10-20 facts** depending on length. First run takes 30-60 seconds to initialize the trainer.
+
+### Combining with Crew Training
+
+For best results, combine Gutenberg ingestion with overnight crew training:
+
+```bash
+# Day: Ingest Gutenberg books
+uv run python scripts/ingest_gutenberg.py --max-books 500
+
+# Night: Let crew_trainer have conversations
+uv run python scripts/crew_trainer.py --max-rounds 200
+
+# Next day: Resume Gutenberg
+uv run python scripts/ingest_gutenberg.py --resume
+```
+
+This creates a virtuous cycle:
+1. **Gutenberg ingestion** provides broad, factual knowledge from literature
+2. **Crew training** teaches dialogue patterns and reasoning
+3. Together they create a Hologram with deep knowledge and natural conversation
+
+### Troubleshooting
+
+**Script hangs on startup**: First run initializes the trainer (30-60 seconds is normal). Just wait for progress output.
+
+**Checkpoint file is corrupted**:
+```bash
+uv run python scripts/ingest_gutenberg.py --fresh
+```
+
+**Out of disk space**:
+- Facts stored in `./data/crew_training_facts`
+- Each fact takes ~1-2 KB
+- 10,000 facts ≈ 10-20 MB
+- Reduce `--max-books` to fit your disk space
+
+**Want to clean up and start over**:
+```bash
+rm -rf ./data/gutenberg_checkpoint.json ./data/crew_training_facts
+uv run python scripts/ingest_gutenberg.py
+```
+
+**Missing datasets library**:
+```bash
+uv pip install datasets
+```
+
 ## Support
 
 For issues or questions:

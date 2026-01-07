@@ -529,16 +529,18 @@ class CrewTrainer:
         max_turns_per_topic: int = 8,
         max_rounds: Optional[int] = None,
         consolidation_threshold: int = 10,  # Lower default for faster testing
+        enable_emergent_layers: bool = True,  # NEW: Use emergent layers for large scale (opt-in)
     ):
         """
         Initialize trainer.
 
         Args:
-            persist_dir: Directory for ChromaDB fact persistence
+            persist_dir: Directory for fact persistence (ChromaDB or Emergent Layers)
             log_dir: Directory for conversation logs
             max_turns_per_topic: Maximum conversation turns per topic
             max_rounds: Maximum number of conversation rounds (None for unlimited)
             consolidation_threshold: Number of facts before neural consolidation triggers (default: 10)
+            enable_emergent_layers: If True, use EmergentLayerFactStore for scalability (default: False)
         """
         self.persist_dir = persist_dir  # Store for saving
         # Load API keys
@@ -574,7 +576,8 @@ class CrewTrainer:
             vocabulary=vocab_dict,
             enable_ventriloquist=True,  # Enable VentriloquistGenerator for fluency
             ventriloquist_model="moonshotai/kimi-k2-thinking",  # Novita/Kimi model
-            enable_neural_consolidation=True,  # Enable Neural Consolidation Layer
+            enable_emergent_layers=enable_emergent_layers,  # NEW: Use emergent layers for scalability
+            enable_neural_consolidation=not enable_emergent_layers,  # Use neural consolidation only if emergent layers disabled
             consolidation_threshold=consolidation_threshold,  # Configurable threshold
         )
         self.chatbot.start_session()
@@ -1872,6 +1875,12 @@ Examples:
         help="Characters per chunk for document ingestion (default: 500)"
     )
 
+    parser.add_argument(
+        "--emergent-layers",
+        action="store_true",
+        help="Use EmergentLayerFactStore instead of ChromaDB for scalability (default: False)"
+    )
+
     args = parser.parse_args()
     
     # Setup signal handler
@@ -1883,6 +1892,7 @@ Examples:
         log_dir=Path(args.log_dir),
         max_turns_per_topic=args.turns_per_topic,
         max_rounds=args.max_rounds,
+        enable_emergent_layers=args.emergent_layers,  # NEW: Use emergent layers flag
     )
 
     # Check for web teaching mode

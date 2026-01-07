@@ -43,6 +43,12 @@ from hologram.config.constants import (
     DEFAULT_UNKNOWN_ANSWER
 )
 
+# Optional CRAG import - graceful fallback if not available
+try:
+    from hologram.core.crag_resonator import CRAGResonator
+except ImportError:
+    CRAGResonator = None
+
 
 @dataclass
 class ResponseCandidate:
@@ -91,6 +97,7 @@ class ResponseSelector:
         metacog: Optional[MetacognitiveLoop] = None,
         dreamer: Optional[Dreamer] = None,
         cadence_jazz: Optional[CadenceJazz] = None,
+        crag_resonator: Optional[object] = None,  # CRAGResonator for grounded resonance
     ):
         """
         Initialize response selector.
@@ -103,6 +110,7 @@ class ResponseSelector:
             response_corpus: Optional corpus for learned responses
             resonant_generator: Optional HDC generator for factual questions
             ventriloquist_generator: Optional SLM generator for fluent conversation
+            crag_resonator: Optional CRAGResonator for grounded resonance (falls back to standard)
         """
         self._pattern_store = pattern_store
         self._memory = conversation_memory
@@ -116,7 +124,8 @@ class ResponseSelector:
         self._metacog = metacog
         self._dreamer = dreamer
         self._cadence_jazz = cadence_jazz
-        
+        self._crag_resonator = crag_resonator  # Optional CRAG resonator for grounded resonance
+
         # Initialize circuit breaker for generation failure detection
         self._circuit_breaker = SimpleCircuitBreaker(
             failure_threshold=3,
@@ -468,14 +477,23 @@ class ResponseSelector:
         # Helper to try multiple case variants
         # Returns (answer, confidence) tuple
         def try_query(subject: str, predicate: str) -> Optional[tuple[str, float]]:
+            # CRITICAL: HDC resonance confidence threshold
+            # In randomized hypervector spaces, similarity < 0.35 is noise (not signal).
+            # For cold-start (< 10 facts), only trust exact matches (conf=1.0) to prevent
+            # hallucination when memory is sparse and interference artifacts are high.
+            # Theory: Valid fact retrieval yields conf > 0.5; lower scores are interference.
+            # Using 0.35 aligns with system hierarchy: retrieval(0.35) < semantic(0.4) < generation(0.5)
+            fact_count = self._fact_store.fact_count if hasattr(self._fact_store, "fact_count") else 0
+            min_confidence_threshold = 0.99 if fact_count < 10 else 0.35
+
             # Try original, capitalized, and lowercase
-            logger.debug(f"  try_query({subject}, {predicate})")
+            logger.debug(f"  try_query({subject}, {predicate}) [fact_count={fact_count}, threshold={min_confidence_threshold:.2f}]")
             best_answer = None
             best_conf = 0.0
             for variant in [subject, subject.capitalize(), subject.lower()]:
                 answer, conf = self._fact_store.query(variant, predicate)
                 logger.debug(f"    variant '{variant}' -> answer='{answer}', conf={conf:.3f}")
-                if conf > 0.1 and conf > best_conf:
+                if conf > min_confidence_threshold and conf > best_conf:
                     best_answer = answer
                     best_conf = conf
             if best_answer:

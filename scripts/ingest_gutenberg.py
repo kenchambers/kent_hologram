@@ -78,6 +78,7 @@ class GutenbergIngester:
         chunk_size: int = 1000,
         max_books: Optional[int] = None,
         skip_existing: bool = True,
+        enable_emergent_layers: bool = True,  # NEW: Use emergent layers for scalability (opt-in)
     ):
         """
         Initialize the ingester.
@@ -89,6 +90,7 @@ class GutenbergIngester:
             chunk_size: Characters per chunk for document processing
             max_books: Maximum number of books to process (None for all)
             skip_existing: Skip books already in checkpoint
+            enable_emergent_layers: If True, use EmergentLayerFactStore for scalability (default: False)
         """
         self.persist_dir = persist_dir
         self.checkpoint_file = checkpoint_file
@@ -96,6 +98,7 @@ class GutenbergIngester:
         self.chunk_size = chunk_size
         self.max_books = max_books
         self.skip_existing = skip_existing
+        self.enable_emergent_layers = enable_emergent_layers  # NEW: Store parameter
 
         # State
         self.running = True
@@ -162,6 +165,7 @@ class GutenbergIngester:
         self._trainer = CrewTrainer(
             persist_dir=self.persist_dir,
             max_rounds=0,  # We don't need conversation rounds
+            enable_emergent_layers=self.enable_emergent_layers,  # NEW: Pass flag to trainer
         )
 
         self._web_teacher = WebTeacher(llm_provider="anthropic")
@@ -505,6 +509,12 @@ Available languages: en (61k), fr (5.5k), de (3.1k), pt (1.1k),
         help="Start fresh, ignoring existing checkpoint"
     )
 
+    parser.add_argument(
+        "--emergent-layers",
+        action="store_true",
+        help="Use EmergentLayerFactStore instead of ChromaDB for scalability (default: False)"
+    )
+
     args = parser.parse_args()
 
     # Handle fresh start
@@ -521,6 +531,7 @@ Available languages: en (61k), fr (5.5k), de (3.1k), pt (1.1k),
         language=args.language,
         chunk_size=args.chunk_size,
         max_books=args.max_books,
+        enable_emergent_layers=args.emergent_layers,  # NEW: Use emergent layers flag
     )
 
     ingester.run()

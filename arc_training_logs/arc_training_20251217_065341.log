@@ -1,0 +1,818 @@
+[06:53:41] ============================================================
+[06:53:41] ARC Trainer Initialization
+[06:53:41] ============================================================
+[06:53:41] Creating HologramContainer...
+[06:53:41] Creating ConsolidationManager...
+[06:53:41] Loaded existing memory: 64 patterns
+[06:53:41] Creating ARC components...
+[06:53:41] Self-improvement enabled: data/crew_training_facts/arc_learned_patterns.json
+[06:53:41] Creating HolographicARCSolver (shared memory mode)...
+[06:53:41] Initialization complete. Persist dir: ./data/crew_training_facts
+[06:53:41] 
+============================================================
+[06:53:41] Starting Continuous Training
+[06:53:41] ============================================================
+[06:53:41] ARC Curriculum Distribution:
+  EASY: 26 tasks
+  MEDIUM: 273 tasks
+  HARD: 701 tasks
+[06:53:41] 
+============================================================
+[06:53:41] Round 1/2
+[06:53:41] ============================================================
+[06:53:41] 
+Training on easy tier (26 tasks)
+[06:53:41] [1/26] Task 794b24be
+[06:53:42]   Could not extract verified pattern
+[06:53:42] [2/26] Task 25ff71a9
+[06:53:43]   Already known (from cache: False)
+[06:53:43] [3/26] Task 6e02f1e3
+[06:53:44]   Could not extract verified pattern
+[06:53:44] [4/26] Task 74dd1130
+[06:53:45]   Could not extract verified pattern
+[06:53:45] [5/26] Task 9565186b
+[06:53:46]   Could not extract verified pattern
+[06:53:46] [6/26] Task 3c9b0459
+[06:53:47]   Could not extract verified pattern
+[06:53:47] [7/26] Task ed36ccf7
+[06:53:48]   Could not extract verified pattern
+[06:53:48] [8/26] Task 0d3d703e
+[06:53:48]   Could not extract verified pattern
+[06:53:48] [9/26] Task 3618c87e
+[06:53:49]   Could not extract verified pattern
+[06:53:49] [10/26] Task a79310a0
+[06:53:50]   Could not extract verified pattern
+[06:53:50] [11/26] Task 5582e5ca
+[06:53:51]   Could not extract verified pattern
+[06:53:51] [12/26] Task 25d8a9c8
+[06:53:51]   Could not extract verified pattern
+[06:53:51] [13/26] Task a9f96cdd
+[06:53:52]   Could not extract verified pattern
+[06:53:52] [14/26] Task f76d97a5
+[06:53:53]   Could not extract verified pattern
+[06:53:53] [15/26] Task 6150a2bd
+[06:53:54]   Could not extract verified pattern
+[06:53:54] [16/26] Task 6ea4a07e
+[06:53:55]   Could not extract verified pattern
+[06:53:55] [17/26] Task 87ab05b8
+[06:53:56]   Could not extract verified pattern
+[06:53:56] [18/26] Task 66e6c45b
+[06:53:56]   Could not extract verified pattern
+[06:53:56] [19/26] Task d511f180
+[06:53:57]   Could not extract verified pattern
+[06:53:57] [20/26] Task e3fe1151
+[06:53:58]   Could not extract verified pattern
+[06:53:58] [21/26] Task 4cd1b7b2
+[06:53:59]   Could not extract verified pattern
+[06:53:59] [22/26] Task a85d4709
+[06:54:00]   Could not extract verified pattern
+[06:54:00] [23/26] Task 833966f4
+[06:54:01]   Could not extract verified pattern
+[06:54:01] [24/26] Task aedd82e4
+[06:54:02]   Could not extract verified pattern
+[06:54:02] [25/26] Task d037b0a7
+[06:54:02]   Could not extract verified pattern
+[06:54:02] [26/26] Task 9dfd6313
+[06:54:03]   Could not extract verified pattern
+[06:54:03]   EASY: 1/26 solved
+[06:54:03] 
+Training on medium tier (273 tasks)
+[06:54:03] [1/273] Task 6f8cd79b
+[06:54:04]   Could not extract verified pattern
+[06:54:04] [2/273] Task 332efdb3
+[06:54:04]   Could not extract verified pattern
+[06:54:04] [3/273] Task b5bb5719
+[06:54:07]   Could not extract verified pattern
+[06:54:07] [4/273] Task c074846d
+[06:54:08]   Could not extract verified pattern
+[06:54:08] [5/273] Task b1948b0a
+[06:54:09]   Could not extract verified pattern
+[06:54:09] [6/273] Task c8f0f002
+[06:54:09]   Could not extract verified pattern
+[06:54:09] [7/273] Task fc754716
+[06:54:10]   Could not extract verified pattern
+[06:54:10] [8/273] Task f3e62deb
+[06:54:12]   Could not extract verified pattern
+[06:54:12] [9/273] Task 67a3c6ac
+[06:54:13]   Could not extract verified pattern
+[06:54:13] [10/273] Task e9afcf9a
+[06:54:14]   Could not extract verified pattern
+[06:54:14] [11/273] Task ea786f4a
+[06:54:15]   Could not extract verified pattern
+[06:54:15] [12/273] Task 1478ab18
+[06:54:18]   Could not extract verified pattern
+[06:54:18] [13/273] Task 6bcdb01e
+[06:54:19]   Could not extract verified pattern
+[06:54:19] [14/273] Task b7256dcd
+[06:54:20]   Could not extract verified pattern
+[06:54:20] [15/273] Task fd02da9e
+[06:54:23]   Could not extract verified pattern
+[06:54:23] [16/273] Task b8cdaf2b
+[06:54:24]   Could not extract verified pattern
+[06:54:24] [17/273] Task 9caf5b84
+[06:54:25]   Could not extract verified pattern
+[06:54:25] [18/273] Task 3bd292e8
+[06:54:27]   Could not extract verified pattern
+[06:54:27] [19/273] Task 68b16354
+[06:54:29]   Could not extract verified pattern
+[06:54:29] [20/273] Task aa300dc3
+[06:54:33]   Could not extract verified pattern
+[06:54:33] [21/273] Task db3e9e38
+[06:54:33]   Could not extract verified pattern
+[06:54:33] [22/273] Task e7dd8335
+[06:54:34]   Could not extract verified pattern
+[06:54:34] [23/273] Task fe45cba4
+[06:54:36]   Could not extract verified pattern
+[06:54:36] [24/273] Task 4a1cacc2
+[06:54:38]   Could not extract verified pattern
+[06:54:38] [25/273] Task a65b410d
+[06:54:39]   Could not extract verified pattern
+[06:54:39] [26/273] Task cc9053aa
+[06:54:40]   Could not extract verified pattern
+[06:54:40] [27/273] Task 7ec998c9
+[06:54:42]   Could not extract verified pattern
+[06:54:42] [28/273] Task 1f0c79e5
+[06:54:43]   Could not extract verified pattern
+[06:54:43] [29/273] Task 1b60fb0c
+[06:54:45]   Could not extract verified pattern
+[06:54:45] [30/273] Task e179c5f4
+[06:54:46]   Could not extract verified pattern
+[06:54:46] [31/273] Task 626c0bcc
+[06:54:47]   Could not extract verified pattern
+[06:54:47] [32/273] Task 1e5d6875
+[06:54:48]   Could not extract verified pattern
+[06:54:48] [33/273] Task 342dd610
+[06:54:53]   Could not extract verified pattern
+[06:54:53] [34/273] Task 834ec97d
+[06:54:53]   Could not extract verified pattern
+[06:54:53] [35/273] Task 93b581b8
+[06:54:54]   Could not extract verified pattern
+[06:54:54] [36/273] Task aba27056
+[06:54:55]   Could not extract verified pattern
+[06:54:55] [37/273] Task c9680e90
+[06:54:58]   Could not extract verified pattern
+[06:54:58] [38/273] Task df9fd884
+[06:55:00]   Could not extract verified pattern
+[06:55:00] [39/273] Task b2bc3ffd
+[06:55:03]   Could not extract verified pattern
+[06:55:03] [40/273] Task 54d82841
+[06:55:03]   Could not extract verified pattern
+[06:55:03] [41/273] Task 14b8e18c
+[06:55:07]   Could not extract verified pattern
+[06:55:07] [42/273] Task 30f42897
+[06:55:09]   Could not extract verified pattern
+[06:55:09] [43/273] Task 7c8af763
+[06:55:11]   Could not extract verified pattern
+[06:55:11] [44/273] Task 8e301a54
+[06:55:15]   Could not extract verified pattern
+[06:55:15] [45/273] Task 67a423a3
+[06:55:16]   Could not extract verified pattern
+[06:55:16] [46/273] Task 880c1354
+[06:55:18]   Could not extract verified pattern
+[06:55:18] [47/273] Task d4f3cd78
+[06:55:19]   Could not extract verified pattern
+[06:55:19] [48/273] Task 27a77e38
+[06:55:20]   Could not extract verified pattern
+[06:55:20] [49/273] Task 465b7d93
+[06:55:23]   Could not extract verified pattern
+[06:55:23] [50/273] Task 46c35fc7
+[06:55:25]   Could not extract verified pattern
+[06:55:25] [51/273] Task 8403a5d5
+[06:55:26]   Could not extract verified pattern
+[06:55:26] [52/273] Task 941d9a10
+[06:55:28]   Could not extract verified pattern
+[06:55:28] [53/273] Task f28a3cbb
+[06:55:30]   Could not extract verified pattern
+[06:55:30] [54/273] Task 4e469f39
+[06:55:31]   Could not extract verified pattern
+[06:55:31] [55/273] Task 2bcee788
+[06:55:33]   Could not extract verified pattern
+[06:55:33] [56/273] Task 90347967
+[06:55:33]   Could not extract verified pattern
+[06:55:33] [57/273] Task bd5af378
+[06:55:36]   Could not extract verified pattern
+[06:55:36] [58/273] Task 496994bd
+[06:55:37]   Could not extract verified pattern
+[06:55:37] [59/273] Task bdad9b1f
+[06:55:37]   Could not extract verified pattern
+[06:55:37] [60/273] Task f1bcbc2c
+[06:55:40]   Could not extract verified pattern
+[06:55:40] [61/273] Task bda2d7a6
+[06:55:41]   Could not extract verified pattern
+[06:55:41] [62/273] Task 575b1a71
+[06:55:44]   Could not extract verified pattern
+[06:55:44] [63/273] Task 69889d6e
+[06:55:46]   Could not extract verified pattern
+[06:55:46] [64/273] Task 825aa9e9
+[06:55:48]   Could not extract verified pattern
+[06:55:48] [65/273] Task 984d8a3e
+[06:55:51]   Could not extract verified pattern
+[06:55:51] [66/273] Task 9b30e358
+[06:55:52]   Could not extract verified pattern
+[06:55:52] [67/273] Task f0100645
+[06:55:54]   Could not extract verified pattern
+[06:55:54] [68/273] Task 3befdf3e
+[06:55:55]   Could not extract verified pattern
+[06:55:55] [69/273] Task 99fa7670
+[06:55:56]   Could not extract verified pattern
+[06:55:56] [70/273] Task bd4472b8
+[06:55:57]   Could not extract verified pattern
+[06:55:57] [71/273] Task 9344f635
+[06:55:59]   Could not extract verified pattern
+[06:55:59] [72/273] Task bd283c4a
+[06:56:01]   Could not extract verified pattern
+[06:56:01] [73/273] Task f25ffba3
+[06:56:02]   Could not extract verified pattern
+[06:56:02] [74/273] Task 9473c6fb
+[06:56:04]   Could not extract verified pattern
+[06:56:04] [75/273] Task 9f669b64
+[06:56:07]   Could not extract verified pattern
+[06:56:07] [76/273] Task a406ac07
+[06:56:09]   Could not extract verified pattern
+[06:56:09] [77/273] Task ad38a9d0
+[06:56:11]   Could not extract verified pattern
+[06:56:11] [78/273] Task bc93ec48
+[06:56:13]   Could not extract verified pattern
+[06:56:13] [79/273] Task 32e9702f
+[06:56:14]   Could not extract verified pattern
+[06:56:14] [80/273] Task aabf363d
+[06:56:15]   Could not extract verified pattern
+[06:56:15] [81/273] Task aaef0977
+[06:56:17]   Could not extract verified pattern
+[06:56:17] [82/273] Task b15fca0b
+[06:56:18]   Could not extract verified pattern
+[06:56:18] [83/273] Task 3ac3eb23
+[06:56:19]   Could not extract verified pattern
+[06:56:19] [84/273] Task 4df5b0ae
+[06:56:22]   Could not extract verified pattern
+[06:56:22] [85/273] Task 9c1e755f
+[06:56:24]   Could not extract verified pattern
+[06:56:24] [86/273] Task e48d4e1a
+[06:56:26]   Could not extract verified pattern
+[06:56:26] [87/273] Task e8593010
+[06:56:29]   Could not extract verified pattern
+[06:56:29] [88/273] Task 3aa6fb7a
+[06:56:30]   Could not extract verified pattern
+[06:56:30] [89/273] Task 5792cb4d
+[06:56:32]   Could not extract verified pattern
+[06:56:32] [90/273] Task 5c0a986e
+[06:56:33]   Could not extract verified pattern
+[06:56:33] [91/273] Task 05269061
+[06:56:34]   Could not extract verified pattern
+[06:56:34] [92/273] Task 952a094c
+[06:56:36]   Could not extract verified pattern
+[06:56:36] [93/273] Task 9968a131
+[06:56:37]   Could not extract verified pattern
+[06:56:37] [94/273] Task b1fc8b8e
+[06:56:38]   Could not extract verified pattern
+[06:56:38] [95/273] Task db7260a4
+[06:56:40]   Could not extract verified pattern
+[06:56:40] [96/273] Task 23581191
+[06:56:41]   Could not extract verified pattern
+[06:56:41] [97/273] Task 6d0aefbc
+[06:56:42]   Could not extract verified pattern
+[06:56:42] [98/273] Task 6e19193c
+[06:56:43]   Could not extract verified pattern
+[06:56:43] [99/273] Task bb43febb
+[06:56:44]   Could not extract verified pattern
+[06:56:44] [100/273] Task e9614598
+[06:56:45]   Could not extract verified pattern
+[06:56:45] [101/273] Task 2a28add5
+[06:56:47]   Could not extract verified pattern
+[06:56:47] [102/273] Task da2b0fe3
+[06:56:48]   Could not extract verified pattern
+[06:56:48] [103/273] Task 44f52bb0
+[06:56:49]   Could not extract verified pattern
+[06:56:49] [104/273] Task 694f12f3
+[06:56:51]   Could not extract verified pattern
+[06:56:51] [105/273] Task e5790162
+[06:56:52]   Could not extract verified pattern
+[06:56:52] [106/273] Task 760b3cac
+[06:56:53]   Could not extract verified pattern
+[06:56:53] [107/273] Task 746b3537
+[06:56:54]   Could not extract verified pattern
+[06:56:54] [108/273] Task 88a10436
+[06:56:55]   Could not extract verified pattern
+[06:56:55] [109/273] Task 60b61512
+[06:56:56]   Could not extract verified pattern
+[06:56:56] [110/273] Task 67385a82
+[06:56:58]   Could not extract verified pattern
+[06:56:58] [111/273] Task b0c4d837
+[06:57:00]   Could not extract verified pattern
+[06:57:00] [112/273] Task 1bfc4729
+[06:57:01]   Could not extract verified pattern
+[06:57:01] [113/273] Task 4c4377d9
+[06:57:02]   Could not extract verified pattern
+[06:57:02] [114/273] Task b6afb2da
+[06:57:03]   Could not extract verified pattern
+[06:57:03] [115/273] Task 8f2ea7aa
+[06:57:04]   Could not extract verified pattern
+[06:57:04] [116/273] Task e40b9e2f
+[06:57:06]   Could not extract verified pattern
+[06:57:06] [117/273] Task dc1df850
+[06:57:06]   Could not extract verified pattern
+[06:57:06] [118/273] Task f8c80d96
+[06:57:08]   Could not extract verified pattern
+[06:57:08] [119/273] Task 62c24649
+[06:57:09]   Could not extract verified pattern
+[06:57:09] [120/273] Task a8610ef7
+[06:57:10]   Could not extract verified pattern
+[06:57:10] [121/273] Task 22233c11
+[06:57:11]   Could not extract verified pattern
+[06:57:11] [122/273] Task 8be77c9e
+[06:57:12]   Could not extract verified pattern
+[06:57:12] [123/273] Task c9e6f938
+[06:57:13]   Could not extract verified pattern
+[06:57:13] [124/273] Task 49d1d64f
+[06:57:13]   Could not extract verified pattern
+[06:57:13] [125/273] Task 9af7a82c
+[06:57:14]   Could not extract verified pattern
+[06:57:14] [126/273] Task 7ee1c6ea
+[06:57:17]   Could not extract verified pattern
+[06:57:17] [127/273] Task d6ad076f
+[06:57:19]   Could not extract verified pattern
+[06:57:19] [128/273] Task 46442a0e
+[06:57:20]   Could not extract verified pattern
+[06:57:20] [129/273] Task d631b094
+[06:57:20]   Could not extract verified pattern
+[06:57:20] [130/273] Task 7ddcd7ec
+[06:57:21]   Could not extract verified pattern
+[06:57:21] [131/273] Task c7d4e6ad
+[06:57:23]   Could not extract verified pattern
+[06:57:23] [132/273] Task 0becf7df
+[06:57:24]   Could not extract verified pattern
+[06:57:24] [133/273] Task 7fe24cdd
+[06:57:25]   Could not extract verified pattern
+[06:57:25] [134/273] Task f45f5ca7
+[06:57:26]   Could not extract verified pattern
+[06:57:26] [135/273] Task 3906de3d
+[06:57:28]   Could not extract verified pattern
+[06:57:28] [136/273] Task 67e8384a
+[06:57:29]   Could not extract verified pattern
+[06:57:29] [137/273] Task 6fa7a44f
+[06:57:30]   Could not extract verified pattern
+[06:57:30] [138/273] Task e633a9e5
+[06:57:31]   Could not extract verified pattern
+[06:57:31] [139/273] Task ea32f347
+[06:57:32]   Could not extract verified pattern
+[06:57:32] [140/273] Task 444801d8
+[06:57:34]   Could not extract verified pattern
+[06:57:34] [141/273] Task 1caeab9d
+[06:57:35]   Could not extract verified pattern
+[06:57:35] [142/273] Task b230c067
+[06:57:37]   Could not extract verified pattern
+[06:57:37] [143/273] Task 00576224
+[06:57:37]   Could not extract verified pattern
+[06:57:37] [144/273] Task 8b28cd80
+[06:57:38]   Could not extract verified pattern
+[06:57:38] [145/273] Task a740d043
+[06:57:40]   Could not extract verified pattern
+[06:57:40] [146/273] Task f9012d9b
+[06:57:41]   Could not extract verified pattern
+[06:57:41] [147/273] Task fcc82909
+[06:57:42]   Could not extract verified pattern
+[06:57:42] [148/273] Task 7953d61e
+[06:57:44]   Could not extract verified pattern
+[06:57:44] [149/273] Task ff28f65a
+[06:57:46]   Could not extract verified pattern
+[06:57:46] [150/273] Task 2685904e
+[06:57:49]   Could not extract verified pattern
+[06:57:49] [151/273] Task a6953f00
+[06:57:50]   Could not extract verified pattern
+[06:57:50] [152/273] Task c59eb873
+[06:57:51]   Stored pattern: expand_all_objects_by_2x (0.4ms)
+[06:57:51] [153/273] Task ed98d772
+[06:57:52]   Could not extract verified pattern
+[06:57:52] [154/273] Task 2072aba6
+[06:57:53]   Could not extract verified pattern
+[06:57:53] [155/273] Task 17cae0c1
+[06:57:54]   Could not extract verified pattern
+[06:57:54] [156/273] Task d2acf2cb
+[06:57:56]   Could not extract verified pattern
+[06:57:56] [157/273] Task f25fbde4
+[06:57:57]   Could not extract verified pattern
+[06:57:57] [158/273] Task 15696249
+[06:57:58]   Could not extract verified pattern
+[06:57:58] [159/273] Task 7b7f7511
+[06:57:59]   Could not extract verified pattern
+[06:57:59] [160/273] Task bbc9ae5d
+[06:58:00]   Could not extract verified pattern
+[06:58:00] [161/273] Task 27a28665
+[06:58:01]   Could not extract verified pattern
+[06:58:01] [162/273] Task 4258a5f9
+[06:58:02]   Could not extract verified pattern
+[06:58:02] [163/273] Task 4522001f
+[06:58:03]   Could not extract verified pattern
+[06:58:03] [164/273] Task 6d1d5c90
+[06:58:04]   Could not extract verified pattern
+[06:58:04] [165/273] Task b60334d2
+[06:58:05]   Could not extract verified pattern
+[06:58:05] [166/273] Task ce22a75a
+[06:58:06]   Could not extract verified pattern
+[06:58:06] [167/273] Task 48f8583b
+[06:58:07]   Could not extract verified pattern
+[06:58:07] [168/273] Task 60c09cac
+[06:58:07]   Stored pattern: expand_all_objects_by_2x (0.6ms)
+[06:58:07] [169/273] Task cce03e0d
+[06:58:08]   Could not extract verified pattern
+[06:58:08] [170/273] Task a416b8f3
+[06:58:09]   Could not extract verified pattern
+[06:58:09] [171/273] Task 79cce52d
+[06:58:11]   Could not extract verified pattern
+[06:58:11] [172/273] Task 8618d23e
+[06:58:11]   Could not extract verified pattern
+[06:58:11] [173/273] Task 0ca9ddb6
+[06:58:13]   Could not extract verified pattern
+[06:58:13] [174/273] Task c48954c1
+[06:58:13]   Could not extract verified pattern
+[06:58:13] [175/273] Task e76a88a6
+[06:58:15]   Could not extract verified pattern
+[06:58:15] [176/273] Task 1190bc91
+[06:58:16]   Could not extract verified pattern
+[06:58:16] [177/273] Task 0c786b71
+[06:58:17]   Could not extract verified pattern
+[06:58:17] [178/273] Task 94414823
+[06:58:18]   Could not extract verified pattern
+[06:58:18] [179/273] Task ce9e57f2
+[06:58:20]   Could not extract verified pattern
+[06:58:20] [180/273] Task d13f3404
+[06:58:21]   Could not extract verified pattern
+[06:58:21] [181/273] Task bf32578f
+[06:58:22]   Could not extract verified pattern
+[06:58:22] [182/273] Task 28bf18c6
+[06:58:22]   Could not extract verified pattern
+[06:58:22] [183/273] Task bbb1b8b6
+[06:58:25]   Could not extract verified pattern
+[06:58:25] [184/273] Task c3e719e8
+[06:58:26]   Could not extract verified pattern
+[06:58:26] [185/273] Task 662c240a
+[06:58:27]   Could not extract verified pattern
+[06:58:27] [186/273] Task 77fdfe62
+[06:58:29]   Could not extract verified pattern
+[06:58:29] [187/273] Task c35c1b4c
+[06:58:32]   Could not extract verified pattern
+[06:58:32] [188/273] Task 03560426
+[06:58:34]   Could not extract verified pattern
+[06:58:34] [189/273] Task 539a4f51
+[06:58:35]   Could not extract verified pattern
+[06:58:35] [190/273] Task aaecdb9a
+[06:58:38]   Could not extract verified pattern
+[06:58:38] [191/273] Task ef135b50
+[06:58:40]   Could not extract verified pattern
+[06:58:40] [192/273] Task 007bbfb7
+[06:58:40]   Already known (from cache: False)
+[06:58:40] [193/273] Task 27f8ce4f
+[06:58:41]   Could not extract verified pattern
+[06:58:41] [194/273] Task 3979b1a8
+[06:58:42]   Could not extract verified pattern
+[06:58:42] [195/273] Task 833dafe3
+[06:58:43]   Could not extract verified pattern
+[06:58:43] [196/273] Task cfb2ce5a
+[06:58:44]   Could not extract verified pattern
+[06:58:44] [197/273] Task 8d5021e8
+[06:58:45]   Could not extract verified pattern
+[06:58:45] [198/273] Task 8e2edd66
+[06:58:45]   Could not extract verified pattern
+[06:58:45] [199/273] Task d23f8c26
+[06:58:47]   Could not extract verified pattern
+[06:58:47] [200/273] Task 5587a8d0
+[06:58:49]   Could not extract verified pattern
+[06:58:49] [201/273] Task dae9d2b5
+[06:58:50]   Could not extract verified pattern
+[06:58:50] [202/273] Task f2829549
+[06:58:52]   Could not extract verified pattern
+[06:58:52] [203/273] Task fafffa47
+[06:58:53]   Could not extract verified pattern
+[06:58:53] [204/273] Task 1b2d62fb
+[06:58:55]   Could not extract verified pattern
+[06:58:55] [205/273] Task 10fcaaa3
+[06:58:56]   Could not extract verified pattern
+[06:58:56] [206/273] Task 8abad3cf
+[06:58:57]   Could not extract verified pattern
+[06:58:57] [207/273] Task 1e0a9b12
+[06:58:58]   Could not extract verified pattern
+[06:58:58] [208/273] Task 8ba14f53
+[06:59:00]   Could not extract verified pattern
+[06:59:00] [209/273] Task 3af2c5a8
+[06:59:01]   Could not extract verified pattern
+[06:59:01] [210/273] Task 5ad8a7c0
+[06:59:03]   Could not extract verified pattern
+[06:59:03] [211/273] Task 0692e18c
+[06:59:03]   Could not extract verified pattern
+[06:59:03] [212/273] Task beb8660c
+[06:59:05]   Could not extract verified pattern
+[06:59:05] [213/273] Task 08ed6ac7
+[06:59:05]   Already known (from cache: False)
+[06:59:05] [214/273] Task ff2825db
+[06:59:08]   Could not extract verified pattern
+[06:59:08] [215/273] Task 4acc7107
+[06:59:10]   Could not extract verified pattern
+[06:59:10] [216/273] Task a1570a43
+[06:59:12]   Could not extract verified pattern
+[06:59:12] [217/273] Task d4469b4b
+[06:59:14]   Could not extract verified pattern
+[06:59:14] [218/273] Task d90796e8
+[06:59:16]   Could not extract verified pattern
+[06:59:16] [219/273] Task e3497940
+[06:59:17]   Could not extract verified pattern
+[06:59:17] [220/273] Task ed74f2f2
+[06:59:19]   Could not extract verified pattern
+[06:59:19] [221/273] Task a61f2674
+[06:59:20]   Could not extract verified pattern
+[06:59:20] [222/273] Task 321b1fc6
+[06:59:21]   Could not extract verified pattern
+[06:59:21] [223/273] Task e133d23d
+[06:59:23]   Could not extract verified pattern
+[06:59:23] [224/273] Task a48eeaf7
+[06:59:24]   Could not extract verified pattern
+[06:59:24] [225/273] Task 9172f3a0
+[06:59:24]   Stored pattern: expand_all_objects_tile_3x3 (0.5ms)
+[06:59:24] [226/273] Task 48131b3c
+[06:59:25]   Could not extract verified pattern
+[06:59:25] [227/273] Task ded97339
+[06:59:26]   Could not extract verified pattern
+[06:59:26] [228/273] Task 0520fde7
+[06:59:28]   Could not extract verified pattern
+[06:59:28] [229/273] Task 12eac192
+[06:59:30]   Could not extract verified pattern
+[06:59:30] [230/273] Task 445eab21
+[06:59:32]   Could not extract verified pattern
+[06:59:32] [231/273] Task 681b3aeb
+[06:59:33]   Could not extract verified pattern
+[06:59:33] [232/273] Task a78176bb
+[06:59:34]   Could not extract verified pattern
+[06:59:34] [233/273] Task e345f17b
+[06:59:36]   Could not extract verified pattern
+[06:59:36] [234/273] Task c8b7cc0f
+[06:59:37]   Could not extract verified pattern
+[06:59:37] [235/273] Task be03b35f
+[06:59:39]   Could not extract verified pattern
+[06:59:39] [236/273] Task 6c434453
+[06:59:40]   Could not extract verified pattern
+[06:59:40] [237/273] Task 506d28a5
+[06:59:42]   Could not extract verified pattern
+[06:59:42] [238/273] Task 6e82a1ae
+[06:59:44]   Could not extract verified pattern
+[06:59:44] [239/273] Task e50d258f
+[06:59:46]   Could not extract verified pattern
+[06:59:46] [240/273] Task af902bf9
+[06:59:48]   Could not extract verified pattern
+[06:59:48] [241/273] Task d2abd087
+[06:59:50]   Could not extract verified pattern
+[06:59:50] [242/273] Task 31d5ba1a
+[06:59:52]   Could not extract verified pattern
+[06:59:52] [243/273] Task 53b68214
+[06:59:53]   Could not extract verified pattern
+[06:59:53] [244/273] Task 94f9d214
+[06:59:55]   Could not extract verified pattern
+[06:59:55] [245/273] Task 2281f1f4
+[06:59:56]   Could not extract verified pattern
+[06:59:56] [246/273] Task d9f24cd1
+[06:59:57]   Could not extract verified pattern
+[06:59:57] [247/273] Task a3325580
+[07:00:00]   Could not extract verified pattern
+[07:00:00] [248/273] Task 239be575
+[07:00:03]   Could not extract verified pattern
+[07:00:03] [249/273] Task 63613498
+[07:00:05]   Could not extract verified pattern
+[07:00:05] [250/273] Task 017c7c7b
+[07:00:05]   Could not extract verified pattern
+[07:00:05] [251/273] Task 7c008303
+[07:00:08]   Could not extract verified pattern
+[07:00:08] [252/273] Task ae4f1146
+[07:00:10]   Could not extract verified pattern
+[07:00:10] [253/273] Task d89b689b
+[07:00:12]   Could not extract verified pattern
+[07:00:12] [254/273] Task e9ac8c9e
+[07:00:14]   Could not extract verified pattern
+[07:00:14] [255/273] Task 5d2a5c43
+[07:00:17]   Could not extract verified pattern
+[07:00:17] [256/273] Task bc1d5164
+[07:00:18]   Could not extract verified pattern
+[07:00:18] [257/273] Task d364b489
+[07:00:19]   Could not extract verified pattern
+[07:00:19] [258/273] Task 6430c8c4
+[07:00:21]   Could not extract verified pattern
+[07:00:21] [259/273] Task 99b1bc43
+[07:00:23]   Could not extract verified pattern
+[07:00:23] [260/273] Task 1f642eb9
+[07:00:25]   Could not extract verified pattern
+[07:00:25] [261/273] Task 72ca375d
+[07:00:26]   Could not extract verified pattern
+[07:00:26] [262/273] Task 3b4c2228
+[07:00:29]   Could not extract verified pattern
+[07:00:29] [263/273] Task a68b268e
+[07:00:33]   Could not extract verified pattern
+[07:00:33] [264/273] Task 2013d3e2
+[07:00:35]   Could not extract verified pattern
+[07:00:35] [265/273] Task 88a62173
+[07:00:36]   Could not extract verified pattern
+[07:00:36] [266/273] Task ddf7fa4f
+[07:00:38]   Could not extract verified pattern
+[07:00:38] [267/273] Task 228f6490
+[07:00:41]   Could not extract verified pattern
+[07:00:41] [268/273] Task 68b67ca3
+[07:00:42]   Could not extract verified pattern
+[07:00:42] [269/273] Task ce4f8723
+[07:00:44]   Could not extract verified pattern
+[07:00:44] [270/273] Task 48d8fb45
+[07:00:45]   Could not extract verified pattern
+[07:00:45] [271/273] Task 34b99a2b
+[07:00:47]   Could not extract verified pattern
+[07:00:47] [272/273] Task 5614dbcf
+[07:00:49]   Could not extract verified pattern
+[07:00:49] [273/273] Task af24b4cc
+[07:00:51]   Could not extract verified pattern
+[07:00:51]   MEDIUM: 5/273 solved
+[07:00:51] 
+Training on hard tier (701 tasks)
+[07:00:51] [1/701] Task 28e73c20
+[07:00:52]   Could not extract verified pattern
+[07:00:52] [2/701] Task 84ba50d3
+[07:00:55]   Could not extract verified pattern
+[07:00:55] [3/701] Task dc433765
+[07:00:57]   Could not extract verified pattern
+[07:00:57] [4/701] Task 37ce87bb
+[07:00:59]   Could not extract verified pattern
+[07:00:59] [5/701] Task e4941b18
+[07:01:02]   Could not extract verified pattern
+[07:01:02] [6/701] Task f0f8a26d
+[07:01:05]   Could not extract verified pattern
+[07:01:05] [7/701] Task 97c75046
+[07:01:07]   Could not extract verified pattern
+[07:01:07] [8/701] Task b25e450b
+[07:01:10]   Could not extract verified pattern
+[07:01:10] [9/701] Task ba26e723
+[07:01:12]   Could not extract verified pattern
+[07:01:12] [10/701] Task ecb67b6d
+[07:01:14]   Could not extract verified pattern
+[07:01:14] [11/701] Task 292dd178
+[07:01:17]   Could not extract verified pattern
+[07:01:17] [12/701] Task 423a55dc
+[07:01:19]   Could not extract verified pattern
+[07:01:19] [13/701] Task 230f2e48
+[07:01:23]   Could not extract verified pattern
+[07:01:23] [14/701] Task 2bee17df
+[07:01:25]   Could not extract verified pattern
+[07:01:25] [15/701] Task 72a961c9
+[07:01:27]   Could not extract verified pattern
+[07:01:27] [16/701] Task 8886d717
+[07:01:30]   Could not extract verified pattern
+[07:01:30] [17/701] Task d6e50e54
+[07:01:34]   Could not extract verified pattern
+[07:01:34] [18/701] Task caa06a1f
+[07:01:36]   Could not extract verified pattern
+[07:01:36] [19/701] Task dc46ea44
+[07:01:40]   Could not extract verified pattern
+[07:01:40] [20/701] Task 150deff5
+[07:01:41]   Could not extract verified pattern
+[07:01:41] [21/701] Task 11dc524f
+[07:01:46]   Could not extract verified pattern
+[07:01:46] [22/701] Task 9f27f097
+[07:01:50]   Could not extract verified pattern
+[07:01:50] [23/701] Task 182e5d0f
+[07:01:54]   Could not extract verified pattern
+[07:01:54] [24/701] Task 78e78cff
+[07:01:57]   Could not extract verified pattern
+[07:01:57] [25/701] Task 52364a65
+[07:01:59]   Could not extract verified pattern
+[07:01:59] [26/701] Task 917bccba
+[07:02:01]   Could not extract verified pattern
+[07:02:01] [27/701] Task 2601afb7
+[07:02:04]   Could not extract verified pattern
+[07:02:04] [28/701] Task 470c91de
+[07:02:08]   Could not extract verified pattern
+[07:02:08] [29/701] Task 6d75e8bb
+[07:02:09]   Could not extract verified pattern
+[07:02:09] [30/701] Task 85c4e7cd
+[07:02:13]   Could not extract verified pattern
+[07:02:13] [31/701] Task 9b4c17c4
+[07:02:20]   Could not extract verified pattern
+[07:02:20] [32/701] Task b2862040
+[07:02:26]   Could not extract verified pattern
+[07:02:26] [33/701] Task d06dbe63
+[07:02:27]   Could not extract verified pattern
+[07:02:27] [34/701] Task e45ef808
+[07:02:30]   Could not extract verified pattern
+[07:02:30] [35/701] Task 689c358e
+[07:02:32]   Could not extract verified pattern
+[07:02:32] [36/701] Task ba97ae07
+[07:02:34]   Could not extract verified pattern
+[07:02:34] [37/701] Task 2f767503
+[07:02:38]   Could not extract verified pattern
+[07:02:38] [38/701] Task 5207a7b5
+[07:02:39]   Could not extract verified pattern
+[07:02:39] [39/701] Task f341894c
+[07:02:43]   Could not extract verified pattern
+[07:02:43] [40/701] Task 140c817e
+[07:02:48]   Could not extract verified pattern
+[07:02:48] [41/701] Task 41ace6b5
+[07:02:52]   Could not extract verified pattern
+[07:02:52] [42/701] Task 9f8de559
+[07:03:00]   Could not extract verified pattern
+[07:03:00] [43/701] Task ac605cbb
+[07:03:02]   Could not extract verified pattern
+[07:03:02] [44/701] Task 1c56ad9f
+[07:03:05]   Could not extract verified pattern
+[07:03:05] [45/701] Task 62b74c02
+[07:03:06]   Could not extract verified pattern
+[07:03:06] [46/701] Task ac0c2ac3
+[07:03:09]   Could not extract verified pattern
+[07:03:09] [47/701] Task b745798f
+[07:03:11]   Could not extract verified pattern
+[07:03:11] [48/701] Task 50c07299
+[07:03:19]   Could not extract verified pattern
+[07:03:19] [49/701] Task 64a7c07e
+[07:03:20]   Could not extract verified pattern
+[07:03:20] [50/701] Task 8dab14c2
+[07:03:29]   Could not extract verified pattern
+[07:03:29] [51/701] Task f18ec8cc
+[07:03:34]   Could not extract verified pattern
+[07:03:34] [52/701] Task 253bf280
+[07:03:36]   Could not extract verified pattern
+[07:03:36] [53/701] Task 623ea044
+[07:03:37]   Could not extract verified pattern
+[07:03:37] [54/701] Task 62ab2642
+[07:03:39]   Could not extract verified pattern
+[07:03:39] [55/701] Task dce56571
+[07:03:42]   Could not extract verified pattern
+[07:03:42] [56/701] Task e39e9282
+[07:03:46]   Could not extract verified pattern
+[07:03:46] [57/701] Task f8f52ecc
+[07:03:50]   Could not extract verified pattern
+[07:03:50] [58/701] Task 58c02a16
+[07:03:53]   Could not extract verified pattern
+[07:03:53] [59/701] Task 41e4d17e
+[07:03:57]   Could not extract verified pattern
+[07:03:57] [60/701] Task 48634b99
+[07:04:05]   Could not extract verified pattern
+[07:04:05] [61/701] Task 9f5f939b
+[07:04:11]   Could not extract verified pattern
+[07:04:11] [62/701] Task af726779
+[07:04:16]   Could not extract verified pattern
+[07:04:16] [63/701] Task 25d487eb
+[07:04:18]   Could not extract verified pattern
+[07:04:18] [64/701] Task 5623160b
+[07:04:21]   Could not extract verified pattern
+[07:04:21] [65/701] Task d8c310e9
+[07:04:22]   Could not extract verified pattern
+[07:04:22] [66/701] Task f5c89df1
+[07:04:24]   Could not extract verified pattern
+[07:04:24] [67/701] Task 1a244afd
+[07:04:28]   Could not extract verified pattern
+[07:04:28] [68/701] Task 543a7ed5
+[07:04:33]   Could not extract verified pattern
+[07:04:33] [69/701] Task 6ca952ad
+[07:04:39]   Could not extract verified pattern
+[07:04:39] [70/701] Task 963c33f8
+[07:04:46]   Could not extract verified pattern
+[07:04:46] [71/701] Task d4a91cb9
+[07:04:47]   Could not extract verified pattern
+[07:04:47] [72/701] Task d93c6891
+[07:04:51]   Could not extract verified pattern
+[07:04:51] [73/701] Task e21a174a
+[07:04:54]   Could not extract verified pattern
+[07:04:54] [74/701] Task 3bd67248
+[07:04:55]   Could not extract verified pattern
+[07:04:55] [75/701] Task 758abdf0
+[07:04:57]   Could not extract verified pattern
+[07:04:57] [76/701] Task 7acdf6d3
+[07:05:02]   Could not extract verified pattern
+[07:05:02] [77/701] Task e0fb7511
+[07:05:07]   Could not extract verified pattern
+[07:05:07] [78/701] Task 22806e14
+[07:05:15] 
+Final save...
+[07:05:15] Saved memory to data/crew_training_facts/neural_memory.pt
+[07:05:16] Saved self-improvement patterns
+[07:05:16] 
+============================================================
+[07:05:16] Final Training Report
+[07:05:16] ============================================================
+[07:05:16] Rounds: 1, Tasks: 377, Solved: 6 (1.6%), Patterns stored: 3, Already known: 3, Extraction failures: 371
+[07:05:16] 
+--- Validation (50 tasks) ---
+[07:05:31] Validation accuracy: 0.0%
+[07:05:31] Solve rate: 0.0%
+[07:05:31] 
+============================================================
+[07:05:31] Self-Improvement Learning Report
+[07:05:31] ============================================================
+[07:05:31] 
+Circuit Introspection Report
+=============================
+
+Observations Summary:
+  - Total observations: 0
+  - Unique circuits: 0
+  - Context types: 0
+  - Co-activation pairs: 0
+
+Top Performers (>80% success rate):
+  (none yet)
+
+Candidates for Pruning (<20% success rate):
+  (none yet)
+
+Trending Items:
+

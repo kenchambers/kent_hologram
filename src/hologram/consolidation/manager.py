@@ -34,6 +34,33 @@ from hologram.core.similarity import Similarity
 logger = logging.getLogger(__name__)
 
 
+def compute_salience(text: str, source: str) -> float:
+    """
+    Simple salience heuristic - no ML needed.
+
+    Args:
+        text: The fact text to score
+        source: Source type ("user", "gutenberg_X", etc.)
+
+    Returns:
+        Salience score 0-1
+    """
+    salience = 0.5  # Base score
+
+    # User input is more important than book facts
+    if source.startswith("user"):
+        salience += 0.3
+
+    # Named entities boost salience (simple heuristic)
+    important_terms = ["captain", "died", "king", "queen", "death", "war"]
+    for term in important_terms:
+        if term.lower() in text.lower():
+            salience += 0.1
+            break
+
+    return min(1.0, salience)
+
+
 @dataclass
 class PendingFact:
     """A fact pending consolidation."""
@@ -41,6 +68,8 @@ class PendingFact:
     value_vector: torch.Tensor
     value_label: str
     timestamp: float
+    source_id: str = "user"  # Source tracking: "user", "gutenberg_moby_dick_ch5", etc.
+    salience: float = 0.5    # Importance score 0-1
 
 
 @dataclass
@@ -93,6 +122,7 @@ class ConsolidationManager:
         self._space = space
         self._consolidation_threshold = consolidation_threshold
         self._decay_factor = decay_factor
+        self._max_pending = 100  # Episodic buffer capacity limit
 
         # Working memory (HDC)
         self._working_memory = MemoryTrace(space)
@@ -261,6 +291,8 @@ class ConsolidationManager:
         key: torch.Tensor,
         value: torch.Tensor,
         value_label: str,
+        source_id: str = "user",
+        salience: Optional[float] = None,
     ) -> float:
         """
         Store a key-value pair in working memory.
@@ -272,6 +304,8 @@ class ConsolidationManager:
             key: Key vector (typically bind(subject, predicate))
             value: Value vector
             value_label: String label for the value
+            source_id: Source tracking ("user", "gutenberg_X", etc.)
+            salience: Importance score 0-1 (auto-computed if None)
 
         Returns:
             Store latency in milliseconds
@@ -285,12 +319,25 @@ class ConsolidationManager:
             # Add to vocabulary
             self._value_vocab[value_label] = value
 
+            # Compute salience if not provided
+            if salience is None:
+                salience = compute_salience(value_label, source_id)
+
+            # Check capacity limit before appending
+            if len(self._pending_facts) >= self._max_pending:
+                # Evict lowest salience facts (keep max_pending - 1 to make room for new fact)
+                self._pending_facts.sort(key=lambda x: x.salience)
+                self._pending_facts = self._pending_facts[-(self._max_pending - 1):]
+                logger.info(f"Episodic buffer saturated, evicting low-salience facts")
+
             # Queue for consolidation
             self._pending_facts.append(PendingFact(
                 key_vector=key.clone(),
                 value_vector=value.clone(),
                 value_label=value_label,
                 timestamp=time.time(),
+                source_id=source_id,
+                salience=salience,
             ))
 
             # Check if consolidation should be triggered
@@ -477,6 +524,8 @@ class ConsolidationManager:
                     "value_vector": pf.value_vector.clone(),
                     "value_label": pf.value_label,
                     "timestamp": pf.timestamp,
+                    "source_id": pf.source_id,
+                    "salience": pf.salience,
                 }
                 for pf in self._pending_facts
             ]
@@ -509,6 +558,8 @@ class ConsolidationManager:
                     value_vector=pf["value_vector"],
                     value_label=pf["value_label"],
                     timestamp=pf["timestamp"],
+                    source_id=pf.get("source_id", "user"),
+                    salience=pf.get("salience", 0.5),
                 )
                 for pf in pending_data
             ]
