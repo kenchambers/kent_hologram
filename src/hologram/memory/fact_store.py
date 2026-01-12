@@ -585,6 +585,26 @@ class FactStore:
             state = self._consolidation_manager.state_dict()
             # Inject FactStore-level metadata
             state["fact_store_subject_vocab"] = list(self._subject_vocab)
+            # Serialize facts metadata for restoration
+            state["fact_store_facts"] = [
+                {
+                    "subject": f.subject,
+                    "predicate": f.predicate,
+                    "object": f.object,
+                    "confidence": f.confidence,
+                    "source": f.source,
+                    "timestamp": f.timestamp.isoformat() if f.timestamp else None,
+                    "surprise_score": f.surprise_score,
+                }
+                for f in self._facts
+            ]
+            # Serialize vector caches for faster queries after load
+            state["fact_store_value_vectors_cache"] = {
+                k: v.clone() for k, v in self._value_vectors_cache.items()
+            }
+            state["fact_store_subject_vectors_cache"] = {
+                k: v.clone() for k, v in self._subject_vectors_cache.items()
+            }
             return state
         return None
 
@@ -593,15 +613,45 @@ class FactStore:
         if self._consolidation_manager:
             # Load manager state
             self._consolidation_manager.load_state_dict(state)
-            
+
             # Sync FactStore value vocab with manager's
             # Manager stores dict[str, Tensor], we just need keys
             if "value_vocab" in state:
                 self._value_vocab = set(state["value_vocab"].keys())
-                
+
             # Load subject vocab
             if "fact_store_subject_vocab" in state:
                 self._subject_vocab = set(state["fact_store_subject_vocab"])
+
+            # Restore facts metadata
+            if "fact_store_facts" in state:
+                self._facts = []
+                for f_data in state["fact_store_facts"]:
+                    # Handle timestamp deserialization
+                    ts = f_data.get("timestamp")
+                    if ts and isinstance(ts, str):
+                        ts = datetime.fromisoformat(ts)
+                    self._facts.append(Fact(
+                        subject=f_data["subject"],
+                        predicate=f_data["predicate"],
+                        object=f_data["object"],
+                        confidence=f_data.get("confidence", 1.0),
+                        source=f_data.get("source"),
+                        timestamp=ts,
+                        surprise_score=f_data.get("surprise_score"),
+                    ))
+
+                # Rebuild exact index for O(1) lookups
+                self._exact_index = {
+                    f"{self._normalize(f.subject)}:{self._normalize(f.predicate)}": f
+                    for f in self._facts
+                }
+
+            # Restore vector caches
+            if "fact_store_value_vectors_cache" in state:
+                self._value_vectors_cache = state["fact_store_value_vectors_cache"]
+            if "fact_store_subject_vectors_cache" in state:
+                self._subject_vectors_cache = state["fact_store_subject_vectors_cache"]
 
     def __repr__(self) -> str:
         return (
