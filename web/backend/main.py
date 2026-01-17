@@ -102,7 +102,7 @@ def get_chatbot():
     global _chatbot
     if _chatbot is None:
         interface = ChatInterface(
-            persist_dir="./data/cadence_test_facts",
+            persist_dir="./data/crew_training_facts",
             persistent=True,
             enable_ventriloquist=False,
             force_neural=True,   # Enable neural memory for advanced capabilities
