@@ -41,7 +41,10 @@ COPY pyproject.toml README.md ./
 COPY src/ ./src/
 COPY web/backend/ ./web/backend/
 
-# Install Python dependencies
+# Install CPU-only PyTorch first (saves ~5GB vs CUDA version)
+RUN uv pip install --system torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install Python dependencies (torch already installed, will be skipped)
 RUN uv pip install --system -e . && \
     uv pip install --system fastapi uvicorn[standard] python-multipart
 
