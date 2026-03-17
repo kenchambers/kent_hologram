@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 class GenerationContext:
     """
     Unified context for generation that supports both HDC and SLM generators.
-    
+
     This dataclass carries all information needed by either generator type:
     - HDC generators use thought_vector
     - SLM generators use query_text, fact_answer, entities
-    
+
     Attributes:
         query_text: Original user query (for SLM)
         thought_vector: HDC thought vector (for ResonantGenerator)
@@ -41,6 +41,7 @@ class GenerationContext:
         style: Preferred style
         expected_subject: Expected subject for validation
         episodes: Episodic snippets to ground longer responses
+        chain_steps: Multi-step reasoning chain steps (if chain reasoning was used)
     """
     query_text: str
     thought_vector: Optional[torch.Tensor]
@@ -50,6 +51,7 @@ class GenerationContext:
     style: StyleType  # type: ignore  # Forward reference via __future__ annotations
     expected_subject: Optional[str] = None
     episodes: list[str] = field(default_factory=list)
+    chain_steps: list = field(default_factory=list)  # List of ChainStep objects
 
 
 class Generator(Protocol):

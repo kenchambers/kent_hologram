@@ -25,10 +25,46 @@ class Operations:
     - permute: Circular shift for sequence encoding
 
     All methods are static - this is a stateless utility class.
+
+    Supports two binding modes:
+    - MAP (default): Multiply-Add-Permute. For bipolar vectors (+1/-1), achieves
+      near-perfect unbinding (~0.99). For continuous vectors, ~0.5-0.7.
+    - FHRR: Fourier Holographic Reduced Representation via FFT.
+      Circular convolution for binding. Best for continuous Gaussian vectors
+      (>0.9 unbinding). For bipolar vectors, ~0.65.
+
+    NOTE: This codebase uses bipolar vectors, so MAP is optimal (default).
     """
 
-    @staticmethod
-    def bind(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    _binding_mode: str = "MAP"
+
+    @classmethod
+    def set_binding_mode(cls, mode: str) -> None:
+        """
+        Set the binding mode for all operations.
+
+        Args:
+            mode: Either "MAP" or "FHRR"
+
+        Raises:
+            ValueError: If mode is not "MAP" or "FHRR"
+        """
+        if mode not in ("MAP", "FHRR"):
+            raise ValueError(f"Invalid binding mode: {mode}. Must be 'MAP' or 'FHRR'.")
+        cls._binding_mode = mode
+
+    @classmethod
+    def get_binding_mode(cls) -> str:
+        """
+        Get the current binding mode.
+
+        Returns:
+            Current binding mode ("MAP" or "FHRR")
+        """
+        return cls._binding_mode
+
+    @classmethod
+    def bind(cls, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         """
         Binding operation: combines two concepts.
 
@@ -39,7 +75,7 @@ class Operations:
         Properties:
         - Dissimilar: bind(a, b) is orthogonal to both a and b
         - Reversible: unbind(bind(a, b), a) ≈ b
-        - Commutative (for MAP): bind(a, b) = bind(b, a)
+        - Commutative: bind(a, b) = bind(b, a) (both MAP and FHRR)
 
         Args:
             a: First hypervector
@@ -48,14 +84,22 @@ class Operations:
         Returns:
             Bound vector representing the association a↔b
         """
-        result = torchhd.bind(a, b)
-        
+        if cls._binding_mode == "FHRR":
+            # FHRR: Circular convolution via FFT
+            # conv(a, b) = ifft(fft(a) * fft(b))
+            fft_a = torch.fft.fft(a)
+            fft_b = torch.fft.fft(b)
+            result = torch.fft.ifft(fft_a * fft_b).real
+        else:
+            # MAP: Element-wise multiplication (torchhd default)
+            result = torchhd.bind(a, b)
+
         # CRITICAL: Normalize result to prevent magnitude drift (vanishing/exploding gradients)
         # When using float embeddings, element-wise multiplication shrinks norm.
         norm = torch.norm(result)
         if norm > 1e-6:
             result = result / norm
-            
+
         return result
 
     @staticmethod
@@ -96,8 +140,8 @@ class Operations:
 
         return result
 
-    @staticmethod
-    def unbind(composite: torch.Tensor, key: torch.Tensor) -> torch.Tensor:
+    @classmethod
+    def unbind(cls, composite: torch.Tensor, key: torch.Tensor) -> torch.Tensor:
         """
         Unbinding operation: extracts value from composite.
 
@@ -123,13 +167,27 @@ class Operations:
             >>> value = torch.randn(10000)
             >>> composite = ops.bind(key, value)
             >>> recovered = ops.unbind(composite, key)
-            >>> # recovered ≈ value (cosine similarity > 0.9)
+            >>> # recovered ≈ value (cosine similarity > 0.9 for FHRR, ~0.5-0.7 for MAP)
         """
-        # CORRECT API: unbind = bind with inverse
-        return torchhd.bind(composite, torchhd.inverse(key))
+        if cls._binding_mode == "FHRR":
+            # FHRR: Circular correlation via FFT
+            # corr(composite, key) = ifft(fft(composite) * conj(fft(key)))
+            fft_composite = torch.fft.fft(composite)
+            fft_key = torch.fft.fft(key)
+            result = torch.fft.ifft(fft_composite * torch.conj(fft_key)).real
 
-    @staticmethod
-    def inverse(vector: torch.Tensor) -> torch.Tensor:
+            # Normalize
+            norm = torch.norm(result)
+            if norm > 1e-6:
+                result = result / norm
+
+            return result
+        else:
+            # MAP: bind with inverse
+            return torchhd.bind(composite, torchhd.inverse(key))
+
+    @classmethod
+    def inverse(cls, vector: torch.Tensor) -> torch.Tensor:
         """
         Get the inverse of a vector for unbinding.
 
@@ -137,7 +195,7 @@ class Operations:
         bind(vector, inverse(vector)) ≈ identity
 
         For MAP VSA: inverse is the vector itself
-        For FHRR: inverse is the complex conjugate
+        For FHRR: inverse is time-reversal (flip all but first element)
 
         Args:
             vector: Input hypervector
@@ -152,7 +210,13 @@ class Operations:
             >>> identity = ops.bind(v, inv_v)
             >>> # identity should be close to a neutral element
         """
-        return torchhd.inverse(vector)
+        if cls._binding_mode == "FHRR":
+            # FHRR: Time-reversal for circular convolution inverse
+            # inverse(v) = [v[0], v[n-1], v[n-2], ..., v[2], v[1]]
+            return torch.cat([vector[0:1], torch.flip(vector[1:], dims=[0])])
+        else:
+            # MAP: Use torchhd inverse
+            return torchhd.inverse(vector)
 
     @staticmethod
     def permute(vector: torch.Tensor, shifts: int) -> torch.Tensor:

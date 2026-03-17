@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 
 from hologram.config.constants import (
     CREATIVITY_TEMPERATURE,
+    DEFAULT_BINDING_MODE,
     MAX_RESONATOR_ITERATIONS,
     STYLE_WEIGHT,
 )
@@ -48,7 +49,7 @@ class HologramContainer:
         >>> # Both use the same VectorSpace and Codebook
     """
 
-    def __init__(self, dimensions: int = 10000, use_semantic: bool = False, use_fractal: bool = True):
+    def __init__(self, dimensions: int = 10000, use_semantic: bool = False, use_fractal: bool = True, binding_mode: str = DEFAULT_BINDING_MODE):
         """
         Initialize container with shared dependencies.
 
@@ -61,13 +62,16 @@ class HologramContainer:
             use_fractal: If True, use FractalSpace instead of VectorSpace (default: True)
                          FractalSpace provides holographic properties: any fragment
                          contains the whole concept (lower resolution).
+            binding_mode: Binding mode for Operations ("MAP" or "FHRR", default: "MAP")
+                          MAP: ~0.5-0.7 unbinding similarity (standard)
+                          FHRR: ~0.9+ unbinding similarity (circular convolution via FFT)
         """
         # Shared singletons - use FractalSpace by default for holographic properties
         if use_fractal:
             self._space = FractalSpace(dimensions=dimensions)
         else:
             self._space = VectorSpace(dimensions=dimensions)
-        
+
         # SemanticCodebook is disabled by default - it breaks HDC operations
         if use_semantic:
             try:
@@ -79,6 +83,11 @@ class HologramContainer:
         else:
             self._codebook = Codebook(self._space)
 
+        # Set binding mode for all Operations
+        from hologram.core.operations import Operations
+        Operations.set_binding_mode(binding_mode)
+        self._binding_mode = binding_mode
+
     @property
     def vector_space(self) -> VectorSpace:
         """Get the shared VectorSpace instance."""
@@ -88,6 +97,11 @@ class HologramContainer:
     def codebook(self) -> Codebook:
         """Get the shared Codebook instance."""
         return self._codebook
+
+    @property
+    def binding_mode(self) -> str:
+        """Get the current binding mode."""
+        return self._binding_mode
 
     def create_fact_store(
         self,
@@ -819,6 +833,38 @@ class HologramContainer:
             persist_dir=persist_dir,
             collection_name=collection_name,
             auto_recover=auto_recover,
+        )
+
+    def create_chain_reasoner(
+        self,
+        chroma_store,
+        threshold: float = 0.35,
+    ):
+        """
+        Create a ChainReasoner for multi-step reasoning.
+
+        Implements transformer-style attention over facts for multi-hop chains.
+        Each step queries ChromaDB/FAISS individually to avoid superposition noise.
+
+        Args:
+            chroma_store: ChromaFactStore or FAISS adapter for indexed lookup
+            threshold: Minimum confidence threshold for chain steps (default: 0.35)
+
+        Returns:
+            ChainReasoner instance
+
+        Example:
+            >>> chroma_store = container.create_chroma_fact_store()
+            >>> reasoner = container.create_chain_reasoner(chroma_store)
+            >>> result = reasoner.chain_reason("France", ["capital"])
+            >>> # result.final_answer == "Paris"
+        """
+        from hologram.reasoning.chain_reasoner import ChainReasoner
+
+        return ChainReasoner(
+            codebook=self._codebook,
+            chroma_store=chroma_store,
+            threshold=threshold,
         )
 
     def create_persistent_chatbot(

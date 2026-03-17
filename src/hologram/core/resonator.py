@@ -522,9 +522,11 @@ class Resonator:
             binding = self._ops.bind(vec, missing_role_vec)
             full_thought = self._ops.bundle(partial_thought, binding)
 
-            # Score: coherence (norm) of complete thought
-            # Higher norm = more coherent/concentrated thought
-            coherence = float(torch.norm(full_thought).item())
+            # Score: coherence measured by cosine similarity with partial thought
+            # Higher similarity = candidate is more coherent with known bindings
+            # (Replaces broken norm-based scoring which always returns ~1.0 after normalization)
+            from hologram.core.similarity import Similarity
+            coherence = Similarity.cosine(full_thought, partial_thought)
             if coherence > best_score:
                 best_score = coherence
                 best_word = word

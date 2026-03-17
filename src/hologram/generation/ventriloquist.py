@@ -159,12 +159,25 @@ class VentriloquistGenerator:
                 "You are a helpful assistant. Answer questions naturally and fluently "
                 "using the provided facts. Be conversational but accurate."
             )
+
+            # Add verified reasoning chain if available (chain reasoning grounding)
+            chain_text = ""
+            if context.chain_steps:
+                chain_facts = "\n".join(
+                    f"- {step.subject} {step.predicate} → {step.answer}"
+                    for step in context.chain_steps
+                )
+                chain_text = f"\nVerified reasoning chain:\n{chain_facts}\n"
+                system_prompt += "\nUse these verified facts. Do not contradict them."
+
             episodes_text = ""
             if context.episodes:
                 episodes_text = "Recent episodes:\n" + "\n".join(f"- {e}" for e in context.episodes[:3]) + "\n\n"
+
             user_prompt = (
                 f"Question: {context.query_text}\n\n"
-                f"Fact: {context.fact_answer}\n\n"
+                f"Fact: {context.fact_answer}\n"
+                f"{chain_text}\n"
                 f"{episodes_text}"
                 f"Answer the question using the fact above. Be natural and conversational."
             )

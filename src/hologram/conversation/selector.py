@@ -98,6 +98,7 @@ class ResponseSelector:
         dreamer: Optional[Dreamer] = None,
         cadence_jazz: Optional[CadenceJazz] = None,
         crag_resonator: Optional[object] = None,  # CRAGResonator for grounded resonance
+        chain_reasoner: Optional[object] = None,  # ChainReasoner for multi-step reasoning
     ):
         """
         Initialize response selector.
@@ -111,6 +112,7 @@ class ResponseSelector:
             resonant_generator: Optional HDC generator for factual questions
             ventriloquist_generator: Optional SLM generator for fluent conversation
             crag_resonator: Optional CRAGResonator for grounded resonance (falls back to standard)
+            chain_reasoner: Optional ChainReasoner for multi-step reasoning
         """
         self._pattern_store = pattern_store
         self._memory = conversation_memory
@@ -125,6 +127,7 @@ class ResponseSelector:
         self._dreamer = dreamer
         self._cadence_jazz = cadence_jazz
         self._crag_resonator = crag_resonator  # Optional CRAG resonator for grounded resonance
+        self._chain_reasoner = chain_reasoner  # Optional chain reasoner for multi-step reasoning
 
         # Initialize circuit breaker for generation failure detection
         self._circuit_breaker = SimpleCircuitBreaker(
@@ -174,13 +177,36 @@ class ResponseSelector:
         # CRITICAL FIX: Also check for questions in TEACHING/STATEMENT intents (mixed intent)
         # "The capital is Paris. What is the capital?" -> TEACHING but contains question
         is_question = intent.intent == IntentType.QUESTION or "?" in text
-        
+
         fact_answer = None
         fact_confidence = 0.0
         if is_question and self._fact_store:
             result = self._query_facts(entity_names, text)
             if result:
                 fact_answer, fact_confidence = result
+
+        # Step 1.5: Try chain reasoning if single-hop confidence is low
+        # Multi-step reasoning via ChainReasoner (transformer-style attention)
+        chain_result = None
+        if is_question and fact_confidence < 0.5 and self._chain_reasoner:
+            # Try to infer a chain from entity_names
+            # Example: ["Paris", "country", "continent"] -> chain: Paris --country--> France --continent--> Europe
+            # For MVP, try simple 2-step chains with common predicates
+            if len(entity_names) >= 2:
+                # Try treating last entity as predicate for a 2-step chain
+                # e.g., "What country is Paris in?" -> ["Paris", "country"] -> chain: Paris --country-->
+                subject = entity_names[0]
+                predicates = [e for e in entity_names[1:] if e.lower() not in QUERY_SKIP_WORDS]
+
+                if predicates and len(predicates) <= 3:
+                    chain_result = self._chain_reasoner.chain_reason_with_context(
+                        subject, predicates, max_depth=3
+                    )
+                    if chain_result and chain_result.min_confidence > fact_confidence:
+                        # Chain reasoning succeeded with higher confidence
+                        fact_answer = chain_result.final_answer
+                        fact_confidence = chain_result.min_confidence
+                        logger.debug(f"Chain reasoning: {subject} -> {' -> '.join([s.answer for s in chain_result.steps])}")
 
         # Retrieve episodic snippets for additional grounding
         episodes = []
@@ -213,6 +239,7 @@ class ResponseSelector:
                 style=style or StyleType.NEUTRAL,
                 expected_subject=expected_subject,
                 episodes=episodes,
+                chain_steps=chain_result.steps if chain_result else [],
             )
             
             # Hybrid routing: Prioritize Ventriloquist for fluency + grounding

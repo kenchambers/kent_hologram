@@ -12,7 +12,12 @@ but increase computation cost. 10,000D is standard in HDC research."""
 
 VSA_MODEL = "MAP"
 """Vector Symbolic Architecture model. MAP (Multiply-Add-Permute) provides
-good capacity and is well-supported by torchhd."""
+good capacity and is well-supported by torchhd. Alternative: FHRR for exact unbinding."""
+
+DEFAULT_BINDING_MODE = "MAP"
+"""Default binding mode for Operations class. Options: MAP or FHRR.
+MAP is optimal for bipolar vectors (~0.99 unbinding similarity).
+FHRR (Fourier Holographic Reduced Representation) uses circular convolution via FFT."""
 
 # Confidence Thresholds (Calibrated for Holographic Storage)
 RESPONSE_CONFIDENCE_THRESHOLD = 0.20
