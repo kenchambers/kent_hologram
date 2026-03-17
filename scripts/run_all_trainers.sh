@@ -26,7 +26,7 @@ mkdir -p ./data/code_training
 
 # Start ARC Trainer in background
 echo "[$(date '+%H:%M:%S')] Starting ARC Trainer..."
-nohup python scripts/arc_trainer.py \
+nohup uv run python scripts/arc_trainer.py \
   --persist-dir ./data/arc_training \
   --max-rounds 1000 \
   --validate-every 20 \
@@ -37,7 +37,7 @@ echo "  PID: $ARC_PID"
 
 # Start Crew Trainer in background
 echo "[$(date '+%H:%M:%S')] Starting Crew Trainer..."
-nohup python scripts/crew_trainer.py \
+nohup uv run python scripts/crew_trainer.py \
   --persist-dir ./data/crew_training \
   --max-rounds 1000 \
   --turns-per-topic 8 \
@@ -48,7 +48,7 @@ echo "  PID: $CREW_PID"
 
 # Start Code Trainer in background
 echo "[$(date '+%H:%M:%S')] Starting Code Trainer..."
-nohup python scripts/code_trainer.py \
+nohup uv run python scripts/code_trainer.py \
   --persist-dir ./data/code_training \
   --max-rounds 1000 \
   --validate-every 20 \

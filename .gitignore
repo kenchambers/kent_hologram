@@ -88,6 +88,10 @@ logs/
 conversation_logs/*
 !conversation_logs/.gitkeep
 training_*.log
+arc_training_logs/
+code_training_logs/
+overnight_logs/
+training_logs/
 
 # EmbeddixDB - Complete installation (repo-agnostic setup)
 embeddixdb/
